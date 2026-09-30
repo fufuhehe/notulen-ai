@@ -197,6 +197,17 @@ details#d-biaya summary::-webkit-details-marker{display:none}
 @keyframes naik{from{transform:translateY(100%)}}
 @keyframes muncul{from{opacity:0}}
 
+.player{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(.75rem + env(safe-area-inset-bottom));width:min(38rem,calc(100% - 1.5rem));z-index:30;display:flex;align-items:center;gap:.6rem;padding:.55rem .6rem .55rem .55rem;background:var(--navy);color:#fff;border-radius:999px;box-shadow:0 12px 32px -12px rgba(0,0,0,.45)}
+.pl-main{flex:none;width:2.75rem;height:2.75rem;min-height:0;padding:0;border-radius:50%;border:0;background:var(--rec);color:#fff}
+.pl-mid{flex:1;min-width:0}
+.pl-mid input{padding:0;border:0;height:1.1rem;background:none;accent-color:#3dd6c0;box-shadow:none}
+.pl-waktu{display:flex;justify-content:space-between;font-size:.6875rem;color:#aebdcc;font-variant-numeric:tabular-nums;margin-top:-.1rem}
+.pl-kecil{flex:none;min-height:0;min-width:2.4rem;height:2.4rem;padding:0 .5rem;border:0;border-radius:999px;background:rgba(255,255,255,.1);color:#fff;font-size:.8125rem}
+body.ada-player #v-detail .wrap{padding-bottom:6rem}
+body.ada-player .aksi{bottom:4.5rem}
+.line{cursor:pointer;border-radius:.5rem;transition:background .2s}
+.line .ts{color:var(--accent);font-weight:700}
+.line.aktif{background:var(--accent-soft);box-shadow:-.5rem 0 0 var(--accent-soft),.5rem 0 0 var(--accent-soft)}
 .toast{position:fixed;left:50%;bottom:calc(1.5rem + env(safe-area-inset-bottom));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:.7rem 1.1rem;border-radius:999px;font-size:.875rem;font-weight:600;z-index:60;max-width:90vw;box-shadow:var(--shadow)}
 
 /* ---------- pratinjau infografis & slide (ukuran tetap, diskalakan) ---------- */
@@ -249,6 +260,7 @@ details#d-biaya summary::-webkit-details-marker{display:none}
   <symbol id="i-doc" viewBox="0 0 24 24"><path d="M7 3h7l5 5v11a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><path d="M14 3v5h5M9 13h6M9 17h4"/></symbol>
   <symbol id="i-cek" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></symbol>
   <symbol id="i-jam" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></symbol>
+  <symbol id="i-tutup" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></symbol>
   <symbol id="i-x" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5v5.5M12 16.2v.1"/></symbol>
 </svg>
 
@@ -390,6 +402,15 @@ details#d-biaya summary::-webkit-details-marker{display:none}
     </div>
 
     <audio id="d-audio" preload="none" class="hidden"></audio>
+    <div id="player" class="player hidden">
+      <button id="pl-main" class="pl-main" onclick="togglePutar()" aria-label="Putar/jeda"><svg class="i"><use href="#i-play"/></svg></button>
+      <div class="pl-mid">
+        <input id="pl-seek" type="range" min="0" max="100" step="1" value="0" aria-label="Posisi audio">
+        <div class="pl-waktu"><span id="pl-now">00:00</span><span id="pl-dur">00:00</span></div>
+      </div>
+      <button id="pl-speed" class="pl-kecil" onclick="gantiKecepatan()">1×</button>
+      <button class="pl-kecil" onclick="tutupPlayer()" aria-label="Tutup pemutar"><svg class="i"><use href="#i-tutup"/></svg></button>
+    </div>
     <div class="hapus"><button class="ghost danger" onclick="hapusRapat()">Hapus rapat ini</button></div>
   </div>
 </section>
@@ -556,7 +577,7 @@ function ke(v, arg) {
   window.scrollTo(0, 0);
   if (v === 'home') { isiSapaan(); muatDaftar(); muatPending(); }
   if (v === 'detail') bukaDetail(arg);
-  if (v !== 'detail') { const a = $('d-audio'); a.pause(); }
+  if (v !== 'detail') tutupPlayer();
   const hash = v === 'detail' ? '#r/' + arg : v === 'home' ? '' : '#' + v;
   if (location.hash !== hash) history.replaceState(null, '', location.pathname + hash);
 }
@@ -900,7 +921,7 @@ function gabung() {
 function renderTranskrip() {
   const b = gabung();
   $('d-transkrip').innerHTML = b.length
-    ? b.map(u => `<div class="line"><span class="ts">${jam(u.m)}</span><b>${esc(labelSpk(u.s))}</b>: ${esc(u.t)}</div>`).join('')
+    ? b.map(u => `<div class="line" data-m="${u.m}" onclick="putar(${u.m})"><span class="ts">▶ ${jam(u.m)}</span><b>${esc(labelSpk(u.s))}</b>: ${esc(u.t)}</div>`).join('')
     : 'Transkrip belum ada.';
   $('d-transkrip').classList.toggle('muted', !b.length);
 }
@@ -922,24 +943,66 @@ function renderSpeaker() {
     const contoh = (p.contoh.length ? p.contoh : t.filter(u => u.s === s)).slice(0, 2);
     return `<div class="spk">
       <h3><span>Speaker ${esc(s)} <span class="muted">· ${Math.round(p.kata / total * 100)}% bicara</span></span></h3>
-      ${contoh.map(u => `<div class="quote"><button class="ghost" style="min-height:0;padding:0 6px 0 0" onclick="putar(${u.m})">▶</button>“${esc(u.t.length > 140 ? u.t.slice(0, 140) + '…' : u.t)}”</div>`).join('')}
+      ${contoh.map(u => `<div class="quote"><button class="ghost" style="min-height:0;padding:0 6px 0 0" onclick="putar(${u.m}, true)">▶</button>“${esc(u.t.length > 140 ? u.t.slice(0, 140) + '…' : u.t)}”</div>`).join('')}
       <input data-spk="${esc(s)}" placeholder="Nama, mis. Pak Dir" value="${esc((state.rapat.nama_speaker || {})[s] || '')}">
     </div>`;
   }).join('');
 }
 
-async function putar(detik) {
+// ---------- pemutar audio ----------
+async function siapkanAudio() {
   const a = $('d-audio');
+  if (a.dataset.id === state.rapat.id && a.src) return a;
+  const { data, error } = await sb.storage.from('audio').createSignedUrl(state.rapat.audio_path, 3 * 3600);
+  if (error) throw error;
+  a.src = data.signedUrl; a.dataset.id = state.rapat.id;
+  a.playbackRate = state.kecepatan || 1;
+  return a;
+}
+async function putar(detik, cuplikan) {
   try {
-    if (a.dataset.id !== state.rapat.id) {
-      const { data, error } = await sb.storage.from('audio').createSignedUrl(state.rapat.audio_path, 3600);
-      if (error) throw error;
-      a.src = data.signedUrl; a.dataset.id = state.rapat.id;
-    }
+    const a = await siapkanAudio();
+    tampilkanPlayer();
     a.currentTime = detik; await a.play();
-    clearTimeout(a._stop); a._stop = setTimeout(() => a.pause(), 8000);
+    clearTimeout(a._stop);
+    if (cuplikan) a._stop = setTimeout(() => a.pause(), 8000);   // cuplikan nama: 8 detik
   } catch (e) { toast('Audio tidak bisa diputar: ' + (e.message || e)); }
 }
+function tampilkanPlayer() { $('player').classList.remove('hidden'); document.body.classList.add('ada-player'); }
+function tutupPlayer() { const a = $('d-audio'); a.pause(); clearTimeout(a._stop); $('player').classList.add('hidden'); document.body.classList.remove('ada-player'); tandaiBaris(-1); }
+async function togglePutar() {
+  const a = $('d-audio'); clearTimeout(a._stop);
+  if (a.paused) { try { await siapkanAudio(); await a.play(); } catch (e) { toast('Audio tidak bisa diputar'); } } else a.pause();
+}
+function gantiKecepatan() {
+  const L = [1, 1.25, 1.5, 2], a = $('d-audio');
+  state.kecepatan = L[(L.indexOf(state.kecepatan || 1) + 1) % L.length];
+  a.playbackRate = state.kecepatan; $('pl-speed').textContent = state.kecepatan + '×';
+}
+const durasiAudio = () => { const a = $('d-audio'); return isFinite(a.duration) && a.duration > 0 ? a.duration : (state.rapat && state.rapat.durasi_detik) || 0; };
+const mmss = (d) => { d = Math.floor(d || 0); return d >= 3600 ? jam(d) : String(Math.floor(d / 60)).padStart(2, '0') + ':' + String(d % 60).padStart(2, '0'); };
+function tandaiBaris(t) {
+  let aktif = null;
+  document.querySelectorAll('#d-transkrip .line').forEach(el => { if (t >= 0 && +el.dataset.m <= t + 0.5) aktif = el; el.classList.remove('aktif'); });
+  if (aktif) aktif.classList.add('aktif');
+}
+(function () {
+  const a = $('d-audio'), seek = $('pl-seek');
+  const ikon = () => { $('pl-main').innerHTML = `<svg class="i"><use href="#${a.paused ? 'i-play' : 'i-pause'}"/></svg>`; };
+  a.addEventListener('play', ikon); a.addEventListener('pause', ikon);
+  a.addEventListener('timeupdate', () => {
+    const d = durasiAudio();
+    if (!seek._geser) seek.value = d ? Math.min(100, a.currentTime / d * 100) : 0;
+    $('pl-now').textContent = mmss(a.currentTime); $('pl-dur').textContent = mmss(d);
+    if (!$('t-transkrip').classList.contains('hidden')) tandaiBaris(a.currentTime);
+  });
+  seek.addEventListener('input', () => { seek._geser = true; $('pl-now').textContent = mmss(seek.value / 100 * durasiAudio()); });
+  seek.addEventListener('change', () => { a.currentTime = seek.value / 100 * durasiAudio(); seek._geser = false; clearTimeout(a._stop); });
+  if ('mediaSession' in navigator) {
+    a.addEventListener('play', () => { navigator.mediaSession.metadata = new MediaMetadata({ title: (state.rapat && state.rapat.judul) || 'Rapat', artist: 'Notulen AI (Aa Ibot)', artwork: [{ src: 'icon-512.png', sizes: '512x512', type: 'image/png' }] }); });
+    try { navigator.mediaSession.setActionHandler('seekbackward', () => { a.currentTime = Math.max(0, a.currentTime - 10); }); navigator.mediaSession.setActionHandler('seekforward', () => { a.currentTime += 10; }); } catch (_) {}
+  }
+})();
 
 async function simpanNama() {
   const nama = {};
