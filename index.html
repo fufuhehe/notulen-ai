@@ -253,6 +253,7 @@ body.ada-player .aksi{bottom:4.5rem}
   <symbol id="i-back" viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></symbol>
   <symbol id="i-pen" viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16v4z"/><path d="M13.5 6.5l4 4"/></symbol>
   <symbol id="i-copy" viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="12" rx="2.5"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></symbol>
+  <symbol id="i-bagi" viewBox="0 0 24 24"><circle cx="18" cy="5.5" r="2.5"/><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="18.5" r="2.5"/><path d="M8.2 10.8l7.6-4.1M8.2 13.2l7.6 4.1"/></symbol>
   <symbol id="i-send" viewBox="0 0 24 24"><path d="M21 3L10 14"/><path d="M21 3l-7 18-4-7-7-4 18-7z"/></symbol>
   <symbol id="i-dl" viewBox="0 0 24 24"><path d="M12 4v11m0 0l-4.5-4.5M12 15l4.5-4.5"/><path d="M4 17v1a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-1"/></symbol>
   <symbol id="i-pause" viewBox="0 0 24 24"><path d="M9 5v14M15 5v14"/></symbol>
@@ -367,7 +368,7 @@ body.ada-player .aksi{bottom:4.5rem}
       <div id="d-resume" class="resume muted">Notulen belum ada.</div>
       <div class="aksi" id="d-resume-btn">
         <button onclick="salin(denganTtd(state.rapat.resume))"><svg class="i"><use href="#i-copy"/></svg>Salin</button>
-        <button class="accent" onclick="bagikan()"><svg class="i"><use href="#i-send"/></svg>Kirim ke WA</button>
+        <button class="accent" onclick="bagikan()"><svg class="i"><use href="#i-bagi"/></svg>Bagikan</button>
       </div>
     </div>
 
@@ -1062,7 +1063,7 @@ async function salin(teks) {
 async function bagikan() {
   const t = denganTtd(state.rapat.resume || '');
   if (navigator.share) { try { await navigator.share({ text: t }); return; } catch (e) { if (e.name === 'AbortError') return; } }
-  location.href = 'https://wa.me/?text=' + encodeURIComponent(t);
+  salin(t); toast('Tersalin. Tinggal tempel di aplikasi tujuan.', 4000);
 }
 
 
