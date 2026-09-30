@@ -18,7 +18,7 @@ Tangkap juga komitmen informal, misalnya "nanti kirim proposal", "saya kawal", "
 FORMAT (untuk WhatsApp)
 Judul bagian pakai *tebal*, daftar pakai "- ". Jangan pakai tabel, tanda #, atau **dobel bintang**. JANGAN menulis bagian yang kosong. Jangan menulis kalimat pengisi seperti "Tidak ada keputusan".
 
-*NOTULEN: <judul>*
+*<judul>*
 <tanggal> | Durasi <durasi>
 Peserta bicara: <peserta>
 

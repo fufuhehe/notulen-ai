@@ -82,7 +82,7 @@ header.top h1{font-size:1.0625rem;font-weight:700;margin:0;flex:1;white-space:no
 .sapa span{color:var(--muted);font-weight:600}
 .cta{position:relative;overflow:hidden;display:flex;align-items:center;gap:1rem;width:100%;text-align:left;margin:1.25rem 0 .75rem;padding:1.25rem;border-radius:var(--r-lg);background:var(--navy);color:#fff;border:0;min-height:0;box-shadow:var(--shadow)}
 .cta .rec{flex:none;width:3.75rem;height:3.75rem;border-radius:50%;background:var(--rec);display:grid;place-items:center;box-shadow:0 0 0 .45rem rgba(255,99,105,.18)}
-.cta .rec::after{content:"";width:1.1rem;height:1.1rem;border-radius:50%;background:#fff}
+.cta .rec svg{width:1.75rem;height:1.75rem;stroke:#fff;stroke-width:2}
 .cta b{display:block;font-size:1.1875rem;letter-spacing:-.01em}
 .cta small{display:block;font-weight:500;color:#aebdcc;font-size:.8125rem;margin-top:.15rem;font-style:italic}
 .cta .wave{position:absolute;right:-.5rem;bottom:-.25rem;display:flex;gap:.22rem;align-items:flex-end;opacity:.18;height:4.5rem}
@@ -260,6 +260,7 @@ body.ada-player .aksi{bottom:4.5rem}
   <symbol id="i-doc" viewBox="0 0 24 24"><path d="M7 3h7l5 5v11a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><path d="M14 3v5h5M9 13h6M9 17h4"/></symbol>
   <symbol id="i-cek" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></symbol>
   <symbol id="i-jam" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></symbol>
+  <symbol id="i-mic" viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21M8.5 21h7"/></symbol>
   <symbol id="i-tutup" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></symbol>
   <symbol id="i-x" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5v5.5M12 16.2v.1"/></symbol>
 </svg>
@@ -308,7 +309,7 @@ body.ada-player .aksi{bottom:4.5rem}
     <div class="sapa" id="sapa">Halo.</div>
 
     <button class="cta" onclick="bukaRekam()">
-      <span class="rec"></span>
+      <span class="rec"><svg class="i"><use href="#i-mic"/></svg></span>
       <span><b>Rekam rapat</b><small>Rapat itu berat. Biar Aa aja yang nyatet.</small></span>
       <span class="wave" aria-hidden="true"><i style="height:30%"></i><i style="height:60%"></i><i style="height:45%"></i><i style="height:85%"></i><i style="height:55%"></i><i style="height:100%"></i><i style="height:65%"></i><i style="height:40%"></i><i style="height:75%"></i><i style="height:35%"></i><i style="height:55%"></i><i style="height:25%"></i></span>
     </button>
@@ -356,14 +357,14 @@ body.ada-player .aksi{bottom:4.5rem}
     <div id="d-info"></div>
 
     <div class="tabs" id="d-tabs">
-      <button data-t="resume" class="on">Resume</button>
+      <button data-t="resume" class="on">Notulen</button>
       <button data-t="transkrip">Transkrip</button>
-      <button data-t="speaker">Nama</button>
+      <button data-t="speaker">Pembicara</button>
       <button data-t="paparan">Paparan</button>
     </div>
 
     <div id="t-resume" class="panel">
-      <div id="d-resume" class="resume muted">Resume belum ada.</div>
+      <div id="d-resume" class="resume muted">Notulen belum ada.</div>
       <div class="aksi" id="d-resume-btn">
         <button onclick="salin(denganTtd(state.rapat.resume))"><svg class="i"><use href="#i-copy"/></svg>Salin</button>
         <button class="accent" onclick="bagikan()"><svg class="i"><use href="#i-send"/></svg>Kirim ke WA</button>
@@ -376,15 +377,15 @@ body.ada-player .aksi{bottom:4.5rem}
     </div>
 
     <div id="t-speaker" class="panel hidden">
-      <p class="muted" style="margin-top:0">Kasih nama tiap suara. Tekan ▶ untuk dengar cuplikannya. Resume dibuat ulang pakai nama ini.</p>
+      <p class="muted" style="margin-top:0">Kasih nama tiap suara. Tekan ▶ untuk dengar cuplikannya. Notulen dibuat ulang pakai nama ini.</p>
       <div id="d-speaker">Transkrip belum ada.</div>
-      <button class="primary" style="width:100%;margin-top:.5rem" id="d-simpan-nama" onclick="simpanNama()">Simpan nama &amp; buat ulang resume</button>
+      <button class="primary" style="width:100%;margin-top:.5rem" id="d-simpan-nama" onclick="simpanNama()">Simpan nama &amp; buat ulang notulen</button>
     </div>
 
     <div id="t-paparan" class="panel hidden">
       <p class="muted" style="margin-top:0">Deck paparan (.pptx) + infografis 1 halaman. Hasil tiap sumber disimpan terpisah, jadi bisa dibandingkan.</p>
       <div class="seg" id="pp-src">
-        <button data-s="resume" class="on">Dari resume</button>
+        <button data-s="resume" class="on">Dari notulen</button>
         <button data-s="transkrip">Dari transkrip</button>
       </div>
       <div id="pp-status"></div>
@@ -487,8 +488,8 @@ const STATUS = {
   mengunggah:   ['Mengunggah', 'run'],
   antri:        ['Antri', 'run'],
   ditranskrip:  ['Ditranskrip', 'run'],
-  minta_resume: ['Bikin resume', 'run'],
-  meresume:     ['Bikin resume', 'run'],
+  minta_resume: ['Bikin notulen', 'run'],
+  meresume:     ['Bikin notulen', 'run'],
   selesai:      ['Selesai', 'ok'],
   gagal:        ['Gagal', 'bad'],
 };
@@ -874,7 +875,7 @@ async function bukaDetail(id, diam) {
   $('d-biaya').querySelector('summary').textContent = `Biaya ±${rupiah(b.total)}`;
   $('d-biaya').querySelector('div').innerHTML =
     `Transkrip: ${menit(r.stt_detik || 0)} audio (${esc(r.stt_model || '-')}) → ±${rupiah(b.stt)}<br>` +
-    `AI (resume & paparan): ${ribu(r.ai_token_in || 0)} token masuk + ${ribu(r.ai_token_out || 0)} token keluar (${esc(r.ai_model || '-')}) → ` +
+    `AI (notulen & paparan): ${ribu(r.ai_token_in || 0)} token masuk + ${ribu(r.ai_token_out || 0)} token keluar (${esc(r.ai_model || '-')}) → ` +
     (b.aiDikenal ? `±${rupiah(b.ai)}` : 'harga model belum diset') +
     `<br><span style="font-size:12px">Jumlah audio & token dari AssemblyAI/OpenAI; rupiah dihitung dari tarif resmi, kurs Rp${KURS.toLocaleString('id-ID')}/USD. Termasuk semua proses ulang.</span>`;
   const info = {
@@ -890,7 +891,7 @@ async function bukaDetail(id, diam) {
     (r.status === 'selesai' && r.error ? `<div class="warn">${esc(r.error)}</div>` : '');
 
   if (!sebelumnya || sebelumnya.resume !== r.resume) {
-    $('d-resume').innerHTML = r.resume ? waHtml(r.resume) : 'Resume belum ada.';
+    $('d-resume').innerHTML = r.resume ? waHtml(r.resume) : 'Notulen belum ada.';
     $('d-resume').classList.toggle('muted', !r.resume);
     $('d-resume-btn').classList.toggle('hidden', !r.resume);
   }
@@ -906,7 +907,9 @@ async function bukaDetail(id, diam) {
     state.poll = setInterval(() => { if (!$('v-detail').classList.contains('hidden')) bukaDetail(id, true); }, 8000);
   }
 }
+const tanpaLabel = (t) => String(t || '').replace(/^(\s*\*?)\s*NOTULEN\s*:\s*/i, '$1');
 function waHtml(t) {
+  t = tanpaLabel(t);
   return esc(t).replace(/\*([^*\n]+)\*/g, '<b>$1</b>').replace(/_([^_\n]+)_/g, '<i>$1</i>');
 }
 const labelSpk = (s) => (state.rapat.nama_speaker || {})[s] || ('Speaker ' + s);
@@ -1009,7 +1012,7 @@ async function simpanNama() {
   document.querySelectorAll('#d-speaker input[data-spk]').forEach(i => { if (i.value.trim()) nama[i.dataset.spk] = i.value.trim(); });
   const { error } = await sb.from('rapat').update({ nama_speaker: nama, status: 'minta_resume', error: null }).eq('id', state.rapat.id);
   if (error) return toast('Gagal menyimpan: ' + error.message);
-  toast('Tersimpan. Resume lagi dibuat ulang…');
+  toast('Tersimpan. Aa lagi nulis ulang notulennya…');
   pilihTab('resume'); bukaDetail(state.rapat.id);
 }
 
@@ -1032,7 +1035,7 @@ async function gantiJudul() {
 }
 
 async function hapusRapat() {
-  if (!confirm('Hapus rapat ini beserta audio, transkrip, dan resumenya?')) return;
+  if (!confirm('Hapus rapat ini beserta audio, transkrip, dan notulennya?')) return;
   const r = state.rapat;
   if (r.audio_path) await sb.storage.from('audio').remove([r.audio_path]);
   const { error } = await sb.from('rapat').delete().eq('id', r.id);
@@ -1048,7 +1051,7 @@ function pilihTab(t) {
 $('d-tabs').addEventListener('click', e => { const b = e.target.closest('button'); if (b) pilihTab(b.dataset.t); });
 $('pp-src').addEventListener('click', e => { const b = e.target.closest('button'); if (b) { state.srcDeck = b.dataset.s; renderPaparan(); } });
 
-const denganTtd = (t) => (t || '').trim() + '\n\n_— dicatat Notulen AI (Aa Ibot)_';
+const denganTtd = (t) => tanpaLabel(t).trim() + '\n\n_— dicatat Notulen AI (Aa Ibot)_';
 async function salin(teks) {
   try { await navigator.clipboard.writeText(teks || ''); toast('Tersalin'); }
   catch (_) {
@@ -1092,14 +1095,14 @@ function renderPaparan() {
   document.querySelectorAll('#pp-src button').forEach(b => {
     const dd = deck[b.dataset.s];
     b.classList.toggle('on', b.dataset.s === src);
-    b.innerHTML = (b.dataset.s === 'resume' ? 'Dari resume' : 'Dari transkrip') +
+    b.innerHTML = (b.dataset.s === 'resume' ? 'Dari notulen' : 'Dari transkrip') +
       (dd ? `<br><span class="muted" style="font-size:12px">±${rupiah(biayaDeck(dd))} · ${ribu(dd.token_in + dd.token_out)} token</span>` : '');
   });
 
   let status = '';
-  if (sibuk) status = `<div class="warn">Aa lagi nyusun slide dari ${r.deck_sumber === 'transkrip' ? 'transkrip' : 'resume'}… biasanya 20–60 detik.</div>`;
+  if (sibuk) status = `<div class="warn">Aa lagi nyusun slide dari ${r.deck_sumber === 'transkrip' ? 'transkrip' : 'notulen'}… biasanya 20–60 detik.</div>`;
   else if (r.deck_status === 'gagal') status = `<div class="warn"><b>Gagal:</b> ${esc(r.deck_error || '')}</div>`;
-  else if (!punyaBahan) status = `<div class="muted">${src === 'resume' ? 'Resume' : 'Transkrip'} belum ada.</div>`;
+  else if (!punyaBahan) status = `<div class="muted">${src === 'resume' ? 'Notulen' : 'Transkrip'} belum ada.</div>`;
   $('pp-status').innerHTML = status;
 
   const btn = $('pp-buat');
