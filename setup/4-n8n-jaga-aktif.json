@@ -1,0 +1,70 @@
+{
+  "name": "Notulen - 3 Jaga Supabase tetap aktif",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "days",
+              "daysInterval": 2,
+              "triggerAtHour": 8
+            }
+          ]
+        }
+      },
+      "id": "d5095732-022a-42d2-8933-97e63d3ffe5d",
+      "name": "Tiap 2 hari",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "https://ISI.supabase.co/rest/v1/rapat?select=id&limit=1",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "options": {}
+      },
+      "id": "5f251ff8-790f-490b-a314-92626aec49df",
+      "name": "Ping Supabase",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        240,
+        0
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "",
+          "name": "Supabase Notulen"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000
+    }
+  ],
+  "connections": {
+    "Tiap 2 hari": {
+      "main": [
+        [
+          {
+            "node": "Ping Supabase",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

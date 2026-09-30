@@ -1,0 +1,252 @@
+{
+  "name": "Notulen - 2 Resume",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "notulen-resume",
+        "authentication": "headerAuth",
+        "responseMode": "onReceived",
+        "options": {}
+      },
+      "id": "8b06662e-cbac-47bd-af73-69d3cb78ef7d",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ],
+      "webhookId": "d751425e-ceb4-4af1-b4dd-2fdc647bad73",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "",
+          "name": "Kunci Notulen"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "={{ $('Webhook').first().json.body.supa_url }}/rest/v1/rapat?id=eq.{{ $('Webhook').first().json.body.rapat_id }}&select=judul,created_at,durasi_detik,transkrip,nama_speaker,ai_token_in,ai_token_out",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Prefer",
+              "value": "return=representation"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ status: 'meresume', error: null }) }}",
+        "options": {}
+      },
+      "id": "bd3a90da-252a-4528-9fa3-0aef9e650fae",
+      "name": "Tandai meresume",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        220,
+        0
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "",
+          "name": "Supabase Notulen"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Susun transkrip yang sudah diberi nama speaker, untuk dikirim ke OpenAI\nconst r = $input.first().json;\nif (!Array.isArray(r.transkrip) || !r.transkrip.length) {\n  throw new Error('Transkrip belum ada untuk rapat ini');\n}\n\nconst nama = r.nama_speaker || {};\nconst label = (s) => nama[s] || ('Speaker ' + s);\nconst jam = (d) => [Math.floor(d / 3600), Math.floor(d / 60) % 60, d % 60]\n  .map(n => String(n).padStart(2, '0')).join(':');\n\n// Ucapan berurutan dari orang yang sama digabung jadi satu baris\nconst baris = [];\nfor (const u of r.transkrip) {\n  const akhir = baris[baris.length - 1];\n  if (akhir && akhir.s === u.s) akhir.t += ' ' + u.t;\n  else baris.push({ s: u.s, m: u.m, t: u.t });\n}\n\nconst peserta = [...new Set(r.transkrip.map(u => u.s))].sort().map(label).join(', ');\nconst tanggal = new Date(r.created_at).toLocaleDateString('id-ID', {\n  timeZone: 'Asia/Jakarta', weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',\n});\nconst durasi = jam(r.durasi_detik || r.transkrip[r.transkrip.length - 1].m);\n\nconst prompt = `Judul: ${r.judul || 'Rapat'}\nTanggal: ${tanggal}\nDurasi: ${durasi}\nPeserta bicara: ${peserta}\n\nTRANSKRIP:\n${baris.map(b => `[${jam(b.m)}] ${label(b.s)}: ${b.t}`).join('\\n')}`;\n\nreturn [{ json: { prompt } }];\n"
+      },
+      "id": "eab25787-bb2b-46df-bd4b-875e21fe6dbd",
+      "name": "Susun prompt",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        440,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "text",
+        "operation": "message",
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4.1",
+          "mode": "list",
+          "cachedResultName": "GPT-4.1"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "Kamu notulis rapat senior yang berpengalaman. Tugasmu membuat notulen yang LENGKAP dan BERGUNA dari transkrip rapat otomatis. Pembacanya pimpinan dan staf yang tidak ikut rapat: mereka harus bisa tahu apa yang dibahas, fakta apa yang terungkap, dan siapa harus mengerjakan apa.\n\nPRINSIP\n- Detail sebanding dengan isi rapat. Rapat 30 menit yang padat biasanya butuh 300–600 kata. Jangan meringkas sampai hilang substansinya.\n- WAJIB simpan hal konkret: angka (rupiah, persen, jumlah, tanggal, durasi), nama orang, nama lembaga/media/program/acara, dan contoh kasus yang disebut.\n- Tulis siapa menyampaikan apa. Bedakan paparan tamu dan tanggapan/arahan pimpinan.\n- Hanya pakai informasi yang ada di transkrip. Jangan mengarang. Kalau suatu bagian tidak jelas terdengar, lewati; jangan menebak isinya.\n- Jangan menambah penilaian atau keterangan yang tidak diucapkan (misalnya penilaian hasil, atau jabatan seseorang yang tidak disebut). Kalau dua nama merujuk ke hal yang sama, tulis satu saja.\n\nTRANSKRIP HASIL MESIN\nTranskrip ini banyak salah dengar. Perbaiki istilah yang jelas salah berdasarkan konteks: nama lembaga, jabatan, program, media, dan istilah teknis. Kalau sebuah nama muncul dengan beberapa ejaan, pakai satu ejaan yang benar secara konsisten di seluruh notulen.\n(Opsional: tambahkan di sini daftar istilah yang sering salah dengar di rapat-rapatmu, format \"salah → benar\".)\nLabel \"Speaker X\" artinya nama orangnya belum diketahui. Pakai label itu apa adanya.\n\nTINDAK LANJUT\nTangkap juga komitmen informal, misalnya \"nanti kirim proposal\", \"saya kawal\", \"nanti sama Mas X\", \"kita jadwalkan\". Setiap tindak lanjut ditulis: siapa (PIC), apa, kepada/lewat siapa, tenggat kalau disebut, dan catatan syarat kalau ada (contoh: \"anggaran terbatas\"). Tulis \"PIC belum jelas\" hanya kalau memang tidak ada petunjuk sama sekali.\n\nFORMAT (untuk WhatsApp)\nJudul bagian pakai *tebal*, daftar pakai \"- \". Jangan pakai tabel, tanda #, atau **dobel bintang**. JANGAN menulis bagian yang kosong. Jangan menulis kalimat pengisi seperti \"Tidak ada keputusan\".\n\n*NOTULEN: <judul>*\n<tanggal> | Durasi <durasi>\nPeserta bicara: <peserta>\n\n*Ringkasan*\n3–5 kalimat: tujuan pertemuan, pokok persoalan, dan hasil utamanya.\n\n*Poin Penting*\nKelompokkan per topik atau per pihak (misalnya \"Paparan <tamu>\" lalu \"Tanggapan <pimpinan>\"). Tiap poin memuat fakta, angka, dan nama spesifik.\n\n*Fakta & Angka*\nDaftar singkat angka/data kunci yang terungkap. Lewati kalau tidak ada.\n\n*Kesepakatan*\nHanya yang benar-benar disepakati.\n\n*Tindak Lanjut*\n- [PIC] apa yang dikerjakan → kepada/lewat siapa (tenggat) — catatan\n\n*Isu Terbuka*\nHal yang belum tuntas atau perlu dibahas lagi.",
+              "role": "system"
+            },
+            {
+              "content": "={{ $json.prompt }}"
+            }
+          ]
+        },
+        "simplify": false,
+        "options": {
+          "maxTokens": 8000,
+          "temperature": 0.2
+        }
+      },
+      "id": "dea5980d-c2ea-46f3-a8dd-ea62b0366d69",
+      "name": "OpenAI",
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        660,
+        0
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "",
+          "name": "OpenAI account"
+        }
+      },
+      "onError": "continueErrorOutput",
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 5000
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "={{ $('Webhook').first().json.body.supa_url }}/rest/v1/rapat?id=eq.{{ $('Webhook').first().json.body.rapat_id }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Prefer",
+              "value": "return=minimal"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ (() => { const c = $json.choices[0], u = $json.usage || {}, lama = $('Tandai meresume').first().json; return JSON.stringify({ status: 'selesai', resume: String(c.message.content || '').trim(), error: c.finish_reason === 'length' ? 'Resume terpotong karena terlalu panjang' : null, ai_model: $json.model, ai_token_in: (lama.ai_token_in || 0) + (u.prompt_tokens || 0), ai_token_out: (lama.ai_token_out || 0) + (u.completion_tokens || 0) }); })() }}",
+        "options": {}
+      },
+      "id": "5b6d6db3-7235-480e-9739-d6a4fb1239c7",
+      "name": "Simpan resume",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        900,
+        -80
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "",
+          "name": "Supabase Notulen"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "={{ $('Webhook').first().json.body.supa_url }}/rest/v1/rapat?id=eq.{{ $('Webhook').first().json.body.rapat_id }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Prefer",
+              "value": "return=minimal"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ status: 'gagal', error: String(typeof $json.error === 'object' && $json.error ? ($json.error.message || JSON.stringify($json.error)) : ($json.error || 'OpenAI gagal')).slice(0, 500) }) }}",
+        "options": {}
+      },
+      "id": "c19d9cfd-599a-4922-8799-f13735d55c22",
+      "name": "Tandai gagal",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        900,
+        120
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "",
+          "name": "Supabase Notulen"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Tandai meresume",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tandai meresume": {
+      "main": [
+        [
+          {
+            "node": "Susun prompt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Susun prompt": {
+      "main": [
+        [
+          {
+            "node": "OpenAI",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI": {
+      "main": [
+        [
+          {
+            "node": "Simpan resume",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Tandai gagal",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataSuccessExecution": "none"
+  }
+}

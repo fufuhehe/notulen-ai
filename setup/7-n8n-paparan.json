@@ -1,0 +1,242 @@
+{
+  "name": "Notulen - 4 Paparan",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "notulen-deck",
+        "authentication": "headerAuth",
+        "responseMode": "onReceived",
+        "options": {}
+      },
+      "id": "fee4c0b6-97e0-4307-be98-8bc79354a5bf",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ],
+      "webhookId": "c691ea37-dedf-430f-bf03-3cddea612f8a",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "",
+          "name": "Kunci Notulen"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "={{ $('Webhook').first().json.body.supa_url }}/rest/v1/rapat?id=eq.{{ $('Webhook').first().json.body.rapat_id }}&select=judul,created_at,durasi_detik,resume,transkrip,nama_speaker,deck,deck_sumber,ai_token_in,ai_token_out",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Prefer",
+              "value": "return=representation"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ deck_status: 'proses', deck_error: null }) }}",
+        "options": {}
+      },
+      "id": "a62806bd-7211-43b8-9b41-4715c3966d54",
+      "name": "Tandai deck diproses",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        220,
+        0
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "",
+          "name": "Supabase Notulen"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Siapkan bahan untuk deck: dari resume atau dari transkrip lengkap\nconst r = $input.first().json;\nconst sumber = r.deck_sumber === 'transkrip' ? 'transkrip' : 'resume';\n\nconst nama = r.nama_speaker || {};\nconst label = (s) => nama[s] || ('Speaker ' + s);\nconst jam = (d) => [Math.floor(d / 3600), Math.floor(d / 60) % 60, d % 60]\n  .map(n => String(n).padStart(2, '0')).join(':');\nconst tanggal = new Date(r.created_at).toLocaleDateString('id-ID', {\n  timeZone: 'Asia/Jakarta', weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',\n});\n\nlet bahan = '';\nif (sumber === 'resume') {\n  bahan = (r.resume || '').trim();\n} else if (Array.isArray(r.transkrip) && r.transkrip.length) {\n  const baris = [];\n  for (const u of r.transkrip) {\n    const a = baris[baris.length - 1];\n    if (a && a.s === u.s) a.t += ' ' + u.t; else baris.push({ s: u.s, m: u.m, t: u.t });\n  }\n  bahan = baris.map(b => `[${jam(b.m)}] ${label(b.s)}: ${b.t}`).join('\\n');\n}\n\nif (!bahan) {\n  return [{ json: { gagal: true, sumber, error: `Bahan kosong: ${sumber} belum ada untuk rapat ini` } }];\n}\n\nreturn [{ json: {\n  gagal: false,\n  sumber,\n  prompt: `Judul rapat: ${r.judul || 'Rapat'}\nTanggal: ${tanggal}\nDurasi: ${jam(r.durasi_detik || 0)}\nSumber bahan: ${sumber === 'resume' ? 'NOTULEN (sudah diringkas)' : 'TRANSKRIP MENTAH'}\n\nBAHAN:\n${bahan}`,\n} }];\n"
+      },
+      "id": "bd47d732-f095-469e-a867-ed1eb0ac6566",
+      "name": "Susun bahan",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        440,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "text",
+        "operation": "message",
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4.1",
+          "mode": "list",
+          "cachedResultName": "GPT-4.1"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "Kamu penyusun bahan paparan singkat untuk pimpinan. Dari bahan rapat yang diberikan (notulen atau transkrip), susun isi untuk DECK PAPARAN SINGKAT dan INFOGRAFIS 1 halaman.\n\nPRINSIP\n- Hanya pakai informasi dari bahan. Jangan mengarang fakta, angka, nama, atau keputusan.\n- Angka, nama orang, nama lembaga/media/program ditulis PERSIS seperti di bahan (setelah koreksi salah dengar).\n- Gaya bahasa paparan: kalimat pendek, padat, tanpa basa-basi. Tiap poin maksimal 18 kata.\n- Pilih yang paling penting untuk pimpinan: persoalan inti, fakta/angka kunci, arahan pimpinan, kesepakatan, tindak lanjut.\n- Kalau bahannya transkrip mentah: abaikan basa-basi (salam, menawarkan minum, dsb.) dan perbaiki istilah yang jelas salah dengar (nama lembaga, jabatan, program, media) berdasarkan konteks. Label \"Speaker X\" = nama belum diketahui, tulis apa adanya.\n\nKELUARAN: HANYA satu objek JSON valid dengan struktur persis seperti ini (tanpa teks lain):\n{\n  \"judul\": \"judul paparan, maks 8 kata\",\n  \"subjudul\": \"jenis pertemuan · tanggal\",\n  \"pesan_kunci\": \"satu kalimat inti hasil rapat, maks 20 kata\",\n  \"ringkasan\": [\"2–3 poin ringkasan\"],\n  \"slides\": [\n    { \"judul\": \"judul slide, maks 6 kata\", \"poin\": [\"3–5 poin\"] }\n  ],\n  \"angka\": [\n    { \"nilai\": \"angka singkat, mis. Rp10 jt / 200 / 10x / Rp0\", \"label\": \"penjelasan maks 8 kata\" }\n  ],\n  \"tindak_lanjut\": [\n    { \"pic\": \"siapa\", \"tugas\": \"apa, maks 15 kata\" }\n  ]\n}\n\nATURAN STRUKTUR\n- \"slides\": 3–5 slide isi, dikelompokkan per topik atau per pihak (misalnya \"Kondisi Mitra\", \"Arahan Pimpinan\", \"Peluang Kolaborasi\"). Jangan ulangi isi \"ringkasan\", \"angka\", dan \"tindak_lanjut\" di sini.\n- \"angka\": 0–4 item, hanya angka yang benar-benar disebut. Kalau tidak ada, isi [].\n- \"tindak_lanjut\": 0–5 item. PIC ditulis \"Belum jelas\" kalau memang tidak disebut. Kalau tidak ada, isi [].\n- Jangan pakai tanda * atau format markdown di dalam teks.",
+              "role": "system"
+            },
+            {
+              "content": "={{ $json.prompt || \"(kosong)\" }}"
+            }
+          ]
+        },
+        "simplify": false,
+        "jsonOutput": true,
+        "options": {
+          "maxTokens": 4000,
+          "temperature": 0.2
+        }
+      },
+      "id": "688cd000-74b3-48d4-9f50-085a9198b6d9",
+      "name": "OpenAI",
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        660,
+        0
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "",
+          "name": "OpenAI account"
+        }
+      },
+      "onError": "continueErrorOutput",
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 5000
+    },
+    {
+      "parameters": {
+        "jsCode": "// Rakit hasil OpenAI jadi data deck, simpan per sumber (resume / transkrip)\nconst lama = $('Tandai deck diproses').first().json;\nconst bahan = $('Susun bahan').first().json;\nconst res = $input.first().json;\n\nconst tambahToken = (u) => ({\n  ai_token_in: (lama.ai_token_in || 0) + ((u && u.prompt_tokens) || 0),\n  ai_token_out: (lama.ai_token_out || 0) + ((u && u.completion_tokens) || 0),\n});\n\n// Gagal sebelum/saat memanggil AI\nif (bahan.gagal || res.error || !res.choices) {\n  const e = bahan.gagal ? bahan.error : (res.error && (res.error.message || JSON.stringify(res.error))) || 'AI tidak membalas';\n  return [{ json: { deck_status: 'gagal', deck_error: String(e).slice(0, 500), ...tambahToken(res.usage) } }];\n}\n\nlet isi = res.choices[0].message.content;\nif (typeof isi === 'string') {\n  try { isi = JSON.parse(isi); } catch (_) { isi = null; }\n}\nconst daftar = (x) => (Array.isArray(x) ? x : []);\nif (!isi || typeof isi !== 'object' || !isi.judul) {\n  return [{ json: { deck_status: 'gagal', deck_error: 'Format balasan AI tidak sesuai. Coba buat ulang.', ...tambahToken(res.usage) } }];\n}\n\nconst u = res.usage || {};\nconst hasil = {\n  judul: String(isi.judul || ''),\n  subjudul: String(isi.subjudul || ''),\n  pesan_kunci: String(isi.pesan_kunci || ''),\n  ringkasan: daftar(isi.ringkasan).map(String).slice(0, 4),\n  slides: daftar(isi.slides).slice(0, 6).map(s => ({ judul: String(s.judul || ''), poin: daftar(s.poin).map(String).slice(0, 6) })),\n  angka: daftar(isi.angka).slice(0, 4).map(a => ({ nilai: String(a.nilai || ''), label: String(a.label || '') })),\n  tindak_lanjut: daftar(isi.tindak_lanjut).slice(0, 6).map(t => ({ pic: String(t.pic || ''), tugas: String(t.tugas || '') })),\n  model: res.model,\n  token_in: u.prompt_tokens || 0,\n  token_out: u.completion_tokens || 0,\n  dibuat: new Date().toISOString(),\n};\n\nconst deck = Object.assign({}, lama.deck || {});\ndeck[bahan.sumber] = hasil;\n\nreturn [{ json: {\n  deck,\n  deck_status: 'selesai',\n  deck_error: null,\n  ai_model: res.model,\n  ...tambahToken(u),\n} }];\n"
+      },
+      "id": "539531f7-9f93-4382-85ed-feae15acb518",
+      "name": "Rakit deck",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        900,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "={{ $('Webhook').first().json.body.supa_url }}/rest/v1/rapat?id=eq.{{ $('Webhook').first().json.body.rapat_id }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Prefer",
+              "value": "return=minimal"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json) }}",
+        "options": {}
+      },
+      "id": "e39d552f-137d-4e5d-8eee-b76ef5160456",
+      "name": "Simpan deck",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1120,
+        0
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "",
+          "name": "Supabase Notulen"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Tandai deck diproses",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tandai deck diproses": {
+      "main": [
+        [
+          {
+            "node": "Susun bahan",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Susun bahan": {
+      "main": [
+        [
+          {
+            "node": "OpenAI",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI": {
+      "main": [
+        [
+          {
+            "node": "Rakit deck",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Rakit deck",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Rakit deck": {
+      "main": [
+        [
+          {
+            "node": "Simpan deck",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataSuccessExecution": "none"
+  }
+}

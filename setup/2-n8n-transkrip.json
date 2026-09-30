@@ -1,0 +1,457 @@
+{
+  "name": "Notulen - 1 Transkrip",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "notulen-transkrip",
+        "authentication": "headerAuth",
+        "responseMode": "onReceived",
+        "options": {}
+      },
+      "id": "358d67c3-651a-43b3-8518-65a21147d738",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ],
+      "webhookId": "3aa30777-cb6b-4099-b6a5-b211ca51237f",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "",
+          "name": "Kunci Notulen"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "={{ $('Webhook').first().json.body.supa_url }}/rest/v1/rapat?id=eq.{{ $('Webhook').first().json.body.rapat_id }}&select=id,audio_path,stt_detik",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Prefer",
+              "value": "return=representation"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ status: 'ditranskrip', error: null }) }}",
+        "options": {}
+      },
+      "id": "de83ccc3-dc3c-4d1f-a484-6164d5c52680",
+      "name": "Tandai ditranskrip",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        220,
+        0
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "",
+          "name": "Supabase Notulen"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Webhook').first().json.body.supa_url }}/storage/v1/object/sign/audio/{{ $json.audio_path }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Prefer",
+              "value": "return=minimal"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ expiresIn: 86400 }) }}",
+        "options": {}
+      },
+      "id": "45881b63-8e10-4cb7-af8d-b7b5dd2e20d8",
+      "name": "Bikin link audio",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        440,
+        0
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "",
+          "name": "Supabase Notulen"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "resource": "transcript",
+        "operation": "create",
+        "audioUrl": "={{ $('Webhook').first().json.body.supa_url }}/storage/v1{{ $json.signedURL }}",
+        "additionalFields": {
+          "speaker_labels": true,
+          "language_code": "={{ 'id' }}",
+          "speech_models": "universal-3-5-pro,universal-2"
+        }
+      },
+      "id": "23e6f4cc-aa0e-4b50-b595-b0cc5287ea54",
+      "name": "Kirim ke AssemblyAI",
+      "type": "n8n-nodes-assemblyai.assemblyAi",
+      "typeVersion": 1,
+      "position": [
+        660,
+        0
+      ],
+      "credentials": {
+        "assemblyAiApi": {
+          "id": "",
+          "name": "AssemblyAI account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "amount": 30,
+        "unit": "seconds"
+      },
+      "id": "5b750424-71d3-4305-b3f8-04d01d779087",
+      "name": "Tunggu 30 detik",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        880,
+        0
+      ],
+      "webhookId": "d13704f2-fc8c-4e08-ad75-bc6632150d04"
+    },
+    {
+      "parameters": {
+        "resource": "transcript",
+        "operation": "get",
+        "transcriptId": "={{ $('Kirim ke AssemblyAI').first().json.id }}"
+      },
+      "id": "cdd38ff5-aa17-48fd-94d9-c54bd182b2fc",
+      "name": "Cek hasil",
+      "type": "n8n-nodes-assemblyai.assemblyAi",
+      "typeVersion": 1,
+      "position": [
+        1100,
+        0
+      ],
+      "credentials": {
+        "assemblyAiApi": {
+          "id": "",
+          "name": "AssemblyAI account"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "id": "510ea897-a39b-4954-818f-fcc9293c3576",
+              "leftValue": "={{ $json.status }}",
+              "rightValue": "completed",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "a9d8ebeb-c2fe-404c-851d-ef5ac3c16d08",
+      "name": "Sudah jadi?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        1320,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "id": "8ab65bfc-6106-42cb-8675-15fa21f9cc67",
+              "leftValue": "={{ $json.status }}",
+              "rightValue": "error",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            },
+            {
+              "id": "97da7fd9-f12e-4a0b-8735-c0724ee45ebb",
+              "leftValue": "={{ $runIndex }}",
+              "rightValue": 240,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "combinator": "or"
+        },
+        "options": {}
+      },
+      "id": "1edc34c2-4776-4214-85e7-a69d1f6031d0",
+      "name": "Error / kelamaan?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        1540,
+        160
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Ambil hasil AssemblyAI, simpan versi ringkas: speaker, detik mulai, teks\nconst t = $input.first().json;\nconst lama = $('Tandai ditranskrip').first().json;   // untuk menjumlah biaya kalau diproses ulang\n\nconst transkrip = (t.utterances || []).map(u => ({\n  s: u.speaker,\n  m: Math.round(u.start / 1000),\n  t: u.text,\n}));\nif (!transkrip.length && t.text) transkrip.push({ s: 'A', m: 0, t: t.text });\n\nif (!transkrip.length) {\n  return [{ json: { status: 'gagal', error: 'Transkrip kosong. Audio mungkin tanpa suara atau rusak.',\n    stt_detik: (lama.stt_detik || 0) + Math.round(t.audio_duration || 0) } }];\n}\n\nreturn [{ json: {\n  status: 'minta_resume',          // otomatis memicu workflow Resume\n  transcript_id: t.id,\n  durasi_detik: Math.round(t.audio_duration || 0),\n  stt_model: t.speech_model_used || null,\n  stt_detik: (lama.stt_detik || 0) + Math.round(t.audio_duration || 0),\n  transkrip,\n  error: null,\n} }];\n"
+      },
+      "id": "f01a27c1-2167-405d-83e6-0cf9198d7b40",
+      "name": "Ringkas transkrip",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1540,
+        -120
+      ]
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "={{ $('Webhook').first().json.body.supa_url }}/rest/v1/rapat?id=eq.{{ $('Webhook').first().json.body.rapat_id }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Prefer",
+              "value": "return=minimal"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json) }}",
+        "options": {}
+      },
+      "id": "e72b106d-712d-486b-9250-84a955479255",
+      "name": "Simpan transkrip",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1760,
+        -120
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "",
+          "name": "Supabase Notulen"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "={{ $('Webhook').first().json.body.supa_url }}/rest/v1/rapat?id=eq.{{ $('Webhook').first().json.body.rapat_id }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Prefer",
+              "value": "return=minimal"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ status: 'gagal', error: String(typeof $json.error === 'object' && $json.error ? ($json.error.message || JSON.stringify($json.error)) : ($json.error || 'Waktu tunggu habis (lebih dari 2 jam)')).slice(0, 500) }) }}",
+        "options": {}
+      },
+      "id": "fde1a574-7c41-4bff-964f-6a7deb680f95",
+      "name": "Tandai gagal",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1760,
+        300
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "",
+          "name": "Supabase Notulen"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Tandai ditranskrip",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tandai ditranskrip": {
+      "main": [
+        [
+          {
+            "node": "Bikin link audio",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Bikin link audio": {
+      "main": [
+        [
+          {
+            "node": "Kirim ke AssemblyAI",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Tandai gagal",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Kirim ke AssemblyAI": {
+      "main": [
+        [
+          {
+            "node": "Tunggu 30 detik",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Tandai gagal",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tunggu 30 detik": {
+      "main": [
+        [
+          {
+            "node": "Cek hasil",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Cek hasil": {
+      "main": [
+        [
+          {
+            "node": "Sudah jadi?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sudah jadi?": {
+      "main": [
+        [
+          {
+            "node": "Ringkas transkrip",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Error / kelamaan?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Error / kelamaan?": {
+      "main": [
+        [
+          {
+            "node": "Tandai gagal",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Tunggu 30 detik",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ringkas transkrip": {
+      "main": [
+        [
+          {
+            "node": "Simpan transkrip",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataSuccessExecution": "none"
+  }
+}
