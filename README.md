@@ -2,7 +2,7 @@
 
 Rekam rapat dari HP. Aplikasi ini lalu bikin transkrip yang dipisah per pembicara, plus resume siap kirim ke WhatsApp.
 
-**App:** https://fufuhehe.github.io/notulen-relasi-media/
+**App:** https://fufuhehe.github.io/notulen-ai/
 
 ```
 HP (PWA) ──upload──▶ Supabase Storage + tabel rapat
