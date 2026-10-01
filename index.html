@@ -180,6 +180,8 @@ header.top h1{font-size:1.0625rem;font-weight:700;margin:0;flex:1;white-space:no
 .td-mic::after{content:"";position:absolute;top:-.05rem;right:-.05rem;width:.55rem;height:.55rem;border-radius:50%;background:#ff4d55;box-shadow:0 0 0 0 rgba(255,77,85,.6);animation:denyut 1.6s ease-out infinite}
 @keyframes denyut{0%{box-shadow:0 0 0 0 rgba(255,77,85,.55)}70%{box-shadow:0 0 0 .5rem rgba(255,77,85,0)}100%{box-shadow:0 0 0 0 rgba(255,77,85,0)}}
 #tidur.jeda .td-mic::after{animation:none;background:#6b7a89}
+.td-rek #td-durasi{font-size:.75rem;font-weight:600;color:rgba(232,237,242,.5);letter-spacing:.02em}
+#tidur.jeda #td-durasi{color:rgba(142,163,184,.45)}
 .td-wave{display:flex;align-items:center;gap:.2rem;height:1.25rem}
 .td-wave i{display:block;width:.18rem;height:.2rem;border-radius:.2rem;background:rgba(61,214,192,.75);transition:height .12s ease}
 #tidur.jeda .td-wave i{background:rgba(142,163,184,.45);height:.2rem!important}
@@ -383,7 +385,7 @@ body.ada-player .aksi{bottom:4.5rem}
   <div class="geser" id="td-geser">
     <div id="td-tgl"></div>
     <div id="td-jam">00.00</div>
-    <div class="td-rek"><span class="td-mic"><svg class="i"><use href="#i-mic"/></svg></span><span class="td-wave" id="td-wave" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span></div>
+    <div class="td-rek"><span class="td-mic"><svg class="i"><use href="#i-mic"/></svg></span><span class="td-wave" id="td-wave" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span><span id="td-durasi">00:00:00</span></div>
     <div class="td-hint">Ketuk dua kali untuk kembali</div>
   </div>
 </div>
@@ -894,6 +896,7 @@ function isiTidur() {
   const d = new Date();
   $('td-jam').textContent = d.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
   $('td-tgl').textContent = d.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long' });
+  $('td-durasi').textContent = jam(detikSekarang());
   $('tidur').classList.toggle('jeda', !!rekam.jeda);
 }
 function masukTidur() {
