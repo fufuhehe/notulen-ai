@@ -118,6 +118,8 @@ header.top h1{font-size:1.0625rem;font-weight:700;margin:0;flex:1;white-space:no
 .card{background:var(--surface);border:1px solid var(--line-2);border-radius:var(--r-lg);padding:1.125rem;margin:.75rem 0}
 .warn{background:var(--aa-soft);color:var(--ink-2);border-radius:var(--r);padding:.8rem 1rem;font-size:.875rem;margin:.75rem 0;border:1px solid color-mix(in srgb,var(--aa) 20%,transparent)}
 .warn b{color:var(--aa)}
+.detail-teknis{margin-top:.6rem;font-size:.75rem;color:var(--muted);word-break:break-word}
+.detail-teknis summary{cursor:pointer;font-weight:600}
 .progress{height:.4rem;background:var(--line);border-radius:99px;overflow:hidden;margin-top:.75rem}
 .progress>div{height:100%;background:var(--accent);width:0;transition:width .3s}
 
@@ -497,6 +499,37 @@ const STATUS = {
 const SEDANG = ['antri', 'ditranskrip', 'minta_resume', 'meresume'];
 const chip = (s) => { const [t, c] = STATUS[s] || [s, '']; return `<span class="chip ${c}">${esc(t)}</span>`; };
 
+
+// ================= Pesan error ala Aa =================
+const POLA_ERROR = [
+  [/insufficient_quota|quota|billing|balance|credit/i, 'Duh, Aa laper nih, ga bisa kerja. Saldo AI-nya kayaknya habis — isi dulu saldo OpenAI, terus tekan Coba lagi ya.'],
+  [/too many requests|429|rate.?limit|tokens per min|TPM/i, 'Duh, Aa laper nih, ga kuat mikir. Kemungkinan saldo AI habis, atau rapatnya kepanjangan buat jatah per menit akun AI. Isi saldo dulu, atau ganti model ke yang “mini”, lalu Coba lagi.'],
+  [/401|403|unauthori[sz]ed|invalid.*(api|key)|incorrect api key|forbidden|kunci salah/i, 'Aa ga dikasih masuk — kunci API-nya salah atau kedaluwarsa. Cek credential di n8n ya.'],
+  [/timeout|timed out|ETIMEDOUT|ECONNRESET|ECONNREFUSED|socket hang up|network|Failed to fetch|NetworkError|Load failed/i, 'Aa ketiduran nungguin jawaban server. Sinyal atau servernya lagi lemot, coba lagi bentar ya.'],
+  [/Waktu tunggu habis/i, 'Aa nunggu transkripnya kelamaan (lebih dari 2 jam) terus nyerah. Coba lagi ya.'],
+  [/Transkrip kosong|no spoken audio|no speech/i, 'Aa ga denger suara apa-apa di rekaman ini. Mungkin mic-nya ketutup atau filenya hening.'],
+  [/Unggah gagal|upload/i, 'Upload-nya putus di jalan. Tenang, rekaman masih aman di HP — unggah lagi dari beranda.'],
+  [/download|could not (fetch|process)|unsupported|format|codec|decode/i, 'Aa ga bisa dengerin file ini — formatnya mungkin ga didukung atau filenya rusak.'],
+  [/terpotong|terlalu panjang|length/i, 'Notulennya kepanjangan sampai kepotong di akhir. Coba buat ulang, atau ringkas lewat tab Paparan.'],
+  [/Bahan kosong/i, 'Bahannya belum ada, jadi Aa belum bisa nyusun apa-apa.'],
+  [/Format balasan AI/i, 'Aa salah format pas nyusun slide. Tekan Buat ulang ya.'],
+  [/Invalid login credentials/i, 'Email atau password-nya salah, Aa ga kenal nih.'],
+  [/Email not confirmed/i, 'Akun ini belum dikonfirmasi. Centang “Auto Confirm” waktu bikin user di Supabase.'],
+  [/JWT|session|expired/i, 'Sesi login-nya udah basi. Keluar terus masuk lagi ya.'],
+  [/permission denied|row-level security|violates/i, 'Aa ga punya izin buat itu. Cek pengaturan akses (SQL setup) di Supabase.'],
+  [/payload too large|exceeded the maximum|too large|413/i, 'Filenya kegedean buat Aa (maks 50 MB).'],
+  [/not found|404/i, 'Aa nyari tapi ga ketemu. Mungkin datanya udah dihapus, atau workflow n8n belum aktif.'],
+];
+function pesanAa(raw) {
+  const t = String(raw || '');
+  for (const [p, m] of POLA_ERROR) if (p.test(t)) return m;
+  return 'Waduh, ada yang ga beres. Coba lagi ya — kalau masih gagal, kirim detailnya ke yang bikin app.';
+}
+function kotakGagal(raw, tombol) {
+  return `<div class="warn"><b>Gagal.</b> ${esc(pesanAa(raw))}${tombol || ''}` +
+    (raw ? `<details class="detail-teknis"><summary>Detail teknis</summary>${esc(raw)}</details>` : '') + `</div>`;
+}
+
 // ================= IndexedDB (rekaman lokal) =================
 let dbP;
 function db() {
@@ -566,7 +599,7 @@ async function login() {
   const b = $('l-btn'); b.disabled = true; b.textContent = 'Masuk…';
   const { error } = await sb.auth.signInWithPassword({ email: $('l-email').value.trim(), password: $('l-pass').value });
   b.disabled = false; b.textContent = 'Masuk';
-  if (error) return toast(error.message === 'Invalid login credentials' ? 'Email atau password salah' : error.message);
+  if (error) return toast(pesanAa(error.message), 5000);
   ke('home');
 }
 async function logout() { await sb.auth.signOut(); ke('login'); }
@@ -598,7 +631,7 @@ async function muatDaftar() {
     .select('id,created_at,judul,status,durasi_detik,stt_model,stt_detik,ai_model,ai_token_in,ai_token_out').order('created_at', { ascending: false }).limit(100);
   if (error) {
     if (/JWT|auth/i.test(error.message)) return ke('login');
-    $('daftar').innerHTML = `<div class="item muted">Gagal memuat: ${esc(error.message)}</div>`; return;
+    $('daftar').innerHTML = `<div class="item kosong">${esc(pesanAa(error.message))}</div>`; return;
   }
   const awalBulan = new Date(); awalBulan.setDate(1); awalBulan.setHours(0, 0, 0, 0);
   const bulanIni = data.filter(r => new Date(r.created_at) >= awalBulan).reduce((a, r) => a + hitungBiaya(r).total, 0);
@@ -668,7 +701,7 @@ function pilihMime() {
 }
 
 async function bukaRekam() {
-  if (!window.MediaRecorder || !navigator.mediaDevices) return toast('Browser ini tidak bisa merekam. Pakai Chrome/Safari terbaru.');
+  if (!window.MediaRecorder || !navigator.mediaDevices) return toast('Browser ini ga bisa dipakai Aa buat merekam. Pakai Chrome atau Safari terbaru ya.', 5000);
   ke('rec');
   $('r-judul').value = ''; $('r-time').textContent = '00:00:00'; $('r-saved').textContent = 'Tersimpan aman di HP: 0 menit';
   $('r-state').textContent = 'Menyiapkan mikrofon…'; $('rec-box').classList.remove('paused');
@@ -677,7 +710,7 @@ async function bukaRekam() {
       audio: { channelCount: 1, echoCancellation: true, noiseSuppression: true, autoGainControl: true },
     });
   } catch (e) {
-    toast('Izin mikrofon ditolak. Aktifkan di pengaturan browser.', 5000); return ke('home');
+    toast('Aa ga dikasih izin pakai mic. Buka pengaturan browser → izinkan Mikrofon.', 6000); return ke('home');
   }
   const mime = pilihMime();
   rekam.id = crypto.randomUUID();
@@ -697,10 +730,10 @@ async function bukaRekam() {
       rekam.potongan++;
       if (rekam.mr) await recPut({ id: idRec, judul: $('r-judul').value.trim(), mime: rekam.mr.mimeType.split(';')[0] || 'audio/webm', mulai: rekam.mulai, detik: Math.round(detikSekarang()) });
       $('r-saved').textContent = `Tersimpan aman di HP: ${Math.floor(detikSekarang() / 60)} menit`;
-    } catch (err) { toast('Memori HP penuh? Gagal menyimpan potongan rekaman.', 6000); }
+    } catch (err) { toast('Aa gagal nyimpen potongan rekaman — memori HP mungkin penuh.', 6000); }
   }
   rekam.stream.getAudioTracks()[0].onended = () => {
-    if (rekam.mr && rekam.mr.state !== 'inactive') { toast('Mikrofon terputus. Rekaman dihentikan & disimpan.', 6000); selesaiRekam(); }
+    if (rekam.mr && rekam.mr.state !== 'inactive') { toast('Mic-nya keputus, Aa berhenti merekam. Yang udah kerekam aman kok.', 6000); selesaiRekam(); }
   };
   rekam.mr.start(10000);           // potongan tiap 10 detik → langsung disimpan
   rekam.t0 = performance.now();
@@ -796,7 +829,7 @@ async function unggahRec(recId) {
   const recs = await recAll();
   const r = recs.find(x => x.id === recId); if (!r) return;
   const blob = await chunkBlob(recId, r.mime);
-  if (!blob.size) { toast('Rekaman kosong'); await recDel(recId); return muatPending(); }
+  if (!blob.size) { toast('Rekamannya kosong, Aa ga dapet apa-apa.'); await recDel(recId); return muatPending(); }
   if (state.uploading[recId]) return;
   state.uploading[recId] = { pct: 0 }; await muatPending();
   const ok = await unggah(blob, r.mime, r.judul, recId, ekstensi(r.mime), r.detik);
@@ -818,7 +851,7 @@ async function pilihFile(inp) {
 // Unggah ke Supabase Storage (bisa lanjut kalau sinyal putus), lalu masuk antrian proses
 async function unggah(blob, mime, judul, id, ext, detik) {
   if (blob.size > MAKS_BYTE) {
-    toast(`File ${(blob.size / 1048576).toFixed(0)} MB, melebihi batas 50 MB. Rekaman tetap tersimpan di HP.`, 8000);
+    toast(`Filenya ${(blob.size / 1048576).toFixed(0)} MB, kegedean buat Aa (maks 50 MB). Rekaman tetap aman di HP.`, 8000);
     return false;
   }
   const { data: s } = await sb.auth.getSession();
@@ -827,7 +860,7 @@ async function unggah(blob, mime, judul, id, ext, detik) {
 
   // 1) catat rapat (status "mengunggah")
   const ins = await sb.from('rapat').upsert({ id, judul: judul || 'Rapat', audio_path: path, status: 'mengunggah', durasi_detik: detik || null });
-  if (ins.error) { toast('Gagal mencatat rapat: ' + ins.error.message, 6000); return false; }
+  if (ins.error) { toast(pesanAa(ins.error.message), 6000); return false; }
 
   // 2) unggah file bertahap (6 MB per potong)
   const barUI = () => document.querySelector(`#pg-${id} > div`);
@@ -853,7 +886,7 @@ async function unggah(blob, mime, judul, id, ext, detik) {
   });
   if (hasil) {
     await sb.from('rapat').update({ status: 'gagal', error: 'Unggah gagal: ' + String(hasil.message || hasil).slice(0, 300) }).eq('id', id);
-    toast('Unggah gagal. Rekaman aman di HP, coba lagi nanti.', 6000);
+    toast(pesanAa('Unggah gagal'), 6000);
     return false;
   }
   // 3) masuk antrian → Supabase otomatis mengabari n8n
@@ -865,7 +898,7 @@ async function unggah(blob, mime, judul, id, ext, detik) {
 // ================= Detail =================
 async function bukaDetail(id, diam) {
   const { data: r, error } = await sb.from('rapat').select('*').eq('id', id).maybeSingle();
-  if (error || !r) { toast('Rapat tidak ditemukan'); return ke('home'); }
+  if (error || !r) { toast('Aa nyari rapatnya tapi ga ketemu. Mungkin udah dihapus.'); return ke('home'); }
   const sebelumnya = state.rapat && state.rapat.id === id ? state.rapat : null;
   state.rapat = r;
   $('d-judul').textContent = r.judul;
@@ -888,8 +921,8 @@ async function bukaDetail(id, diam) {
   }[r.status];
   $('d-info').innerHTML =
     (info ? `<div class="warn">${info} <button class="ghost" style="min-height:0;padding:0;text-decoration:underline;color:inherit" onclick="prosesUlang()">Macet lebih dari 30 menit? Proses ulang</button></div>` : '') +
-    (r.status === 'gagal' ? `<div class="warn"><b>Gagal:</b> ${esc(r.error || '')}<br><button class="primary" style="margin-top:8px" onclick="prosesUlang()">Coba lagi</button></div>` : '') +
-    (r.status === 'selesai' && r.error ? `<div class="warn">${esc(r.error)}</div>` : '');
+    (r.status === 'gagal' ? kotakGagal(r.error, '<br><button class="primary" style="margin-top:8px" onclick="prosesUlang()">Coba lagi</button>') : '') +
+    (r.status === 'selesai' && r.error ? `<div class="warn">${esc(pesanAa(r.error))}</div>` : '');
 
   if (!sebelumnya || sebelumnya.resume !== r.resume) {
     $('d-resume').innerHTML = r.resume ? waHtml(r.resume) : 'Notulen belum ada.';
@@ -970,13 +1003,13 @@ async function putar(detik, cuplikan) {
     a.currentTime = detik; await a.play();
     clearTimeout(a._stop);
     if (cuplikan) a._stop = setTimeout(() => a.pause(), 8000);   // cuplikan nama: 8 detik
-  } catch (e) { toast('Audio tidak bisa diputar: ' + (e.message || e)); }
+  } catch (e) { toast('Aa ga bisa muterin audionya. ' + pesanAa(e.message || e), 5000); }
 }
 function tampilkanPlayer() { $('player').classList.remove('hidden'); document.body.classList.add('ada-player'); }
 function tutupPlayer() { const a = $('d-audio'); a.pause(); clearTimeout(a._stop); $('player').classList.add('hidden'); document.body.classList.remove('ada-player'); tandaiBaris(-1); }
 async function togglePutar() {
   const a = $('d-audio'); clearTimeout(a._stop);
-  if (a.paused) { try { await siapkanAudio(); await a.play(); } catch (e) { toast('Audio tidak bisa diputar'); } } else a.pause();
+  if (a.paused) { try { await siapkanAudio(); await a.play(); } catch (e) { toast('Aa ga bisa muterin audionya. ' + pesanAa(e.message || e), 5000); } } else a.pause();
 }
 function gantiKecepatan() {
   const L = [1, 1.25, 1.5, 2], a = $('d-audio');
@@ -1012,7 +1045,7 @@ async function simpanNama() {
   const nama = {};
   document.querySelectorAll('#d-speaker input[data-spk]').forEach(i => { if (i.value.trim()) nama[i.dataset.spk] = i.value.trim(); });
   const { error } = await sb.from('rapat').update({ nama_speaker: nama, status: 'minta_resume', error: null }).eq('id', state.rapat.id);
-  if (error) return toast('Gagal menyimpan: ' + error.message);
+  if (error) return toast(pesanAa(error.message), 5000);
   toast('Tersimpan. Aa lagi nulis ulang notulennya…');
   pilihTab('resume'); bukaDetail(state.rapat.id);
 }
@@ -1024,14 +1057,14 @@ async function prosesUlang() {
   // status harus berubah supaya n8n terpanggil lagi
   await sb.from('rapat').update({ status: 'gagal' }).eq('id', r.id);
   const { error } = await sb.from('rapat').update({ status: tujuan, error: null }).eq('id', r.id);
-  if (error) return toast('Gagal: ' + error.message);
-  toast('Diproses ulang…'); bukaDetail(r.id);
+  if (error) return toast(pesanAa(error.message), 5000);
+  toast('Siap, Aa kerjain ulang…'); bukaDetail(r.id);
 }
 
 async function gantiJudul() {
   const j = prompt('Judul rapat:', state.rapat.judul); if (!j || !j.trim()) return;
   const { error } = await sb.from('rapat').update({ judul: j.trim() }).eq('id', state.rapat.id);
-  if (error) return toast(error.message);
+  if (error) return toast(pesanAa(error.message), 5000);
   $('d-judul').textContent = j.trim(); state.rapat.judul = j.trim();
 }
 
@@ -1040,8 +1073,8 @@ async function hapusRapat() {
   const r = state.rapat;
   if (r.audio_path) await sb.storage.from('audio').remove([r.audio_path]);
   const { error } = await sb.from('rapat').delete().eq('id', r.id);
-  if (error) return toast(error.message);
-  toast('Dihapus'); ke('home');
+  if (error) return toast(pesanAa(error.message), 5000);
+  toast('Udah Aa hapus.'); ke('home');
 }
 
 function pilihTab(t) {
@@ -1102,7 +1135,7 @@ function renderPaparan() {
 
   let status = '';
   if (sibuk) status = `<div class="warn">Aa lagi nyusun slide dari ${r.deck_sumber === 'transkrip' ? 'transkrip' : 'notulen'}… biasanya 20–60 detik.</div>`;
-  else if (r.deck_status === 'gagal') status = `<div class="warn"><b>Gagal:</b> ${esc(r.deck_error || '')}</div>`;
+  else if (r.deck_status === 'gagal') status = kotakGagal(r.deck_error);
   else if (!punyaBahan) status = `<div class="muted">${src === 'resume' ? 'Notulen' : 'Transkrip'} belum ada.</div>`;
   $('pp-status').innerHTML = status;
 
@@ -1121,7 +1154,7 @@ async function buatPaparan() {
   const r = state.rapat;
   if (['minta', 'proses'].includes(r.deck_status)) await sb.from('rapat').update({ deck_status: 'gagal' }).eq('id', r.id);
   const { error } = await sb.from('rapat').update({ deck_sumber: state.srcDeck, deck_status: 'minta', deck_error: null }).eq('id', r.id);
-  if (error) return toast('Gagal: ' + error.message);
+  if (error) return toast(pesanAa(error.message), 5000);
   toast('Paparan lagi disusun…');
   bukaDetail(r.id);
 }
@@ -1176,7 +1209,7 @@ async function unduhPng() {
     const url = await htmlToImage.toPng(ig, { pixelRatio: 1, backgroundColor: '#ffffff', width: 1080, height: ig.offsetHeight });
     ig.style.transform = t;
     const a = document.createElement('a'); a.href = url; a.download = namaFile('png'); a.click();
-  } catch (e) { toast(e.message || String(e), 5000); }
+  } catch (e) { toast(pesanAa(e.message || e), 5000); }
   b.disabled = false; lb.textContent = 'Infografis PNG';
 }
 
@@ -1187,7 +1220,7 @@ async function unduhPptx() {
     const d = state.rapat.deck[state.srcDeck];
     const p = buatPptx(d);
     await p.writeFile({ fileName: namaFile('pptx') });
-  } catch (e) { toast(e.message || String(e), 5000); }
+  } catch (e) { toast(pesanAa(e.message || e), 5000); }
   b.disabled = false; lb.textContent = 'Deck PPTX';
 }
 
