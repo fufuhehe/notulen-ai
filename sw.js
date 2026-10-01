@@ -1,6 +1,6 @@
 // Service worker: app bisa dibuka cepat & tetap tampil saat sinyal jelek.
 // Data rapat (Supabase) tidak pernah di-cache.
-const CACHE = 'notulen-v15';
+const CACHE = 'notulen-v16';
 const SHELL = ['./', 'index.html', 'manifest.webmanifest', 'icon.svg', 'icon-192.png', 'icon-512.png',
   'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.js',
   'https://cdn.jsdelivr.net/npm/tus-js-client@4.3.1/dist/tus.min.js'];
@@ -19,7 +19,7 @@ self.addEventListener('fetch', e => {
   if (url.hostname.endsWith('supabase.co') || url.hostname.endsWith('supabase.in')) return;
   // Halaman: coba internet dulu (biar dapat versi terbaru), kalau gagal pakai cache
   if (req.mode === 'navigate' || url.pathname.endsWith('index.html')) {
-    e.respondWith(fetch(req).then(r => { const c = r.clone(); caches.open(CACHE).then(x => x.put('index.html', c)); return r; })
+    e.respondWith(fetch(req.url, { cache: 'no-cache' }).then(r => { const c = r.clone(); caches.open(CACHE).then(x => x.put('index.html', c)); return r; })
       .catch(() => caches.match('index.html')));
     return;
   }
