@@ -163,6 +163,23 @@ header.top h1{font-size:1.0625rem;font-weight:700;margin:0;flex:1;white-space:no
 .stop::after{content:"";width:1.6rem;height:1.6rem;border-radius:.35rem;background:#fff}
 .tips{margin-top:2.25rem;text-align:left;font-size:.8125rem;color:#aebdcc;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:var(--r);padding:.8rem 1rem}
 .tips b{color:#fff}
+#v-rec header.top .icon{margin-left:auto;color:#c9d6e3}
+#v-rec header.top h1{flex:1}
+/* ---------- mode tidur (layar kunci) ---------- */
+#tidur{position:fixed;inset:0;z-index:50;color:#e8edf2;user-select:none;-webkit-user-select:none;touch-action:manipulation;
+  background:radial-gradient(120% 70% at 85% 0%,rgba(28,74,92,.38),transparent 60%),radial-gradient(90% 60% at 0% 100%,rgba(46,32,78,.32),transparent 65%),linear-gradient(170deg,#0a1018 0%,#05070b 55%,#020304 100%);
+  display:flex;flex-direction:column;align-items:center;padding:calc(env(safe-area-inset-top) + 14vh) 1.5rem calc(env(safe-area-inset-bottom) + 2.5rem);animation:muncul .6s ease}
+#tidur.hidden{display:none}
+#tidur .geser{transition:transform 2s ease;display:flex;flex-direction:column;align-items:center;flex:1;width:100%}
+#td-tgl{font-size:1.05rem;font-weight:600;color:rgba(232,237,242,.72);letter-spacing:.01em}
+#td-jam{font-size:clamp(4.5rem,24vw,7.5rem);font-weight:300;letter-spacing:-.04em;line-height:1;margin-top:.35rem;font-variant-numeric:tabular-nums;color:rgba(240,244,248,.92)}
+.td-rek{margin-top:auto;display:inline-flex;align-items:center;gap:.6rem;padding:.55rem 1rem .55rem .7rem;border-radius:99px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08);font-size:.8125rem;font-weight:600;color:rgba(232,237,242,.7);font-variant-numeric:tabular-nums}
+.td-mic{position:relative;width:1.9rem;height:1.9rem;border-radius:50%;background:rgba(255,255,255,.08);display:grid;place-items:center}
+.td-mic svg.i{width:1rem;height:1rem;color:rgba(232,237,242,.85)}
+.td-mic::after{content:"";position:absolute;top:-.05rem;right:-.05rem;width:.55rem;height:.55rem;border-radius:50%;background:#ff4d55;box-shadow:0 0 0 0 rgba(255,77,85,.6);animation:denyut 1.6s ease-out infinite}
+@keyframes denyut{0%{box-shadow:0 0 0 0 rgba(255,77,85,.55)}70%{box-shadow:0 0 0 .5rem rgba(255,77,85,0)}100%{box-shadow:0 0 0 0 rgba(255,77,85,0)}}
+#tidur.jeda .td-mic::after{animation:none;background:#6b7a89}
+.td-hint{margin-top:1.1rem;font-size:.75rem;color:rgba(232,237,242,.38);letter-spacing:.02em}
 
 /* ---------- detail ---------- */
 .d-judul{font-size:1.5rem;line-height:1.2;font-weight:800;letter-spacing:-.03em;margin:.25rem 0 .5rem}
@@ -263,6 +280,7 @@ body.ada-player .aksi{bottom:4.5rem}
   <symbol id="i-atur" viewBox="0 0 24 24"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></symbol>
   <symbol id="i-back" viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></symbol>
   <symbol id="i-pen" viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16v4z"/><path d="M13.5 6.5l4 4"/></symbol>
+  <symbol id="i-bulan" viewBox="0 0 24 24"><path d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5z"/></symbol>
   <symbol id="i-ulang" viewBox="0 0 24 24"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/></symbol>
   <symbol id="i-copy" viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="12" rx="2.5"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></symbol>
   <symbol id="i-bagi" viewBox="0 0 24 24"><circle cx="18" cy="5.5" r="2.5"/><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="18.5" r="2.5"/><path d="M8.2 10.8l7.6-4.1M8.2 13.2l7.6 4.1"/></symbol>
@@ -341,7 +359,7 @@ body.ada-player .aksi{bottom:4.5rem}
 
 <!-- ===== REKAM ===== -->
 <section id="v-rec" class="hidden">
-  <header class="top"><h1>Notulen AI · Merekam</h1></header>
+  <header class="top"><h1>Notulen AI · Merekam</h1><button class="ghost icon" id="r-tidur" onclick="masukTidur()" title="Mode tidur" aria-label="Mode tidur"><svg class="i"><use href="#i-bulan"/></svg></button></header>
   <div class="wrap rec-screen" id="rec-box">
     <input id="r-judul" placeholder="Judul rapat (boleh diisi nanti)">
     <div class="timer" id="r-time">00:00:00</div>
@@ -352,9 +370,19 @@ body.ada-player .aksi{bottom:4.5rem}
       <div class="rb"><button id="r-pause" onclick="jedaRekam()" disabled aria-label="Jeda"><svg class="i" style="width:1.5rem;height:1.5rem"><use href="#i-pause"/></svg></button><span id="r-pause-lbl">Jeda</span></div>
       <div class="rb"><button id="r-stop" class="stop" onclick="selesaiRekam()" disabled aria-label="Selesai"></button><span>Selesai</span></div>
     </div>
-    <div class="tips">Biar rekaman ga putus: <b>layar tetap nyala</b>, colok charger, dan jangan pindah ke aplikasi lain.</div>
+    <div class="tips">Biar rekaman ga putus: <b>layar tetap nyala</b>, colok charger, dan jangan pindah ke aplikasi lain. Mau layarnya ga silau? Tekan ikon bulan di pojok kanan atas buat <b>mode tidur</b>.</div>
   </div>
 </section>
+
+<!-- ===== MODE TIDUR (saat merekam) ===== -->
+<div id="tidur" class="hidden">
+  <div class="geser" id="td-geser">
+    <div id="td-tgl"></div>
+    <div id="td-jam">00.00</div>
+    <div class="td-rek"><span class="td-mic"><svg class="i"><use href="#i-mic"/></svg></span><span id="td-status">Merekam · 00:00:00</span></div>
+    <div class="td-hint">Ketuk dua kali untuk kembali</div>
+  </div>
+</div>
 
 <!-- ===== DETAIL ===== -->
 <section id="v-detail" class="hidden">
@@ -799,7 +827,7 @@ async function bukaRekam() {
   rekam.t0 = performance.now();
   $('r-state').textContent = 'Merekam';
   $('r-pause').disabled = false; $('r-stop').disabled = false; setJeda(false);
-  rekam.timer = setInterval(() => { $('r-time').textContent = jam(detikSekarang()); }, 500);
+  rekam.timer = setInterval(() => { $('r-time').textContent = jam(detikSekarang()); if (rekam.tidur) isiTidur(); }, 500);
   meterMulai();
   kunciLayar();
   window.onbeforeunload = () => 'Rekaman sedang berjalan';
@@ -828,7 +856,7 @@ async function selesaiRekam() {
   await new Promise(res => { mr.onstop = res; mr.stop(); });
   await new Promise(r => setTimeout(r, 50));
   await rekam.antrian;                           // tunggu potongan terakhir tersimpan
-  clearInterval(rekam.timer); meterStop(); lepasLayar();
+  bangun(); clearInterval(rekam.timer); meterStop(); lepasLayar();
   rekam.stream.getTracks().forEach(t => t.stop());
   window.onbeforeunload = null;
   const id = rekam.id;
@@ -837,6 +865,36 @@ async function selesaiRekam() {
   rekam.id = null; rekam.mr = null;
   ke('home');
   unggahRec(id);
+}
+
+// ---- mode tidur: layar gelap ala HP terkunci, rekaman tetap jalan ----
+function isiTidur() {
+  const d = new Date();
+  $('td-jam').textContent = d.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+  $('td-tgl').textContent = d.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long' });
+  $('td-status').textContent = (rekam.jeda ? 'Dijeda · ' : 'Merekam · ') + jam(detikSekarang());
+  $('tidur').classList.toggle('jeda', !!rekam.jeda);
+}
+function masukTidur() {
+  if (!rekam.mr || rekam.mr.state === 'inactive') return;
+  rekam.tidur = true; isiTidur(); $('tidur').classList.remove('hidden');
+  try { document.documentElement.requestFullscreen && document.documentElement.requestFullscreen({ navigationUI: 'hide' }).catch(() => {}); } catch (_) {}
+  // geser posisi sedikit tiap menit supaya layar OLED ga "membekas"
+  clearInterval(rekam.geser);
+  rekam.geser = setInterval(() => {
+    const x = Math.round(Math.random() * 24 - 12), y = Math.round(Math.random() * 30 - 15);
+    $('td-geser').style.transform = `translate(${x}px,${y}px)`;
+  }, 60000);
+}
+// ketuk dua kali (dibuat manual — dblclick ga konsisten di HP)
+$('tidur').addEventListener('pointerup', () => {
+  const t = performance.now();
+  if (t - (rekam.ketuk || 0) < 400) { rekam.ketuk = 0; bangun(); } else rekam.ketuk = t;
+});
+function bangun() {
+  if (!rekam.tidur) return;
+  rekam.tidur = false; clearInterval(rekam.geser); $('tidur').classList.add('hidden');
+  try { document.fullscreenElement && document.exitFullscreen().catch(() => {}); } catch (_) {}
 }
 
 function meterMulai() {
@@ -857,7 +915,7 @@ function meterMulai() {
         rekam.tWave = now;
         rekam.riwayat.push(rekam.jeda ? 0 : Math.min(1, peak / 128 * 2.2));
         rekam.riwayat.shift();
-        rekam.bar.forEach((el, i) => { el.style.height = Math.max(4, rekam.riwayat[i] * 88) + 'px'; });
+        if (!rekam.tidur) rekam.bar.forEach((el, i) => { el.style.height = Math.max(4, rekam.riwayat[i] * 88) + 'px'; });
       }
       rekam.raf = requestAnimationFrame(loop);
     };
