@@ -9,7 +9,7 @@
         "responseMode": "onReceived",
         "options": {}
       },
-      "id": "185aa963-22d9-4ba1-8860-f75446323c4a",
+      "id": "55bc73be-183f-49fd-98c2-088a72727051",
       "name": "Webhook",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2,
@@ -17,7 +17,7 @@
         0,
         0
       ],
-      "webhookId": "1c0dbc5a-518a-4a58-9d6f-613995da4b84",
+      "webhookId": "d547dd0a-34e7-43c1-878d-5d64db3e467e",
       "credentials": {
         "httpHeaderAuth": {
           "id": "",
@@ -45,7 +45,7 @@
         "jsonBody": "={{ JSON.stringify({ status: 'meresume', error: null }) }}",
         "options": {}
       },
-      "id": "216d705b-fed0-4caa-92f0-236467279695",
+      "id": "c7395d6f-42dc-4ce0-862d-c76a4ff25647",
       "name": "Tandai meresume",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
@@ -64,7 +64,7 @@
       "parameters": {
         "jsCode": "// Susun transkrip yang sudah diberi nama speaker, untuk dikirim ke OpenAI\nconst r = $input.first().json;\nif (!Array.isArray(r.transkrip) || !r.transkrip.length) {\n  throw new Error('Transkrip belum ada untuk rapat ini');\n}\n\nconst nama = r.nama_speaker || {};\nconst label = (s) => nama[s] || ('Speaker ' + s);\nconst jam = (d) => [Math.floor(d / 3600), Math.floor(d / 60) % 60, d % 60]\n  .map(n => String(n).padStart(2, '0')).join(':');\n\n// Ucapan berurutan dari orang yang sama digabung jadi satu baris\nconst baris = [];\nfor (const u of r.transkrip) {\n  const akhir = baris[baris.length - 1];\n  if (akhir && akhir.s === u.s) akhir.t += ' ' + u.t;\n  else baris.push({ s: u.s, m: u.m, t: u.t });\n}\n\nconst peserta = [...new Set(r.transkrip.map(u => u.s))].sort().map(label).join(', ');\nconst tanggal = new Date(r.created_at).toLocaleDateString('id-ID', {\n  timeZone: 'Asia/Jakarta', weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',\n});\nconst durasi = jam(r.durasi_detik || r.transkrip[r.transkrip.length - 1].m);\n\nconst prompt = `Judul: ${r.judul || 'Rapat'}\nTanggal: ${tanggal}\nDurasi: ${durasi}\nPeserta bicara: ${peserta}\n\nTRANSKRIP:\n${baris.map(b => `[${jam(b.m)}] ${label(b.s)}: ${b.t}`).join('\\n')}`;\n\nreturn [{ json: { prompt } }];\n"
       },
-      "id": "5682f067-b301-4e52-9659-dd1660fd3590",
+      "id": "beaa2482-ca62-4bb9-b326-b967a87d1f1e",
       "name": "Susun prompt",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -79,9 +79,8 @@
         "operation": "message",
         "modelId": {
           "__rl": true,
-          "value": "gpt-4.1",
-          "mode": "list",
-          "cachedResultName": "GPT-4.1"
+          "mode": "id",
+          "value": "={{ (() => { const m = $('Webhook').first().json.body.model_notulen || 'otomatis'; return m === 'otomatis' ? (String($json.prompt || '').length > 60000 ? 'gpt-4.1-mini' : 'gpt-4.1') : m; })() }}"
         },
         "messages": {
           "values": [
@@ -100,7 +99,7 @@
           "temperature": 0.2
         }
       },
-      "id": "ec90d866-c76b-405f-90c9-07ac439ccc14",
+      "id": "f926c690-c19c-4ac5-b57c-db3b706991e3",
       "name": "OpenAI",
       "type": "@n8n/n8n-nodes-langchain.openAi",
       "typeVersion": 1.8,
@@ -139,7 +138,7 @@
         "jsonBody": "={{ (() => { const c = $json.choices[0], u = $json.usage || {}, lama = $('Tandai meresume').first().json; return JSON.stringify({ status: 'selesai', resume: String(c.message.content || '').trim(), error: c.finish_reason === 'length' ? 'Resume terpotong karena terlalu panjang' : null, ai_model: $json.model, ai_token_in: (lama.ai_token_in || 0) + (u.prompt_tokens || 0), ai_token_out: (lama.ai_token_out || 0) + (u.completion_tokens || 0) }); })() }}",
         "options": {}
       },
-      "id": "e72f3fde-2170-4320-a48c-efa32236680f",
+      "id": "eb8f70f9-f052-4211-a543-e98707559f63",
       "name": "Simpan resume",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
@@ -174,7 +173,7 @@
         "jsonBody": "={{ JSON.stringify({ status: 'gagal', error: String(typeof $json.error === 'object' && $json.error ? ($json.error.message || JSON.stringify($json.error)) : ($json.error || 'OpenAI gagal')).slice(0, 500) }) }}",
         "options": {}
       },
-      "id": "c96f10c3-9b21-4c74-add7-dcda9508d553",
+      "id": "d6a3ab80-83c8-487f-8040-3ecb3ab7f87d",
       "name": "Tandai gagal",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,

@@ -132,7 +132,7 @@ const w2 = wf('Notulen - 2 Resume', [
   {
     parameters: {
       resource: 'text', operation: 'message',
-      modelId: { __rl: true, value: 'gpt-4.1', mode: 'list', cachedResultName: 'GPT-4.1' },
+      modelId: { __rl: true, mode: 'id', value: "={{ (() => { const m = $('Webhook').first().json.body.model_notulen || 'otomatis'; return m === 'otomatis' ? (String($json.prompt || '').length > 60000 ? 'gpt-4.1-mini' : 'gpt-4.1') : m; })() }}" },
       messages: { values: [
         { content: SISTEM, role: 'system' },
         { content: '={{ $json.prompt }}' },
@@ -168,7 +168,7 @@ const w4 = wf('Notulen - 4 Paparan', [
   {
     parameters: {
       resource: 'text', operation: 'message',
-      modelId: { __rl: true, value: 'gpt-4.1', mode: 'list', cachedResultName: 'GPT-4.1' },
+      modelId: { __rl: true, mode: 'id', value: "={{ (() => { const m = $('Webhook').first().json.body.model_paparan || 'otomatis'; return m === 'otomatis' ? (String($json.prompt || '').length > 60000 ? 'gpt-4.1-mini' : 'gpt-4.1') : m; })() }}" },
       messages: { values: [
         { content: PROMPT_DECK, role: 'system' },
         { content: '={{ $json.prompt || "(kosong)" }}' },

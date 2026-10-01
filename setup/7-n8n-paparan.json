@@ -9,7 +9,7 @@
         "responseMode": "onReceived",
         "options": {}
       },
-      "id": "2d7d85bd-cd3b-4027-bd5b-90360efb1791",
+      "id": "74e88f2d-8b92-4249-823a-5d938559e0af",
       "name": "Webhook",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2,
@@ -17,7 +17,7 @@
         0,
         0
       ],
-      "webhookId": "68af8312-ef45-4f28-a63d-c458f4154979",
+      "webhookId": "e822deda-9e84-442e-ba75-a8173fc5a21d",
       "credentials": {
         "httpHeaderAuth": {
           "id": "",
@@ -45,7 +45,7 @@
         "jsonBody": "={{ JSON.stringify({ deck_status: 'proses', deck_error: null }) }}",
         "options": {}
       },
-      "id": "3f79b5fa-b62e-47f1-ba79-25fc0f50acbd",
+      "id": "46cf83b8-d65f-437d-8520-e90107b27dc8",
       "name": "Tandai deck diproses",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
@@ -64,7 +64,7 @@
       "parameters": {
         "jsCode": "// Siapkan bahan untuk deck: dari resume atau dari transkrip lengkap\nconst r = $input.first().json;\nconst sumber = r.deck_sumber === 'transkrip' ? 'transkrip' : 'resume';\n\nconst nama = r.nama_speaker || {};\nconst label = (s) => nama[s] || ('Speaker ' + s);\nconst jam = (d) => [Math.floor(d / 3600), Math.floor(d / 60) % 60, d % 60]\n  .map(n => String(n).padStart(2, '0')).join(':');\nconst tanggal = new Date(r.created_at).toLocaleDateString('id-ID', {\n  timeZone: 'Asia/Jakarta', weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',\n});\n\nlet bahan = '';\nif (sumber === 'resume') {\n  bahan = (r.resume || '').trim();\n} else if (Array.isArray(r.transkrip) && r.transkrip.length) {\n  const baris = [];\n  for (const u of r.transkrip) {\n    const a = baris[baris.length - 1];\n    if (a && a.s === u.s) a.t += ' ' + u.t; else baris.push({ s: u.s, m: u.m, t: u.t });\n  }\n  bahan = baris.map(b => `[${jam(b.m)}] ${label(b.s)}: ${b.t}`).join('\\n');\n}\n\nif (!bahan) {\n  return [{ json: { gagal: true, sumber, error: `Bahan kosong: ${sumber} belum ada untuk rapat ini` } }];\n}\n\nreturn [{ json: {\n  gagal: false,\n  sumber,\n  prompt: `Judul rapat: ${r.judul || 'Rapat'}\nTanggal: ${tanggal}\nDurasi: ${jam(r.durasi_detik || 0)}\nSumber bahan: ${sumber === 'resume' ? 'NOTULEN (sudah diringkas)' : 'TRANSKRIP MENTAH'}\n\nBAHAN:\n${bahan}`,\n} }];\n"
       },
-      "id": "8dad2020-185c-49a2-b540-798048f58c25",
+      "id": "850d876e-3e28-4d4c-9809-e9fc5859c182",
       "name": "Susun bahan",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -79,9 +79,8 @@
         "operation": "message",
         "modelId": {
           "__rl": true,
-          "value": "gpt-4.1",
-          "mode": "list",
-          "cachedResultName": "GPT-4.1"
+          "mode": "id",
+          "value": "={{ (() => { const m = $('Webhook').first().json.body.model_paparan || 'otomatis'; return m === 'otomatis' ? (String($json.prompt || '').length > 60000 ? 'gpt-4.1-mini' : 'gpt-4.1') : m; })() }}"
         },
         "messages": {
           "values": [
@@ -101,7 +100,7 @@
           "temperature": 0.2
         }
       },
-      "id": "352d4134-c11b-4e4c-b73d-cd68da922b5e",
+      "id": "0bc192fc-1427-4c3b-91fd-ce297542c508",
       "name": "OpenAI",
       "type": "@n8n/n8n-nodes-langchain.openAi",
       "typeVersion": 1.8,
@@ -124,7 +123,7 @@
       "parameters": {
         "jsCode": "// Rakit hasil OpenAI jadi data deck, simpan per sumber (resume / transkrip)\nconst lama = $('Tandai deck diproses').first().json;\nconst bahan = $('Susun bahan').first().json;\nconst res = $input.first().json;\n\nconst tambahToken = (u) => ({\n  ai_token_in: (lama.ai_token_in || 0) + ((u && u.prompt_tokens) || 0),\n  ai_token_out: (lama.ai_token_out || 0) + ((u && u.completion_tokens) || 0),\n});\n\n// Gagal sebelum/saat memanggil AI\nif (bahan.gagal || res.error || !res.choices) {\n  const e = bahan.gagal ? bahan.error : (res.error && (res.error.message || JSON.stringify(res.error))) || 'AI tidak membalas';\n  return [{ json: { deck_status: 'gagal', deck_error: String(e).slice(0, 500), ...tambahToken(res.usage) } }];\n}\n\nlet isi = res.choices[0].message.content;\nif (typeof isi === 'string') {\n  try { isi = JSON.parse(isi); } catch (_) { isi = null; }\n}\nconst daftar = (x) => (Array.isArray(x) ? x : []);\nif (!isi || typeof isi !== 'object' || !isi.judul) {\n  return [{ json: { deck_status: 'gagal', deck_error: 'Format balasan AI tidak sesuai. Coba buat ulang.', ...tambahToken(res.usage) } }];\n}\n\nconst u = res.usage || {};\nconst hasil = {\n  judul: String(isi.judul || ''),\n  subjudul: String(isi.subjudul || ''),\n  pesan_kunci: String(isi.pesan_kunci || ''),\n  ringkasan: daftar(isi.ringkasan).map(String).slice(0, 4),\n  slides: daftar(isi.slides).slice(0, 6).map(s => ({ judul: String(s.judul || ''), poin: daftar(s.poin).map(String).slice(0, 6) })),\n  angka: daftar(isi.angka).slice(0, 4).map(a => ({ nilai: String(a.nilai || ''), label: String(a.label || '') })),\n  tindak_lanjut: daftar(isi.tindak_lanjut).slice(0, 6).map(t => ({ pic: String(t.pic || ''), tugas: String(t.tugas || '') })),\n  model: res.model,\n  token_in: u.prompt_tokens || 0,\n  token_out: u.completion_tokens || 0,\n  dibuat: new Date().toISOString(),\n};\n\nconst deck = Object.assign({}, lama.deck || {});\ndeck[bahan.sumber] = hasil;\n\nreturn [{ json: {\n  deck,\n  deck_status: 'selesai',\n  deck_error: null,\n  ai_model: res.model,\n  ...tambahToken(u),\n} }];\n"
       },
-      "id": "f2308a47-bc59-4bc6-b0c1-354a5661dd34",
+      "id": "e3ffc5cc-1829-4b45-8b6a-db8dac2008b1",
       "name": "Rakit deck",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -153,7 +152,7 @@
         "jsonBody": "={{ JSON.stringify($json) }}",
         "options": {}
       },
-      "id": "cfdc26de-2e11-44ba-86bf-c69c20042f03",
+      "id": "37dcaa6a-917e-4e7c-90d0-b3c145dae81e",
       "name": "Simpan deck",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
