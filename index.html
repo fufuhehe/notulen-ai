@@ -163,7 +163,8 @@ header.top h1{font-size:1.0625rem;font-weight:700;margin:0;flex:1;white-space:no
 .stop::after{content:"";width:1.6rem;height:1.6rem;border-radius:.35rem;background:#fff}
 .tips{margin-top:2.25rem;text-align:left;font-size:.8125rem;color:#aebdcc;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:var(--r);padding:.8rem 1rem}
 .tips b{color:#fff}
-#v-rec header.top .icon{margin-left:auto;color:#c9d6e3}
+#v-rec header.top .icon{color:#c9d6e3}
+#v-rec header.top h1{text-align:center}
 #v-rec header.top h1{flex:1}
 /* ---------- mode tidur (layar kunci) ---------- */
 #tidur{position:fixed;inset:0;z-index:50;color:#e8edf2;user-select:none;-webkit-user-select:none;touch-action:manipulation;
@@ -359,7 +360,7 @@ body.ada-player .aksi{bottom:4.5rem}
 
 <!-- ===== REKAM ===== -->
 <section id="v-rec" class="hidden">
-  <header class="top"><h1>Notulen AI · Merekam</h1><button class="ghost icon" id="r-tidur" onclick="masukTidur()" title="Mode tidur" aria-label="Mode tidur"><svg class="i"><use href="#i-bulan"/></svg></button></header>
+  <header class="top"><button class="ghost icon" id="r-batal" onclick="batalRekam()" title="Batalkan rekaman" aria-label="Batalkan rekaman"><svg class="i"><use href="#i-tutup"/></svg></button><h1>Notulen AI · Merekam</h1><button class="ghost icon" id="r-tidur" onclick="masukTidur()" title="Mode tidur" aria-label="Mode tidur"><svg class="i"><use href="#i-bulan"/></svg></button></header>
   <div class="wrap rec-screen" id="rec-box">
     <input id="r-judul" placeholder="Judul rapat (boleh diisi nanti)">
     <div class="timer" id="r-time">00:00:00</div>
@@ -800,6 +801,7 @@ async function bukaRekam() {
   } catch (e) {
     toast('Aa ga dikasih izin pakai mic. Buka pengaturan browser → izinkan Mikrofon.', 6000); return ke('home');
   }
+  if ($('v-rec').classList.contains('hidden')) { rekam.stream.getTracks().forEach(t => t.stop()); return; } // keburu dibatalkan
   const mime = pilihMime();
   rekam.id = crypto.randomUUID();
   rekam.potongan = 0; rekam.akumulasi = 0; rekam.jeda = false; rekam.t0 = 0;
@@ -847,6 +849,23 @@ function jedaRekam() {
     mr.resume(); rekam.t0 = performance.now(); rekam.jeda = false;
     setJeda(false); $('r-state').textContent = 'Merekam'; $('rec-box').classList.remove('paused');
   }
+}
+
+async function batalRekam() {
+  const mr = rekam.mr;
+  if (!mr || mr.state === 'inactive') { ke('home'); return; }   // mic belum siap: langsung keluar
+  if (!confirm('Batalkan rekaman ini? Yang sudah terekam akan dihapus dan tidak diunggah.')) return;
+  const id = rekam.id;
+  mr.ondataavailable = null;
+  rekam.mr = null; rekam.id = null;
+  await new Promise(res => { mr.onstop = res; mr.stop(); });
+  await rekam.antrian;
+  bangun(); clearInterval(rekam.timer); meterStop(); lepasLayar();
+  rekam.stream.getTracks().forEach(t => t.stop());
+  window.onbeforeunload = null;
+  try { await chunkDel(id); await recDel(id); } catch (_) {}
+  ke('home');
+  toast('Rekaman dibatalkan, ga ada yang disimpan.');
 }
 
 async function selesaiRekam() {
