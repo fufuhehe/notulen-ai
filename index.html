@@ -450,19 +450,41 @@ body.ada-player .aksi{bottom:4.5rem}
     <div id="atur-model">
       <label style="margin-top:0">Untuk notulen</label>
       <select id="atur-model-notulen" data-k="model_notulen">
-        <option value="otomatis">Otomatis (disarankan)</option>
-        <option value="gpt-4.1">gpt-4.1 · paling teliti</option>
-        <option value="gpt-4.1-mini">gpt-4.1-mini · hemat</option>
-        <option value="gpt-4o-mini">gpt-4o-mini · termurah</option>
+        <option value="otomatis">Otomatis (gpt-4.1, rapat panjang → mini)</option>
+        <optgroup label="Teliti">
+          <option value="claude-sonnet-5">Claude Sonnet 5 · ±Rp1.150/jam rapat</option>
+          <option value="gpt-4.1">GPT-4.1 · ±Rp1.100</option>
+          <option value="gemini/gemini-3.5-flash">Gemini 3.5 Flash · ±Rp900</option>
+        </optgroup>
+        <optgroup label="Hemat">
+          <option value="gemini/gemini-3-flash-preview">Gemini 3 Flash (preview) · ±Rp300</option>
+          <option value="gpt-4.1-mini">GPT-4.1 mini · ±Rp220</option>
+          <option value="gpt-4o-mini">GPT-4o mini · ±Rp80</option>
+        </optgroup>
+        <optgroup label="Super murah (diskon)">
+          <option value="deepseek-v4.1-flash:netra">DeepSeek V4.1 Flash (netra) · ±Rp50</option>
+          <option value="glm-5.3-flash">GLM 5.3 Flash · ±Rp15</option>
+        </optgroup>
       </select>
       <label>Untuk paparan</label>
       <select id="atur-model-paparan" data-k="model_paparan">
-        <option value="otomatis">Otomatis (disarankan)</option>
-        <option value="gpt-4.1">gpt-4.1 · paling teliti</option>
-        <option value="gpt-4.1-mini">gpt-4.1-mini · hemat</option>
-        <option value="gpt-4o-mini">gpt-4o-mini · termurah</option>
+        <option value="otomatis">Otomatis (gpt-4.1, rapat panjang → mini)</option>
+        <optgroup label="Teliti">
+          <option value="claude-sonnet-5">Claude Sonnet 5 · ±Rp1.150/jam rapat</option>
+          <option value="gpt-4.1">GPT-4.1 · ±Rp1.100</option>
+          <option value="gemini/gemini-3.5-flash">Gemini 3.5 Flash · ±Rp900</option>
+        </optgroup>
+        <optgroup label="Hemat">
+          <option value="gemini/gemini-3-flash-preview">Gemini 3 Flash (preview) · ±Rp300</option>
+          <option value="gpt-4.1-mini">GPT-4.1 mini · ±Rp220</option>
+          <option value="gpt-4o-mini">GPT-4o mini · ±Rp80</option>
+        </optgroup>
+        <optgroup label="Super murah (diskon)">
+          <option value="deepseek-v4.1-flash:netra">DeepSeek V4.1 Flash (netra) · ±Rp50</option>
+          <option value="glm-5.3-flash">GLM 5.3 Flash · ±Rp15</option>
+        </optgroup>
       </select>
-      <div class="muted" id="atur-model-info" style="margin-top:.4rem;font-size:.75rem">Otomatis = gpt-4.1, tapi rapat panjang (±2 jam ke atas) pindah ke gpt-4.1-mini biar ga kena limit. Berlaku untuk proses berikutnya.</div>
+      <div class="muted" id="atur-model-info" style="margin-top:.4rem;font-size:.75rem">Perkiraan biaya per 1 jam rapat. Berlaku untuk proses berikutnya.</div>
     </div>
     <div class="row" style="margin-top:1.5rem">
       <button onclick="tutupAtur()">Tutup</button>
@@ -490,15 +512,23 @@ const HARGA_STT = {                        // AssemblyAI per jam audio (+ pisah 
   'universal-2': 0.15, 'universal-3-5-pro': 0.21, _lain: 0.21,
 };
 const HARGA_DIARISASI = 0.02;              // per jam
-const HARGA_AI = {                         // OpenAI per 1 juta token [masuk, keluar]
+const HARGA_AI = {                         // USD per 1 juta token [masuk, keluar] — tarif Sumopod/OpenAI (cek ulang kalau diskon berubah)
   'gpt-4.1-mini': [0.4, 1.6], 'gpt-4.1-nano': [0.1, 0.4], 'gpt-4.1': [2, 8],
   'gpt-4o-mini': [0.15, 0.6], 'gpt-4o': [2.5, 10],
+  'claude-sonnet-5': [2, 10], 'claude-haiku-4-5': [1, 5], 'claude-opus-5-5': [4, 20],
+  'gemini-3.5-flash': [1.5, 9], 'gemini-3-flash': [0.5, 3], 'gemini-3.1-flash-lite': [0.25, 1.5], 'gemini-3.1-pro': [2, 12],
+  'deepseek-v4.1-flash': [0.1, 0.25], 'deepseek-v4-flash': [0.1, 0.25], 'deepseek-v4-pro': [0.66, 1.98],
+  'glm-5.3-flash': [0.015, 0.25], 'glm-5.2': [1.05, 3.3],
+};
+const kunciHarga = (model) => {
+  const m = String(model || '').toLowerCase().replace(/^[a-z0-9_-]+\//, '');
+  return Object.keys(HARGA_AI).sort((a, b) => b.length - a.length).find(k => m.startsWith(k));
 };
 function hitungBiaya(r) {
   const jamAudio = (r.stt_detik || 0) / 3600;
   const tarif = HARGA_STT[r.stt_model] ?? HARGA_STT._lain;
   const stt = jamAudio * (tarif + HARGA_DIARISASI) * KURS;
-  const kunci = Object.keys(HARGA_AI).sort((a, b) => b.length - a.length).find(k => (r.ai_model || '').startsWith(k));
+  const kunci = kunciHarga(r.ai_model);
   const hAi = kunci ? HARGA_AI[kunci] : null;
   const ai = hAi ? ((r.ai_token_in || 0) * hAi[0] + (r.ai_token_out || 0) * hAi[1]) / 1e6 * KURS : 0;
   return { stt, ai, total: stt + ai, aiDikenal: !!hAi || !r.ai_model };
@@ -1140,7 +1170,7 @@ function muatScript(src, cek) {
 }
 const biayaDeck = (d) => {
   if (!d) return 0;
-  const k = Object.keys(HARGA_AI).sort((a, b) => b.length - a.length).find(x => (d.model || '').startsWith(x));
+  const k = kunciHarga(d.model);
   return k ? (d.token_in * HARGA_AI[k][0] + d.token_out * HARGA_AI[k][1]) / 1e6 * KURS : 0;
 };
 
@@ -1339,7 +1369,7 @@ async function muatModel() {
 }
 document.querySelectorAll('#atur-model select').forEach(x => x.addEventListener('change', async () => {
   const { error } = await sb.from('pengaturan_app').update({ [x.dataset.k]: x.value }).eq('id', 1);
-  toast(error ? pesanAa(error.message) : 'Siap, Aa pakai ' + x.options[x.selectedIndex].text.split(' · ')[0].replace(' (disarankan)','') + '.');
+  toast(error ? pesanAa(error.message) : 'Siap, Aa pakai ' + x.options[x.selectedIndex].text.split(' · ')[0].replace(/ \(.*\)$/, '') + '.');
 }));
 function tutupAtur() { $('atur').classList.add('hidden'); }
 $('atur-tema').addEventListener('click', e => {
