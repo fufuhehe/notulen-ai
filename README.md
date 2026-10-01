@@ -9,7 +9,7 @@ HP (PWA) ──upload──▶ Supabase Storage + tabel rapat
                          │ status berubah → Supabase otomatis colek n8n
                          ▼
 n8n "1 Transkrip": AssemblyAI (pisah speaker) → simpan transkrip
-n8n "2 Resume":    OpenAI (gpt-4o-mini)       → simpan resume
+n8n "2 Resume":    AI via Sumopod (model dipilih di app) → simpan notulen
                          ▼
 HP menampilkan resume, transkrip, dan form kasih nama speaker
 ```
@@ -29,7 +29,7 @@ HP menampilkan resume, transkrip, dan form kasih nama speaker
    | Header Auth | `Kunci Notulen` | Name: `x-kunci` · Value: kata kunci yang sama dengan di SQL |
    | Supabase API | `Supabase Notulen` | Host: Project URL · Service Role Secret: secret/service_role key |
    | AssemblyAI API | (bebas) | API key AssemblyAI |
-   | OpenAI | (sudah ada) | — |
+   | OpenAI | (bebas) | API Key dari **Sumopod** (atau OpenAI). Node *Minta AI* memanggil `ai.sumopod.com/v1/chat/completions`; kalau pakai OpenAI langsung, ganti URL di node itu |
 2. **Import** dua workflow: buka [`setup/2-n8n-transkrip.json`](setup/2-n8n-transkrip.json) dan [`setup/3-n8n-resume.json`](setup/3-n8n-resume.json) → tombol *Raw* → salin semua → di n8n bikin workflow baru → tempel (Ctrl+V) di kanvas.
 3. Buka node yang ada tanda merah, lalu pilih credential-nya.
 4. **Aktifkan (Publish) dua-duanya.**

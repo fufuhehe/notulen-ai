@@ -9,7 +9,7 @@
         "responseMode": "onReceived",
         "options": {}
       },
-      "id": "55bc73be-183f-49fd-98c2-088a72727051",
+      "id": "4616fdbe-add5-482e-8692-3fced62b502b",
       "name": "Webhook",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2,
@@ -17,7 +17,7 @@
         0,
         0
       ],
-      "webhookId": "d547dd0a-34e7-43c1-878d-5d64db3e467e",
+      "webhookId": "78eb7361-c6d3-4656-840a-58eb5f2db390",
       "credentials": {
         "httpHeaderAuth": {
           "id": "",
@@ -45,7 +45,7 @@
         "jsonBody": "={{ JSON.stringify({ status: 'meresume', error: null }) }}",
         "options": {}
       },
-      "id": "c7395d6f-42dc-4ce0-862d-c76a4ff25647",
+      "id": "a014a1d9-519b-4647-9900-9005e4da0a63",
       "name": "Tandai meresume",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
@@ -64,7 +64,7 @@
       "parameters": {
         "jsCode": "// Susun transkrip yang sudah diberi nama speaker, untuk dikirim ke OpenAI\nconst r = $input.first().json;\nif (!Array.isArray(r.transkrip) || !r.transkrip.length) {\n  throw new Error('Transkrip belum ada untuk rapat ini');\n}\n\nconst nama = r.nama_speaker || {};\nconst label = (s) => nama[s] || ('Speaker ' + s);\nconst jam = (d) => [Math.floor(d / 3600), Math.floor(d / 60) % 60, d % 60]\n  .map(n => String(n).padStart(2, '0')).join(':');\n\n// Ucapan berurutan dari orang yang sama digabung jadi satu baris\nconst baris = [];\nfor (const u of r.transkrip) {\n  const akhir = baris[baris.length - 1];\n  if (akhir && akhir.s === u.s) akhir.t += ' ' + u.t;\n  else baris.push({ s: u.s, m: u.m, t: u.t });\n}\n\nconst peserta = [...new Set(r.transkrip.map(u => u.s))].sort().map(label).join(', ');\nconst tanggal = new Date(r.created_at).toLocaleDateString('id-ID', {\n  timeZone: 'Asia/Jakarta', weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',\n});\nconst durasi = jam(r.durasi_detik || r.transkrip[r.transkrip.length - 1].m);\n\nconst prompt = `Judul: ${r.judul || 'Rapat'}\nTanggal: ${tanggal}\nDurasi: ${durasi}\nPeserta bicara: ${peserta}\n\nTRANSKRIP:\n${baris.map(b => `[${jam(b.m)}] ${label(b.s)}: ${b.t}`).join('\\n')}`;\n\nreturn [{ json: { prompt } }];\n"
       },
-      "id": "beaa2482-ca62-4bb9-b326-b967a87d1f1e",
+      "id": "74121637-2ade-491e-8759-ea07fd662982",
       "name": "Susun prompt",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -75,36 +75,53 @@
     },
     {
       "parameters": {
-        "resource": "text",
-        "operation": "message",
-        "modelId": {
-          "__rl": true,
-          "mode": "id",
-          "value": "={{ (() => { const m = $('Webhook').first().json.body.model_notulen || 'otomatis'; return m === 'otomatis' ? (String($json.prompt || '').length > 60000 ? 'gpt-4.1-mini' : 'gpt-4.1') : m; })() }}"
-        },
-        "messages": {
-          "values": [
+        "mode": "manual",
+        "assignments": {
+          "assignments": [
             {
-              "content": "Kamu notulis rapat senior yang berpengalaman. Tugasmu membuat notulen yang LENGKAP dan BERGUNA dari transkrip rapat otomatis. Pembacanya pimpinan dan staf yang tidak ikut rapat: mereka harus bisa tahu apa yang dibahas, fakta apa yang terungkap, dan siapa harus mengerjakan apa.\n\nPRINSIP\n- Detail sebanding dengan isi rapat. Rapat 30 menit yang padat biasanya butuh 300–600 kata. Jangan meringkas sampai hilang substansinya.\n- WAJIB simpan hal konkret: angka (rupiah, persen, jumlah, tanggal, durasi), nama orang, nama lembaga/media/program/acara, dan contoh kasus yang disebut.\n- Tulis siapa menyampaikan apa. Bedakan paparan tamu dan tanggapan/arahan pimpinan.\n- Hanya pakai informasi yang ada di transkrip. Jangan mengarang. Kalau suatu bagian tidak jelas terdengar, lewati; jangan menebak isinya.\n- Jangan menambah penilaian atau keterangan yang tidak diucapkan (misalnya penilaian hasil, atau jabatan seseorang yang tidak disebut). Kalau dua nama merujuk ke hal yang sama, tulis satu saja.\n\nTRANSKRIP HASIL MESIN\nTranskrip ini banyak salah dengar. Perbaiki istilah yang jelas salah berdasarkan konteks: nama lembaga, jabatan, program, media, dan istilah teknis. Kalau sebuah nama muncul dengan beberapa ejaan, pakai satu ejaan yang benar secara konsisten di seluruh notulen.\n(Opsional: tambahkan di sini daftar istilah yang sering salah dengar di rapat-rapatmu, format \"salah → benar\".)\nLabel \"Speaker X\" artinya nama orangnya belum diketahui. Pakai label itu apa adanya.\n\nTINDAK LANJUT\nTangkap juga komitmen informal, misalnya \"nanti kirim proposal\", \"saya kawal\", \"nanti sama Mas X\", \"kita jadwalkan\". Setiap tindak lanjut ditulis: siapa (PIC), apa, kepada/lewat siapa, tenggat kalau disebut, dan catatan syarat kalau ada (contoh: \"anggaran terbatas\"). Tulis \"PIC belum jelas\" hanya kalau memang tidak ada petunjuk sama sekali.\n\nFORMAT (untuk WhatsApp)\nJudul bagian pakai *tebal*, daftar pakai \"- \". Jangan pakai tabel, tanda #, atau **dobel bintang**. JANGAN menulis bagian yang kosong. Jangan menulis kalimat pengisi seperti \"Tidak ada keputusan\".\n\n*<judul>*\n<tanggal> | Durasi <durasi>\nPeserta bicara: <peserta>\n\n*Ringkasan*\n3–5 kalimat: tujuan pertemuan, pokok persoalan, dan hasil utamanya.\n\n*Poin Penting*\nKelompokkan per topik atau per pihak (misalnya \"Paparan <tamu>\" lalu \"Tanggapan <pimpinan>\"). Tiap poin memuat fakta, angka, dan nama spesifik.\n\n*Fakta & Angka*\nDaftar singkat angka/data kunci yang terungkap. Lewati kalau tidak ada.\n\n*Kesepakatan*\nHanya yang benar-benar disepakati.\n\n*Tindak Lanjut*\n- [PIC] apa yang dikerjakan → kepada/lewat siapa (tenggat) — catatan\n\n*Isu Terbuka*\nHal yang belum tuntas atau perlu dibahas lagi.",
-              "role": "system"
-            },
-            {
-              "content": "={{ $json.prompt }}"
+              "id": "c04505d2-8bc9-49d5-8dcb-59ae3fa868ac",
+              "name": "sistem",
+              "value": "Kamu notulis rapat senior yang berpengalaman. Tugasmu membuat notulen yang LENGKAP dan BERGUNA dari transkrip rapat otomatis. Pembacanya pimpinan dan staf yang tidak ikut rapat: mereka harus bisa tahu apa yang dibahas, fakta apa yang terungkap, dan siapa harus mengerjakan apa.\n\nPRINSIP\n- Detail sebanding dengan isi rapat. Rapat 30 menit yang padat biasanya butuh 300–600 kata. Jangan meringkas sampai hilang substansinya.\n- WAJIB simpan hal konkret: angka (rupiah, persen, jumlah, tanggal, durasi), nama orang, nama lembaga/media/program/acara, dan contoh kasus yang disebut.\n- Tulis siapa menyampaikan apa. Bedakan paparan tamu dan tanggapan/arahan pimpinan.\n- Hanya pakai informasi yang ada di transkrip. Jangan mengarang. Kalau suatu bagian tidak jelas terdengar, lewati; jangan menebak isinya.\n- Jangan menambah penilaian atau keterangan yang tidak diucapkan (misalnya penilaian hasil, atau jabatan seseorang yang tidak disebut). Kalau dua nama merujuk ke hal yang sama, tulis satu saja.\n\nTRANSKRIP HASIL MESIN\nTranskrip ini banyak salah dengar. Perbaiki istilah yang jelas salah berdasarkan konteks: nama lembaga, jabatan, program, media, dan istilah teknis. Kalau sebuah nama muncul dengan beberapa ejaan, pakai satu ejaan yang benar secara konsisten di seluruh notulen.\n(Opsional: tambahkan di sini daftar istilah yang sering salah dengar di rapat-rapatmu, format \"salah → benar\".)\nLabel \"Speaker X\" artinya nama orangnya belum diketahui. Pakai label itu apa adanya.\n\nTINDAK LANJUT\nTangkap juga komitmen informal, misalnya \"nanti kirim proposal\", \"saya kawal\", \"nanti sama Mas X\", \"kita jadwalkan\". Setiap tindak lanjut ditulis: siapa (PIC), apa, kepada/lewat siapa, tenggat kalau disebut, dan catatan syarat kalau ada (contoh: \"anggaran terbatas\"). Tulis \"PIC belum jelas\" hanya kalau memang tidak ada petunjuk sama sekali.\n\nFORMAT (untuk WhatsApp)\nJudul bagian pakai *tebal*, daftar pakai \"- \". Jangan pakai tabel, tanda #, atau **dobel bintang**. JANGAN menulis bagian yang kosong. Jangan menulis kalimat pengisi seperti \"Tidak ada keputusan\".\n\n*<judul>*\n<tanggal> | Durasi <durasi>\nPeserta bicara: <peserta>\n\n*Ringkasan*\n3–5 kalimat: tujuan pertemuan, pokok persoalan, dan hasil utamanya.\n\n*Poin Penting*\nKelompokkan per topik atau per pihak (misalnya \"Paparan <tamu>\" lalu \"Tanggapan <pimpinan>\"). Tiap poin memuat fakta, angka, dan nama spesifik.\n\n*Fakta & Angka*\nDaftar singkat angka/data kunci yang terungkap. Lewati kalau tidak ada.\n\n*Kesepakatan*\nHanya yang benar-benar disepakati.\n\n*Tindak Lanjut*\n- [PIC] apa yang dikerjakan → kepada/lewat siapa (tenggat) — catatan\n\n*Isu Terbuka*\nHal yang belum tuntas atau perlu dibahas lagi.",
+              "type": "string"
             }
           ]
         },
-        "simplify": false,
-        "options": {
-          "maxTokens": 8000,
-          "temperature": 0.2
-        }
+        "includeOtherFields": true,
+        "options": {}
       },
-      "id": "f926c690-c19c-4ac5-b57c-db3b706991e3",
-      "name": "OpenAI",
-      "type": "@n8n/n8n-nodes-langchain.openAi",
-      "typeVersion": 1.8,
+      "id": "80ab3436-36db-494e-bfbf-88c952343d96",
+      "name": "Prompt sistem",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
       "position": [
         660,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://ai.sumopod.com/v1/chat/completions",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "openAiApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ model: (() => { const m = $('Webhook').first().json.body.model_notulen || 'otomatis'; return m === 'otomatis' ? (String($json.prompt || '').length > 60000 ? 'gpt-4.1-mini' : 'gpt-4.1') : m; })(), temperature: 0.2, max_tokens: 8000, messages: [ { role: 'system', content: $json.sistem }, { role: 'user', content: $json.prompt || '(kosong)' } ] }) }}",
+        "options": {
+          "timeout": 600000,
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
+      },
+      "id": "36eb580e-5b5b-4505-a1fd-c74f1497dc26",
+      "name": "Minta AI",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        880,
         0
       ],
       "credentials": {
@@ -113,10 +130,42 @@
           "name": "OpenAI account"
         }
       },
-      "onError": "continueErrorOutput",
       "retryOnFail": true,
       "maxTries": 2,
       "waitBetweenTries": 5000
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "id": "bfd2abcd-f855-4045-b38b-4315479175db",
+              "leftValue": "={{ Array.isArray($json.choices) && $json.choices.length > 0 }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "8e1aae15-a67a-493e-b50b-92b410057283",
+      "name": "Ada jawaban?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        1100,
+        0
+      ]
     },
     {
       "parameters": {
@@ -138,12 +187,12 @@
         "jsonBody": "={{ (() => { const c = $json.choices[0], u = $json.usage || {}, lama = $('Tandai meresume').first().json; return JSON.stringify({ status: 'selesai', resume: String(c.message.content || '').trim(), error: c.finish_reason === 'length' ? 'Resume terpotong karena terlalu panjang' : null, ai_model: $json.model, ai_token_in: (lama.ai_token_in || 0) + (u.prompt_tokens || 0), ai_token_out: (lama.ai_token_out || 0) + (u.completion_tokens || 0) }); })() }}",
         "options": {}
       },
-      "id": "eb8f70f9-f052-4211-a543-e98707559f63",
+      "id": "f3dbf632-ce50-4c01-b217-eef01e222ef0",
       "name": "Simpan resume",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        900,
+        1320,
         -80
       ],
       "credentials": {
@@ -170,15 +219,15 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify({ status: 'gagal', error: String(typeof $json.error === 'object' && $json.error ? ($json.error.message || JSON.stringify($json.error)) : ($json.error || 'OpenAI gagal')).slice(0, 500) }) }}",
+        "jsonBody": "={{ JSON.stringify({ status: 'gagal', error: 'AI: ' + String(($json.error && ($json.error.message || (typeof $json.error === 'string' ? $json.error : JSON.stringify($json.error)))) || $json.message || $json.detail || JSON.stringify($json)).slice(0, 500) }) }}",
         "options": {}
       },
-      "id": "d6a3ab80-83c8-487f-8040-3ecb3ab7f87d",
+      "id": "3a403c28-6bac-4898-a07f-18a966692533",
       "name": "Tandai gagal",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        900,
+        1320,
         120
       ],
       "credentials": {
@@ -216,14 +265,36 @@
       "main": [
         [
           {
-            "node": "OpenAI",
+            "node": "Prompt sistem",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "OpenAI": {
+    "Prompt sistem": {
+      "main": [
+        [
+          {
+            "node": "Minta AI",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Minta AI": {
+      "main": [
+        [
+          {
+            "node": "Ada jawaban?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ada jawaban?": {
       "main": [
         [
           {

@@ -10,13 +10,15 @@ const tambahToken = (u) => ({
 
 // Gagal sebelum/saat memanggil AI
 if (bahan.gagal || res.error || !res.choices) {
-  const e = bahan.gagal ? bahan.error : (res.error && (res.error.message || JSON.stringify(res.error))) || 'AI tidak membalas';
+  const e = bahan.gagal ? bahan.error : 'AI: ' + ((res.error && (res.error.message || (typeof res.error === 'string' ? res.error : JSON.stringify(res.error)))) || res.message || JSON.stringify(res).slice(0, 300));
   return [{ json: { deck_status: 'gagal', deck_error: String(e).slice(0, 500), ...tambahToken(res.usage) } }];
 }
 
-let isi = res.choices[0].message.content;
+let isi = res.choices[0].message && res.choices[0].message.content;
 if (typeof isi === 'string') {
-  try { isi = JSON.parse(isi); } catch (_) { isi = null; }
+  // sebagian model membungkus JSON dengan ```json ... ``` atau teks lain — ambil dari { pertama s/d } terakhir
+  const a = isi.indexOf('{'), z = isi.lastIndexOf('}');
+  try { isi = JSON.parse(a >= 0 && z > a ? isi.slice(a, z + 1) : isi); } catch (_) { isi = null; }
 }
 const daftar = (x) => (Array.isArray(x) ? x : []);
 if (!isi || typeof isi !== 'object' || !isi.judul) {

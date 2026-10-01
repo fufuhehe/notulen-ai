@@ -574,6 +574,7 @@ const POLA_ERROR = [
   [/JWT|session|expired/i, 'Sesi login-nya udah basi. Keluar terus masuk lagi ya.'],
   [/permission denied|row-level security|violates/i, 'Aa ga punya izin buat itu. Cek pengaturan akses (SQL setup) di Supabase.'],
   [/payload too large|exceeded the maximum|too large|413/i, 'Filenya kegedean buat Aa (maks 50 MB).'],
+  [/(model|engine)[^.]{0,60}(not (found|exist|support)|invalid|unknown|tidak)|invalid model|unknown model|no such model/i, 'Aa ga kenal model AI yang dipilih. Ganti model di Pengaturan, terus Coba lagi.'],
   [/not found|404/i, 'Aa nyari tapi ga ketemu. Mungkin datanya udah dihapus, atau workflow n8n belum aktif.'],
 ];
 function pesanAa(raw) {

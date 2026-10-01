@@ -118,6 +118,30 @@ const w1 = wf('Notulen - 1 Transkrip', [
   'Ringkas transkrip': { main: [[L('Simpan transkrip')]] },
 });
 
+
+// ---- node AI generik (OpenAI-compatible: Sumopod / OpenAI) ----
+const AI_URL = 'https://ai.sumopod.com/v1/chat/completions';   // ganti ke https://api.openai.com/v1/chat/completions kalau pakai OpenAI langsung
+const pilihModel = (key) => `(() => { const m = $('Webhook').first().json.body.${key} || 'otomatis'; return m === 'otomatis' ? (String($json.prompt || '').length > 60000 ? 'gpt-4.1-mini' : 'gpt-4.1') : m; })()`;
+const promptSistem = (teks, pos) => ({
+  parameters: {
+    mode: 'manual',
+    assignments: { assignments: [{ id: uid(), name: 'sistem', value: teks, type: 'string' }] },
+    includeOtherFields: true, options: {},
+  },
+  id: uid(), name: 'Prompt sistem', type: 'n8n-nodes-base.set', typeVersion: 3.4, position: pos,
+});
+const nodeAI = (key, maxTokens, pos) => ({
+  parameters: {
+    method: 'POST', url: AI_URL,
+    authentication: 'predefinedCredentialType', nodeCredentialType: 'openAiApi',
+    sendBody: true, specifyBody: 'json',
+    jsonBody: `={{ JSON.stringify({ model: ${pilihModel(key)}, temperature: 0.2, max_tokens: ${maxTokens}, messages: [ { role: 'system', content: $json.sistem }, { role: 'user', content: $json.prompt || '(kosong)' } ] }) }}`,
+    options: { timeout: 600000, response: { response: { neverError: true } } },
+  },
+  id: uid(), name: 'Minta AI', type: 'n8n-nodes-base.httpRequest', typeVersion: 4.2, position: pos,
+  credentials: CRED.openai, retryOnFail: true, maxTries: 2, waitBetweenTries: 5000,
+});
+
 // ================= WORKFLOW 2: RESUME =================
 const SISTEM = fs.readFileSync(path.join(__dirname, 'prompt-resume.txt'), 'utf8').trim();
 
@@ -129,30 +153,20 @@ const w2 = wf('Notulen - 2 Resume', [
     representation: true,
   }),
   code('Susun prompt', 'susun-prompt.js', [440, 0]),
-  {
-    parameters: {
-      resource: 'text', operation: 'message',
-      modelId: { __rl: true, mode: 'id', value: "={{ (() => { const m = $('Webhook').first().json.body.model_notulen || 'otomatis'; return m === 'otomatis' ? (String($json.prompt || '').length > 60000 ? 'gpt-4.1-mini' : 'gpt-4.1') : m; })() }}" },
-      messages: { values: [
-        { content: SISTEM, role: 'system' },
-        { content: '={{ $json.prompt }}' },
-      ] },
-      simplify: false,
-      options: { maxTokens: 8000, temperature: 0.2 },
-    },
-    id: uid(), name: 'OpenAI', type: '@n8n/n8n-nodes-langchain.openAi', typeVersion: 1.8,
-    position: [660, 0], credentials: CRED.openai, onError: 'continueErrorOutput',
-    retryOnFail: true, maxTries: 2, waitBetweenTries: 5000,
-  },
-  supa('Simpan resume', [900, -80], {
+  promptSistem(SISTEM, [660, 0]),
+  nodeAI('model_notulen', 8000, [880, 0]),
+  ifNode('Ada jawaban?', [1100, 0], [{ leftValue: '={{ Array.isArray($json.choices) && $json.choices.length > 0 }}', rightValue: '', operator: { type: 'boolean', operation: 'true', singleValue: true } }]),
+  supa('Simpan resume', [1320, -80], {
     body: `={{ (() => { const c = $json.choices[0], u = $json.usage || {}, lama = $('Tandai meresume').first().json; return JSON.stringify({ status: 'selesai', resume: String(c.message.content || '').trim(), error: c.finish_reason === 'length' ? 'Resume terpotong karena terlalu panjang' : null, ai_model: $json.model, ai_token_in: (lama.ai_token_in || 0) + (u.prompt_tokens || 0), ai_token_out: (lama.ai_token_out || 0) + (u.completion_tokens || 0) }); })() }}`,
   }),
-  supa('Tandai gagal', [900, 120], { body: '=' + errExpr.replace('Waktu tunggu habis (lebih dari 2 jam)', 'OpenAI gagal') }),
+  supa('Tandai gagal', [1320, 120], { body: `={{ JSON.stringify({ status: 'gagal', error: 'AI: ' + String(($json.error && ($json.error.message || (typeof $json.error === 'string' ? $json.error : JSON.stringify($json.error)))) || $json.message || $json.detail || JSON.stringify($json)).slice(0, 500) }) }}` }),
 ], {
   Webhook: { main: [[L('Tandai meresume')]] },
   'Tandai meresume': { main: [[L('Susun prompt')]] },
-  'Susun prompt': { main: [[L('OpenAI')]] },
-  OpenAI: { main: [[L('Simpan resume')], [L('Tandai gagal')]] },
+  'Susun prompt': { main: [[L('Prompt sistem')]] },
+  'Prompt sistem': { main: [[L('Minta AI')]] },
+  'Minta AI': { main: [[L('Ada jawaban?')]] },
+  'Ada jawaban?': { main: [[L('Simpan resume')], [L('Tandai gagal')]] },
 });
 
 // ================= WORKFLOW 4: PAPARAN (deck + infografis) =================
@@ -165,29 +179,16 @@ const w4 = wf('Notulen - 4 Paparan', [
     representation: true,
   }),
   code('Susun bahan', 'susun-bahan-deck.js', [440, 0]),
-  {
-    parameters: {
-      resource: 'text', operation: 'message',
-      modelId: { __rl: true, mode: 'id', value: "={{ (() => { const m = $('Webhook').first().json.body.model_paparan || 'otomatis'; return m === 'otomatis' ? (String($json.prompt || '').length > 60000 ? 'gpt-4.1-mini' : 'gpt-4.1') : m; })() }}" },
-      messages: { values: [
-        { content: PROMPT_DECK, role: 'system' },
-        { content: '={{ $json.prompt || "(kosong)" }}' },
-      ] },
-      simplify: false,
-      jsonOutput: true,
-      options: { maxTokens: 4000, temperature: 0.2 },
-    },
-    id: uid(), name: 'OpenAI', type: '@n8n/n8n-nodes-langchain.openAi', typeVersion: 1.8,
-    position: [660, 0], credentials: CRED.openai, onError: 'continueErrorOutput',
-    retryOnFail: true, maxTries: 2, waitBetweenTries: 5000,
-  },
-  code('Rakit deck', 'rakit-deck.js', [900, 0]),
-  supa('Simpan deck', [1120, 0], { body: '={{ JSON.stringify($json) }}' }),
+  promptSistem(PROMPT_DECK, [660, 0]),
+  nodeAI('model_paparan', 4000, [880, 0]),
+  code('Rakit deck', 'rakit-deck.js', [1100, 0]),
+  supa('Simpan deck', [1320, 0], { body: '={{ JSON.stringify($json) }}' }),
 ], {
   Webhook: { main: [[L('Tandai deck diproses')]] },
   'Tandai deck diproses': { main: [[L('Susun bahan')]] },
-  'Susun bahan': { main: [[L('OpenAI')]] },
-  OpenAI: { main: [[L('Rakit deck')], [L('Rakit deck')]] },
+  'Susun bahan': { main: [[L('Prompt sistem')]] },
+  'Prompt sistem': { main: [[L('Minta AI')]] },
+  'Minta AI': { main: [[L('Rakit deck')]] },
   'Rakit deck': { main: [[L('Simpan deck')]] },
 });
 
