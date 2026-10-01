@@ -181,6 +181,7 @@ details#d-biaya summary::-webkit-details-marker{display:none}
 .resume b{color:var(--ink);font-weight:750}
 .aksi{position:sticky;bottom:0;display:flex;gap:.625rem;padding:.75rem 0 calc(.75rem + env(safe-area-inset-bottom));margin-top:1rem;background:linear-gradient(to top,var(--bg) 70%,transparent)}
 .aksi button{flex:1}
+.aksi button.ulang{flex:0 0 auto;padding-left:.9rem;padding-right:.9rem}
 .line{padding:.75rem 0;border-bottom:1px solid var(--line-2);font-size:.9375rem;line-height:1.6;color:var(--ink-2)}
 .line:last-child{border-bottom:0}
 .line b{color:var(--accent);font-weight:700}
@@ -262,6 +263,7 @@ body.ada-player .aksi{bottom:4.5rem}
   <symbol id="i-atur" viewBox="0 0 24 24"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></symbol>
   <symbol id="i-back" viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></symbol>
   <symbol id="i-pen" viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16v4z"/><path d="M13.5 6.5l4 4"/></symbol>
+  <symbol id="i-ulang" viewBox="0 0 24 24"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/></symbol>
   <symbol id="i-copy" viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="12" rx="2.5"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></symbol>
   <symbol id="i-bagi" viewBox="0 0 24 24"><circle cx="18" cy="5.5" r="2.5"/><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="18.5" r="2.5"/><path d="M8.2 10.8l7.6-4.1M8.2 13.2l7.6 4.1"/></symbol>
   <symbol id="i-send" viewBox="0 0 24 24"><path d="M21 3L10 14"/><path d="M21 3l-7 18-4-7-7-4 18-7z"/></symbol>
@@ -377,6 +379,7 @@ body.ada-player .aksi{bottom:4.5rem}
     <div id="t-resume" class="panel">
       <div id="d-resume" class="resume muted">Notulen belum ada.</div>
       <div class="aksi" id="d-resume-btn">
+        <button class="ulang" onclick="buatUlangNotulen()" title="Buat ulang notulen" aria-label="Buat ulang notulen"><svg class="i"><use href="#i-ulang"/></svg></button>
         <button onclick="salin(denganTtd(state.rapat.resume))"><svg class="i"><use href="#i-copy"/></svg>Salin</button>
         <button class="accent" onclick="bagikan()"><svg class="i"><use href="#i-bagi"/></svg>Bagikan</button>
       </div>
@@ -1116,6 +1119,15 @@ async function prosesUlang() {
   const { error } = await sb.from('rapat').update({ status: tujuan, error: null }).eq('id', r.id);
   if (error) return toast(pesanAa(error.message), 5000);
   toast('Siap, Aa kerjain ulang…'); bukaDetail(r.id);
+}
+
+async function buatUlangNotulen() {
+  const r = state.rapat;
+  if (!Array.isArray(r.transkrip) || !r.transkrip.length) return toast('Transkripnya belum ada, jadi notulen belum bisa dibuat ulang.');
+  if (!confirm('Buat ulang notulen pakai model di Pengaturan? Notulen yang sekarang akan diganti.')) return;
+  const { error } = await sb.from('rapat').update({ status: 'minta_resume', error: null }).eq('id', r.id);
+  if (error) return toast(pesanAa(error.message), 5000);
+  toast('Siap, Aa tulis ulang notulennya…'); bukaDetail(r.id);
 }
 
 async function gantiJudul() {
