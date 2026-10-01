@@ -1,6 +1,6 @@
 // Service worker: app bisa dibuka cepat & tetap tampil saat sinyal jelek.
 // Data rapat (Supabase) tidak pernah di-cache.
-const CACHE = 'notulen-v10';
+const CACHE = 'notulen-v11';
 const SHELL = ['./', 'index.html', 'manifest.webmanifest', 'icon.svg', 'icon-192.png', 'icon-512.png',
   'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.js',
   'https://cdn.jsdelivr.net/npm/tus-js-client@4.3.1/dist/tus.min.js'];

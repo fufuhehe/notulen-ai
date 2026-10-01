@@ -82,7 +82,14 @@ header.top h1{font-size:1.0625rem;font-weight:700;margin:0;flex:1;white-space:no
 .sapa{font-size:1.75rem;line-height:1.15;font-weight:800;letter-spacing:-.03em;margin:.75rem 0 .25rem}
 .sapa span{color:var(--muted);font-weight:600}
 .cta{position:relative;overflow:hidden;display:flex;align-items:center;gap:1rem;width:100%;text-align:left;margin:1.25rem 0 .75rem;padding:1.25rem;border-radius:var(--r-lg);background:var(--navy);color:#fff;border:0;min-height:0;box-shadow:var(--shadow)}
-.cta .rec{flex:none;width:3.75rem;height:3.75rem;border-radius:50%;background:var(--rec);display:grid;place-items:center;box-shadow:0 0 0 .45rem rgba(255,99,105,.18)}
+.cta .rec{position:relative;flex:none;width:3.75rem;height:3.75rem;margin:.35rem;border-radius:50%;background:var(--rec);display:grid;place-items:center;box-shadow:0 0 0 .3rem rgba(255,99,105,.22),0 4px 14px rgba(229,72,77,.45)}
+.cta .rec::before,.cta .rec::after{content:"";position:absolute;inset:0;border-radius:50%;border:2px solid rgba(255,120,124,.75);animation:sonar 2.6s cubic-bezier(.2,.6,.3,1) infinite;pointer-events:none}
+.cta .rec::after{animation-delay:1.3s}
+.cta .rec svg{position:relative;z-index:1;animation:napas 2.6s ease-in-out infinite}
+@keyframes sonar{0%{transform:scale(1);opacity:.85}80%{opacity:0}100%{transform:scale(1.85);opacity:0}}
+@keyframes napas{0%,100%{transform:scale(1)}50%{transform:scale(1.07)}}
+.cta:active .rec::before,.cta:active .rec::after{animation-duration:.9s}
+@media (prefers-reduced-motion:reduce){.cta .rec::before,.cta .rec::after,.cta .rec svg{animation:none}}
 .cta .rec svg{width:1.75rem;height:1.75rem;stroke:#fff;stroke-width:2}
 .cta b{display:block;font-size:1.1875rem;letter-spacing:-.01em}
 .cta small{display:block;font-weight:500;color:#aebdcc;font-size:.8125rem;margin-top:.15rem;font-style:italic}
