@@ -26,7 +26,7 @@
   --skala:1;
   --bg:#f5f4f0; --surface:#ffffff; --raised:#fbfaf7; --ink:#15171c; --ink-2:#3b3f46; --muted:#6c7079; --line:#e6e3dc; --line-2:#efece6; --toast-bg:#18212e;
   --accent:#0f766e; --accent-ink:#ffffff; --accent-soft:#e2f1ed; --navy:#0b2545;
-  --aa:#b45309; --aa-soft:#fdf1e3; --rec:#e5484d; --rec-soft:#fdecec; --ok:#0f766e; --bad:#c2410c; --bad-soft:#fdeee6;
+  --pp:#6d4bd1; --pp-soft:#efeafc; --aa:#b45309; --aa-soft:#fdf1e3; --rec:#e5484d; --rec-soft:#fdecec; --ok:#0f766e; --bad:#c2410c; --bad-soft:#fdeee6;
   --shadow:0 1px 2px rgba(20,22,28,.04),0 8px 24px -12px rgba(20,22,28,.12);
   --r-lg:22px; --r:16px; --r-sm:12px;
   color-scheme:light;
@@ -34,14 +34,14 @@
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
   --bg:#0c0e11; --surface:#15181d; --raised:#1a1e24; --ink:#eceef0; --ink-2:#c9cdd2; --muted:#949aa2; --line:#262b32; --line-2:#1f2329; --toast-bg:#283241;
   --accent:#3dd6c0; --accent-ink:#04201c; --accent-soft:#0f2e2a; --navy:#0b2545;
-  --aa:#f5a524; --aa-soft:#2e2210; --rec:#ff6369; --rec-soft:#3a1719; --ok:#3dd6c0; --bad:#ff8f5a; --bad-soft:#35180d;
+  --pp:#ad97ff; --pp-soft:#231b3f; --aa:#f5a524; --aa-soft:#2e2210; --rec:#ff6369; --rec-soft:#3a1719; --ok:#3dd6c0; --bad:#ff8f5a; --bad-soft:#35180d;
   --shadow:0 1px 2px rgba(0,0,0,.3),0 12px 32px -16px rgba(0,0,0,.6);
   color-scheme:dark;
 }}
 :root[data-theme="dark"]{
   --bg:#0c0e11; --surface:#15181d; --raised:#1a1e24; --ink:#eceef0; --ink-2:#c9cdd2; --muted:#949aa2; --line:#262b32; --line-2:#1f2329; --toast-bg:#283241;
   --accent:#3dd6c0; --accent-ink:#04201c; --accent-soft:#0f2e2a; --navy:#0b2545;
-  --aa:#f5a524; --aa-soft:#2e2210; --rec:#ff6369; --rec-soft:#3a1719; --ok:#3dd6c0; --bad:#ff8f5a; --bad-soft:#35180d;
+  --pp:#ad97ff; --pp-soft:#231b3f; --aa:#f5a524; --aa-soft:#2e2210; --rec:#ff6369; --rec-soft:#3a1719; --ok:#3dd6c0; --bad:#ff8f5a; --bad-soft:#35180d;
   --shadow:0 1px 2px rgba(0,0,0,.3),0 12px 32px -16px rgba(0,0,0,.6);
   color-scheme:dark;
 }
@@ -116,6 +116,7 @@ header.top h1{font-size:1.0625rem;font-weight:700;margin:0;flex:1;white-space:no
 .item .ikon{flex:none;width:2.5rem;height:2.5rem;border-radius:.8rem;display:grid;place-items:center;background:var(--raised);color:var(--muted);border:1px solid var(--line-2)}
 .item .ikon.ok{background:var(--accent-soft);color:var(--accent);border-color:transparent}
 .item .ikon.bad{background:var(--bad-soft);color:var(--bad);border-color:transparent}
+.item .ikon.pp{background:var(--pp-soft);color:var(--pp);border-color:transparent}
 .item .ikon.run{background:var(--aa-soft);color:var(--aa);border-color:transparent}
 .item.kosong{justify-content:center;color:var(--muted);font-size:.875rem;cursor:default;padding:2rem 1rem;border-style:dashed;text-align:center}
 
@@ -241,8 +242,6 @@ details#d-biaya summary::-webkit-details-marker{display:none}
 #pm-daftar button.on{border-color:var(--accent,#0f7a6c);background:color-mix(in srgb,var(--accent,#0f7a6c) 8%,var(--surface))}
 #pm-daftar button.on::before{border:5px solid var(--accent,#0f7a6c)}
 #pm-daftar button.on .hg{color:var(--ink-2)}
-.tanda-pp{display:inline-flex;align-items:center;gap:.3rem;margin-top:.35rem;padding:.15rem .5rem .15rem .4rem;border-radius:99px;background:var(--accent-soft);color:var(--accent);font-size:.6875rem;font-weight:700;letter-spacing:.02em}
-.tanda-pp svg.i{width:.85rem;height:.85rem;stroke-width:2.2}
 .ke-panduan{width:100%;margin-top:1.5rem;justify-content:flex-start;background:var(--raised);border-color:var(--line);font-weight:600}
 #panduan .alur{margin:1rem 0 .75rem;padding:0;list-style:none;counter-reset:a;display:grid;gap:.5rem}
 #panduan .alur li{counter-increment:a;display:flex;gap:.65rem;align-items:center;font-size:.875rem;color:var(--ink-2,var(--ink))}
@@ -909,16 +908,16 @@ async function muatDaftar() {
     const g = labelHari(r.created_at);
     const kepala = g !== grupLalu ? `<div class="grup">${esc(g)}</div>` : '';
     grupLalu = g;
-    const jenis = STATUS[r.status] ? STATUS[r.status][1] : '';
-    const ikon = r.status === 'selesai' ? 'i-doc' : r.status === 'gagal' ? 'i-x' : 'i-jam';
+    const pp = r.status === 'selesai' && punyaPaparan(r);
+    const jenis = pp ? 'pp' : STATUS[r.status] ? STATUS[r.status][1] : '';
+    const ikon = pp ? 'i-slide' : r.status === 'selesai' ? 'i-doc' : r.status === 'gagal' ? 'i-x' : 'i-jam';
     const biaya = hitungBiaya(r).total;
     return kepala + `
     <div class="item" onclick="ke('detail','${r.id}')">
-      <div class="ikon ${jenis}"><svg class="i"><use href="#${ikon}"/></svg></div>
+      <div class="ikon ${jenis}" title="${pp ? 'Notulen + paparan' : ''}"><svg class="i"><use href="#${ikon}"/></svg></div>
       <div class="grow">
         <div class="t">${esc(r.judul)}</div>
         <div class="m">${jamSaja(r.created_at)}${r.durasi_detik ? ' · ' + menit(r.durasi_detik) : ''}${biaya ? ' · ±' + rupiah(biaya) : ''}</div>
-        ${punyaPaparan(r) ? '<div class="tanda-pp"><svg class="i"><use href="#i-slide"/></svg>Paparan</div>' : ''}
       </div>
       ${r.status === 'selesai' ? '' : chip(r.status)}
     </div>`;
