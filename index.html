@@ -227,6 +227,17 @@ details#d-biaya summary::-webkit-details-marker{display:none}
 .lembar>div{max-height:92vh;overflow-y:auto;width:100%;max-width:40rem;background:var(--surface);border-radius:var(--r-lg) var(--r-lg) 0 0;padding:.75rem 1.25rem calc(1.5rem + env(safe-area-inset-bottom));animation:naik .22s cubic-bezier(.2,.8,.2,1)}
 .lembar .pegangan{width:2.5rem;height:.3rem;border-radius:99px;background:var(--line);margin:0 auto 1rem}
 .lembar h3{font-size:1.125rem;margin:0 0 .25rem;letter-spacing:-.02em}
+.ke-panduan{width:100%;margin-top:1.5rem;justify-content:flex-start;background:var(--raised);border-color:var(--line);font-weight:600}
+#panduan .alur{margin:1rem 0 .75rem;padding:0;list-style:none;counter-reset:a;display:grid;gap:.5rem}
+#panduan .alur li{counter-increment:a;display:flex;gap:.65rem;align-items:center;font-size:.875rem;color:var(--ink-2,var(--ink))}
+#panduan .alur li::before{content:counter(a);flex:none;width:1.5rem;height:1.5rem;border-radius:50%;display:grid;place-items:center;background:var(--ink);color:var(--surface);font-size:.75rem;font-weight:700}
+#panduan details{border-top:1px solid var(--line)}
+#panduan summary{list-style:none;cursor:pointer;padding:.9rem 0;font-weight:700;font-size:.9375rem;display:flex;justify-content:space-between;align-items:center;gap:1rem}
+#panduan summary::-webkit-details-marker{display:none}
+#panduan summary::after{content:"";width:.5rem;height:.5rem;border-right:2px solid var(--muted);border-bottom:2px solid var(--muted);transform:rotate(45deg);transition:transform .2s;margin-right:.25rem;flex:none}
+#panduan details[open] summary::after{transform:rotate(-135deg)}
+#panduan ul{margin:0 0 1rem;padding-left:1.1rem;display:grid;gap:.45rem;font-size:.875rem;line-height:1.55;color:var(--ink)}
+#panduan ul li::marker{color:var(--muted)}
 .lembar .lbl{font-size:.8125rem;font-weight:700;color:var(--muted);margin:1.25rem 0 .5rem}
 .skala{display:flex;align-items:center;gap:.75rem}
 .skala input{flex:1;padding:0;border:0;box-shadow:none;accent-color:var(--accent);height:2rem;background:none}
@@ -291,6 +302,7 @@ body.ada-player .aksi{bottom:4.5rem}
   <symbol id="i-back" viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></symbol>
   <symbol id="i-pen" viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16v4z"/><path d="M13.5 6.5l4 4"/></symbol>
   <symbol id="i-bulan" viewBox="0 0 24 24"><path d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5z"/></symbol>
+  <symbol id="i-bantu" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.6 9.4a2.5 2.5 0 0 1 4.8.9c0 1.7-2.4 2.2-2.4 3.7M12 17.2v.1"/></symbol>
   <symbol id="i-ulang" viewBox="0 0 24 24"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/></symbol>
   <symbol id="i-copy" viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="12" rx="2.5"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></symbol>
   <symbol id="i-bagi" viewBox="0 0 24 24"><circle cx="18" cy="5.5" r="2.5"/><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="18.5" r="2.5"/><path d="M8.2 10.8l7.6-4.1M8.2 13.2l7.6 4.1"/></symbol>
@@ -344,6 +356,7 @@ body.ada-player .aksi{bottom:4.5rem}
 <section id="v-home" class="hidden">
   <header class="top">
     <div class="brand"><img src="icon-192.png" alt=""><div><b>Notulen AI</b><small>(Aa Ibot)</small></div></div>
+    <button class="ghost icon" title="Panduan" aria-label="Panduan" onclick="bukaPanduan()"><svg class="i"><use href="#i-bantu"/></svg></button>
     <button class="ghost icon" title="Pengaturan" aria-label="Pengaturan" onclick="bukaAtur()"><svg class="i"><use href="#i-atur"/></svg></button>
   </header>
   <div class="wrap">
@@ -535,10 +548,107 @@ body.ada-player .aksi{bottom:4.5rem}
       </select>
       <div class="muted" id="atur-model-info" style="margin-top:.4rem;font-size:.75rem">Perkiraan biaya per 1 jam rapat. Berlaku untuk proses berikutnya.</div>
     </div>
-    <div class="row" style="margin-top:1.5rem">
+    <button class="ke-panduan" onclick="tutupAtur();bukaPanduan()"><svg class="i"><use href="#i-bantu"/></svg>Panduan pakai Notulen AI</button>
+    <div class="row" style="margin-top:1rem">
       <button onclick="tutupAtur()">Tutup</button>
       <button class="danger" onclick="tutupAtur();logout()">Keluar</button>
     </div>
+  </div>
+</div>
+
+<div id="panduan" class="lembar hidden" onclick="if(event.target===this)tutupPanduan()">
+  <div>
+    <div class="pegangan"></div>
+    <h3>Panduan pakai</h3>
+    <div class="muted">Rapat itu berat. Biar Aa aja yang nyatet. Begini cara kerjanya.</div>
+
+    <ol class="alur">
+      <li><span><b>Rekam</b> atau <b>upload</b> rekaman rapat</span></li>
+      <li><span>Aa nyimak dan <b>misahin suara tiap orang</b> (transkrip)</span></li>
+      <li><span>Aa <b>nulis notulen</b> siap dibagikan</span></li>
+      <li><span>Kalau perlu, Aa bikinin <b>paparan</b> (slide + infografis)</span></li>
+    </ol>
+
+    <details open>
+      <summary>Rekam rapat di HP</summary>
+      <ul>
+        <li>Tekan <b>Rekam rapat</b>. Judul boleh diisi nanti.</li>
+        <li>Biar ga putus: <b>layar tetap nyala</b>, colok charger, jangan pindah ke aplikasi lain. Di iPhone ini paling penting.</li>
+        <li>Silau? Tekan <b>ikon bulan</b> → mode tidur (layar gelap, ada jam). Ketuk dua kali buat balik.</li>
+        <li><b>Jeda</b> buat istirahat, <b>Selesai</b> buat kirim. Salah rekam? Tekan <b>✕</b> di kiri atas buat batalin.</li>
+        <li>Rekaman disimpan ke HP tiap 10 detik. Kalau app ketutup atau sinyal hilang, rekamannya aman dan bisa diunggah lagi dari beranda.</li>
+        <li>Taruh HP di tengah meja, dekat orang yang paling banyak ngomong.</li>
+      </ul>
+    </details>
+
+    <details>
+      <summary>Rapat online di laptop (Zoom, Meet, YouTube)</summary>
+      <ul>
+        <li>Buka app ini di Chrome/Edge laptop. Di bawah tombol rekam ada <b>Sumber suara</b>.</li>
+        <li><b>Mic + laptop</b> buat rapat online (suara lawan bicara + suara lo). <b>Laptop</b> buat webinar/video saja.</li>
+        <li>Pas diminta milih: <b>Tab</b> untuk Meet/YouTube di browser (nyalakan “Bagikan audio tab”), atau <b>Seluruh layar</b> untuk aplikasi Zoom (nyalakan “Bagikan audio sistem”).</li>
+        <li>Pakai <b>headset</b> biar suara ga kerekam dobel. Boleh pindah ke Zoom, tapi jangan tutup tab ini.</li>
+        <li>Alternatif: rekam dari Zoom (<i>Record on this computer</i>), lalu <b>Upload rekaman</b>.</li>
+      </ul>
+    </details>
+
+    <details>
+      <summary>Upload rekaman</summary>
+      <ul>
+        <li>Bisa file suara atau video: m4a, mp3, wav, webm, mp4, dll.</li>
+        <li>Maksimal <b>50 MB</b> per file. Rekaman dari app ini ±13 MB/jam, jadi 3 jam masih aman.</li>
+        <li>File Zoom (.m4a) ±25–30 MB/jam. Rapat lebih dari 1,5 jam sebaiknya dikompres dulu ke MP3 64 kbps.</li>
+      </ul>
+    </details>
+
+    <details>
+      <summary>Setelah rekaman terkirim</summary>
+      <ul>
+        <li>Statusnya jalan sendiri: <b>Mengunggah → Antri → Ditranskrip → Bikin notulen → Selesai</b>. Biasanya beres dalam beberapa menit, tergantung panjang rapat.</li>
+        <li>App boleh ditutup, prosesnya jalan di server.</li>
+        <li>Kalau <b>Gagal</b>, baca pesannya lalu tekan <b>Coba lagi</b>. Ketuk “Detail teknis” kalau perlu laporan ke yang bikin app.</li>
+      </ul>
+    </details>
+
+    <details>
+      <summary>Notulen, transkrip & pembicara</summary>
+      <ul>
+        <li><b>Notulen</b>: tekan <b>Salin</b> atau <b>Bagikan</b> (WA, email, dll). Formatnya sudah rapi untuk WhatsApp.</li>
+        <li><b>↻</b> = tulis ulang notulen, misalnya setelah ganti model AI.</li>
+        <li><b>Transkrip</b>: ketuk satu baris untuk dengar audionya dari titik itu.</li>
+        <li><b>Pembicara</b>: dengar cuplikan ▶ tiap suara, isi namanya, lalu <b>Simpan nama</b>. Notulen ditulis ulang pakai nama asli.</li>
+        <li>Judul rapat bisa diganti lewat ikon pensil di kanan atas.</li>
+      </ul>
+    </details>
+
+    <details>
+      <summary>Paparan (slide & infografis)</summary>
+      <ul>
+        <li>Buka tab <b>Paparan</b>, pilih <b>Dari notulen</b> (lebih ringkas) atau <b>Dari transkrip</b> (lebih lengkap).</li>
+        <li>Tekan <b>Buat paparan</b>, lalu unduh <b>Deck PPTX</b> atau <b>Infografis PNG</b>.</li>
+        <li>Hasil dari dua sumber disimpan terpisah, jadi bisa dibandingkan.</li>
+      </ul>
+    </details>
+
+    <details>
+      <summary>Model AI & biaya</summary>
+      <ul>
+        <li>Ganti model di <b>Pengaturan → Model AI</b>. <b>Otomatis</b> sudah cukup untuk kebanyakan rapat.</li>
+        <li>Model “Teliti” lebih bagus tapi lebih mahal; “Hemat” cocok buat rapat ringan.</li>
+        <li>Biaya tiap rapat tampil di bawah judul. Ketuk untuk rinciannya (transkrip + AI).</li>
+      </ul>
+    </details>
+
+    <details>
+      <summary>Hal yang perlu diingat</summary>
+      <ul>
+        <li>Notulen buatan AI adalah <b>draf</b>. Cek lagi nama, angka, dan keputusan sebelum dikirim ke pimpinan.</li>
+        <li>Istilah atau nama yang jarang bisa salah dengar. Isi nama pembicara supaya hasilnya lebih rapi.</li>
+        <li>Audio diproses layanan AI di luar negeri. <b>Jangan dipakai untuk rapat yang sifatnya rahasia.</b></li>
+      </ul>
+    </details>
+
+    <button style="width:100%;margin-top:1.25rem" onclick="tutupPanduan()">Siap, paham</button>
   </div>
 </div>
 
@@ -1548,6 +1658,8 @@ document.querySelectorAll('#atur-model select').forEach(x => x.addEventListener(
   const { error } = await sb.from('pengaturan_app').update({ [x.dataset.k]: x.value }).eq('id', 1);
   toast(error ? pesanAa(error.message) : 'Siap, Aa pakai ' + x.options[x.selectedIndex].text.split(' · ')[0].replace(/ \(.*\)$/, '') + '.');
 }));
+function bukaPanduan() { $('panduan').classList.remove('hidden'); $('panduan').firstElementChild.scrollTop = 0; simpanLS('panduan_dibaca', '1'); }
+function tutupPanduan() { $('panduan').classList.add('hidden'); }
 function tutupAtur() { $('atur').classList.add('hidden'); }
 $('atur-tema').addEventListener('click', e => {
   const b = e.target.closest('button'); if (!b) return;
