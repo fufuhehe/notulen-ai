@@ -253,6 +253,13 @@ details#d-biaya summary::-webkit-details-marker{display:none}
 #panduan details[open] summary::after{transform:rotate(-135deg)}
 #panduan ul{margin:0 0 1rem;padding-left:1.1rem;display:grid;gap:.45rem;font-size:.875rem;line-height:1.55;color:var(--ink)}
 #panduan ul li::marker{color:var(--muted)}
+#panduan .lg{display:flex;align-items:center;gap:.55rem;margin-top:.4rem}
+#panduan .lg .ikon{flex:none;width:1.75rem;height:1.75rem;border-radius:.55rem;display:grid;place-items:center;font-style:normal}
+#panduan .lg .ikon svg.i{width:1rem;height:1rem}
+#panduan .lg .ikon.ok{background:var(--accent-soft);color:var(--accent)}
+#panduan .lg .ikon.pp{background:var(--pp-soft);color:var(--pp)}
+#panduan .lg .ikon.run{background:var(--aa-soft);color:var(--aa)}
+#panduan .lg .ikon.bad{background:var(--bad-soft);color:var(--bad)}
 .lembar .lbl{font-size:.8125rem;font-weight:700;color:var(--muted);margin:1.25rem 0 .5rem}
 .skala{display:flex;align-items:center;gap:.75rem}
 .skala input{flex:1;padding:0;border:0;box-shadow:none;accent-color:var(--accent);height:2rem;background:none}
@@ -623,6 +630,12 @@ body.ada-player .aksi{bottom:4.5rem}
       <ul>
         <li>Statusnya jalan sendiri: <b>Mengunggah → Antri → Ditranskrip → Bikin notulen → Selesai</b>. Biasanya beres dalam beberapa menit, tergantung panjang rapat.</li>
         <li>App boleh ditutup, prosesnya jalan di server.</li>
+        <li>Arti ikon di daftar rapat:
+          <span class="lg"><i class="ikon run"><svg class="i"><use href="#i-jam"/></svg></i>lagi diproses</span>
+          <span class="lg"><i class="ikon ok"><svg class="i"><use href="#i-doc"/></svg></i>notulen jadi</span>
+          <span class="lg"><i class="ikon pp"><svg class="i"><use href="#i-slide"/></svg></i>notulen + paparan sudah ada</span>
+          <span class="lg"><i class="ikon bad"><svg class="i"><use href="#i-x"/></svg></i>gagal, buka lalu Coba lagi</span>
+        </li>
         <li>Kalau <b>Gagal</b>, baca pesannya lalu tekan <b>Coba lagi</b>. Ketuk “Detail teknis” kalau perlu laporan ke yang bikin app.</li>
       </ul>
     </details>
@@ -644,6 +657,7 @@ body.ada-player .aksi{bottom:4.5rem}
         <li>Buka tab <b>Paparan</b>, pilih <b>Dari notulen</b> (lebih ringkas) atau <b>Dari transkrip</b> (lebih lengkap).</li>
         <li>Tekan <b>Buat paparan</b>, lalu unduh <b>Deck PPTX</b> atau <b>Infografis PNG</b>.</li>
         <li>Hasil dari dua sumber disimpan terpisah, jadi bisa dibandingkan.</li>
+        <li>Rapat yang sudah punya paparan ditandai <b>ikon presentasi ungu</b> di daftar rapat.</li>
       </ul>
     </details>
 
@@ -653,6 +667,8 @@ body.ada-player .aksi{bottom:4.5rem}
         <li>Ganti model di <b>Pengaturan → Model AI</b>. <b>Otomatis</b> sudah cukup untuk kebanyakan rapat.</li>
         <li>Model “Teliti” lebih bagus tapi lebih mahal; “Hemat” cocok buat rapat ringan.</li>
         <li>Biaya tiap rapat tampil di bawah judul. Ketuk untuk rinciannya (transkrip + AI).</li>
+        <li>Harga AI dalam dolar, jadi Aa pakai <b>kurs hari rapat itu dibuat</b>. Kursnya dikunci, jadi biaya rapat lama ga ikut berubah.</li>
+        <li>Total biaya bulan berjalan ada di atas daftar rapat.</li>
       </ul>
     </details>
 
