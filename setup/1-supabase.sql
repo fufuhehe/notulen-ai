@@ -26,7 +26,8 @@ create table if not exists public.rapat (
   deck          jsonb not null default '{}', -- paparan: {"resume": {...}, "transkrip": {...}}
   deck_sumber   text,                        -- 'resume' | 'transkrip'
   deck_status   text,                        -- minta | proses | selesai | gagal
-  deck_error    text
+  deck_error    text,
+  kurs          numeric                     -- kurs USD→IDR hari rapat dibuat (dikunci)
 );
 
 -- Hanya user yang login (akun lo sendiri) yang bisa akses.

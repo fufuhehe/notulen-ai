@@ -241,6 +241,8 @@ details#d-biaya summary::-webkit-details-marker{display:none}
 #pm-daftar button.on{border-color:var(--accent,#0f7a6c);background:color-mix(in srgb,var(--accent,#0f7a6c) 8%,var(--surface))}
 #pm-daftar button.on::before{border:5px solid var(--accent,#0f7a6c)}
 #pm-daftar button.on .hg{color:var(--ink-2)}
+.tanda-pp{display:inline-flex;align-items:center;gap:.3rem;margin-top:.35rem;padding:.15rem .5rem .15rem .4rem;border-radius:99px;background:var(--accent-soft);color:var(--accent);font-size:.6875rem;font-weight:700;letter-spacing:.02em}
+.tanda-pp svg.i{width:.85rem;height:.85rem;stroke-width:2.2}
 .ke-panduan{width:100%;margin-top:1.5rem;justify-content:flex-start;background:var(--raised);border-color:var(--line);font-weight:600}
 #panduan .alur{margin:1rem 0 .75rem;padding:0;list-style:none;counter-reset:a;display:grid;gap:.5rem}
 #panduan .alur li{counter-increment:a;display:flex;gap:.65rem;align-items:center;font-size:.875rem;color:var(--ink-2,var(--ink))}
@@ -318,6 +320,7 @@ body.ada-player .aksi{bottom:4.5rem}
   <symbol id="i-pen" viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16v4z"/><path d="M13.5 6.5l4 4"/></symbol>
   <symbol id="i-bulan" viewBox="0 0 24 24"><path d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5z"/></symbol>
   <symbol id="i-bantu" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.6 9.4a2.5 2.5 0 0 1 4.8.9c0 1.7-2.4 2.2-2.4 3.7M12 17.2v.1"/></symbol>
+  <symbol id="i-slide" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M12 16v4M8.5 20h7M7.5 12.5l3-3 2 2 4-4"/></symbol>
   <symbol id="i-ulang" viewBox="0 0 24 24"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/></symbol>
   <symbol id="i-copy" viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="12" rx="2.5"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></symbol>
   <symbol id="i-bagi" viewBox="0 0 24 24"><circle cx="18" cy="5.5" r="2.5"/><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="18.5" r="2.5"/><path d="M8.2 10.8l7.6-4.1M8.2 13.2l7.6 4.1"/></symbol>
@@ -690,7 +693,28 @@ const jam = (d) => [Math.floor(d / 3600), Math.floor(d / 60) % 60, Math.floor(d 
 const MAKS_BYTE = 50 * 1024 * 1024;
 
 // ===== Harga (USD). Ubah di sini kalau harga berubah. =====
-const KURS = 16500;                        // asumsi Rp per USD
+const KURS = 16500;                        // kurs cadangan (dipakai rapat lama & kalau kurs harian gagal diambil)
+// Kurs harian USD→IDR: diambil sekali sehari, lalu DIKUNCI di tiap rapat saat dibuat (kolom rapat.kurs),
+// jadi biaya rapat yang sudah lewat tidak ikut berubah.
+async function kursHariIni() {
+  const hari = new Date().toISOString().slice(0, 10);
+  try { const c = JSON.parse(bacaLS('kurs_harian') || 'null'); if (c && c.hari === hari) return c.nilai; } catch (_) {}
+  const sumber = [
+    ['https://api.frankfurter.app/latest?from=USD&to=IDR', j => j.rates && j.rates.IDR],
+    ['https://open.er-api.com/v6/latest/USD', j => j.rates && j.rates.IDR],
+  ];
+  for (const [url, ambil] of sumber) {
+    try {
+      const ctl = new AbortController(); const t = setTimeout(() => ctl.abort(), 4000);
+      const j = await (await fetch(url, { signal: ctl.signal })).json(); clearTimeout(t);
+      const n = Math.round(Number(ambil(j)));
+      if (n > 8000 && n < 40000) { simpanLS('kurs_harian', JSON.stringify({ hari, nilai: n })); return n; }
+    } catch (_) {}
+  }
+  try { const c = JSON.parse(bacaLS('kurs_harian') || 'null'); if (c && c.nilai) return c.nilai; } catch (_) {}
+  return null;
+}
+const kursRapat = (r) => Number(r && r.kurs) || KURS;
 const HARGA_STT = {                        // AssemblyAI per jam audio (+ pisah speaker)
   'universal-2': 0.15, 'universal-3-5-pro': 0.21, _lain: 0.21,
 };
@@ -710,10 +734,11 @@ const kunciHarga = (model) => {
 function hitungBiaya(r) {
   const jamAudio = (r.stt_detik || 0) / 3600;
   const tarif = HARGA_STT[r.stt_model] ?? HARGA_STT._lain;
-  const stt = jamAudio * (tarif + HARGA_DIARISASI) * KURS;
+  const kurs = kursRapat(r);
+  const stt = jamAudio * (tarif + HARGA_DIARISASI) * kurs;
   const kunci = kunciHarga(r.ai_model);
   const hAi = kunci ? HARGA_AI[kunci] : null;
-  const ai = hAi ? ((r.ai_token_in || 0) * hAi[0] + (r.ai_token_out || 0) * hAi[1]) / 1e6 * KURS : 0;
+  const ai = hAi ? ((r.ai_token_in || 0) * hAi[0] + (r.ai_token_out || 0) * hAi[1]) / 1e6 * kurs : 0;
   return { stt, ai, total: stt + ai, aiDikenal: !!hAi || !r.ai_model };
 }
 const rupiah = (n) => 'Rp' + Math.round(n).toLocaleString('id-ID');
@@ -867,8 +892,10 @@ async function mulai() {
 
 // ================= Beranda =================
 async function muatDaftar() {
-  const { data, error } = await sb.from('rapat')
-    .select('id,created_at,judul,status,durasi_detik,stt_model,stt_detik,ai_model,ai_token_in,ai_token_out').order('created_at', { ascending: false }).limit(100);
+  const kolom = 'id,created_at,judul,status,durasi_detik,stt_model,stt_detik,ai_model,ai_token_in,ai_token_out,deck';
+  const ambil = (k) => sb.from('rapat').select(k).order('created_at', { ascending: false }).limit(100);
+  let { data, error } = await ambil(kolom + ',kurs');
+  if (error && /kurs/i.test(error.message)) ({ data, error } = await ambil(kolom));   // kolom kurs belum dibuat
   if (error) {
     if (/JWT|auth/i.test(error.message)) return ke('login');
     $('daftar').innerHTML = `<div class="item kosong">${esc(pesanAa(error.message))}</div>`; return;
@@ -891,6 +918,7 @@ async function muatDaftar() {
       <div class="grow">
         <div class="t">${esc(r.judul)}</div>
         <div class="m">${jamSaja(r.created_at)}${r.durasi_detik ? ' · ' + menit(r.durasi_detik) : ''}${biaya ? ' · ±' + rupiah(biaya) : ''}</div>
+        ${punyaPaparan(r) ? '<div class="tanda-pp"><svg class="i"><use href="#i-slide"/></svg>Paparan</div>' : ''}
       </div>
       ${r.status === 'selesai' ? '' : chip(r.status)}
     </div>`;
@@ -899,6 +927,7 @@ async function muatDaftar() {
     state.poll = setInterval(() => { if (!$('v-home').classList.contains('hidden')) muatDaftar(); }, 10000);
   }
 }
+const punyaPaparan = (r) => !!(r.deck && (r.deck.resume || r.deck.transkrip));
 const jamSaja = (s) => new Date(s).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
 function labelHari(s) {
   const d = new Date(s), h = new Date(); h.setHours(0, 0, 0, 0);
@@ -1217,7 +1246,10 @@ async function unggah(blob, mime, judul, id, ext, detik) {
   const path = `${new Date().getFullYear()}/${id}.${ext}`;
 
   // 1) catat rapat (status "mengunggah")
-  const ins = await sb.from('rapat').upsert({ id, judul: judul || 'Rapat', audio_path: path, status: 'mengunggah', durasi_detik: detik || null });
+  const baris = { id, judul: judul || 'Rapat', audio_path: path, status: 'mengunggah', durasi_detik: detik || null };
+  const kurs = await kursHariIni();
+  let ins = await sb.from('rapat').upsert(kurs ? { ...baris, kurs } : baris);
+  if (ins.error && /kurs/i.test(ins.error.message)) ins = await sb.from('rapat').upsert(baris);   // kolom kurs belum dibuat
   if (ins.error) { toast(pesanAa(ins.error.message), 6000); return false; }
 
   // 2) unggah file bertahap (6 MB per potong)
@@ -1269,7 +1301,7 @@ async function bukaDetail(id, diam) {
     `Transkrip: ${menit(r.stt_detik || 0)} audio (${esc(r.stt_model || '-')}) → ±${rupiah(b.stt)}<br>` +
     `AI (notulen & paparan): ${ribu(r.ai_token_in || 0)} token masuk + ${ribu(r.ai_token_out || 0)} token keluar (${esc(r.ai_model || '-')}) → ` +
     (b.aiDikenal ? `±${rupiah(b.ai)}` : 'harga model belum diset') +
-    `<br><span style="font-size:12px">Jumlah audio & token dari AssemblyAI/OpenAI; rupiah dihitung dari tarif resmi, kurs Rp${KURS.toLocaleString('id-ID')}/USD. Termasuk semua proses ulang.</span>`;
+    `<br><span style="font-size:12px">Jumlah audio & token dari AssemblyAI/OpenAI; rupiah dihitung dari tarif resmi, kurs Rp${kursRapat(r).toLocaleString('id-ID')}/USD${r.kurs ? ' (kurs hari rapat dibuat)' : ''}. Termasuk semua proses ulang.</span>`;
   const info = {
     mengunggah: 'File belum selesai terunggah. Kalau macet, buka beranda dan unggah ulang rekaman dari HP.',
     antri: 'Antri, Aa siap-siap nyimak…',
@@ -1482,7 +1514,7 @@ function muatScript(src, cek) {
 const biayaDeck = (d) => {
   if (!d) return 0;
   const k = kunciHarga(d.model);
-  return k ? (d.token_in * HARGA_AI[k][0] + d.token_out * HARGA_AI[k][1]) / 1e6 * KURS : 0;
+  return k ? (d.token_in * HARGA_AI[k][0] + d.token_out * HARGA_AI[k][1]) / 1e6 * kursRapat(state.rapat) : 0;
 };
 
 function renderPaparan() {
