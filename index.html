@@ -24,7 +24,7 @@
 <style>
 :root{
   --skala:1;
-  --bg:#f5f4f0; --surface:#ffffff; --raised:#fbfaf7; --ink:#15171c; --ink-2:#3b3f46; --muted:#6c7079; --line:#e6e3dc; --line-2:#efece6;
+  --bg:#f5f4f0; --surface:#ffffff; --raised:#fbfaf7; --ink:#15171c; --ink-2:#3b3f46; --muted:#6c7079; --line:#e6e3dc; --line-2:#efece6; --toast-bg:#18212e;
   --accent:#0f766e; --accent-ink:#ffffff; --accent-soft:#e2f1ed; --navy:#0b2545;
   --aa:#b45309; --aa-soft:#fdf1e3; --rec:#e5484d; --rec-soft:#fdecec; --ok:#0f766e; --bad:#c2410c; --bad-soft:#fdeee6;
   --shadow:0 1px 2px rgba(20,22,28,.04),0 8px 24px -12px rgba(20,22,28,.12);
@@ -32,14 +32,14 @@
   color-scheme:light;
 }
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
-  --bg:#0c0e11; --surface:#15181d; --raised:#1a1e24; --ink:#eceef0; --ink-2:#c9cdd2; --muted:#949aa2; --line:#262b32; --line-2:#1f2329;
+  --bg:#0c0e11; --surface:#15181d; --raised:#1a1e24; --ink:#eceef0; --ink-2:#c9cdd2; --muted:#949aa2; --line:#262b32; --line-2:#1f2329; --toast-bg:#283241;
   --accent:#3dd6c0; --accent-ink:#04201c; --accent-soft:#0f2e2a; --navy:#0b2545;
   --aa:#f5a524; --aa-soft:#2e2210; --rec:#ff6369; --rec-soft:#3a1719; --ok:#3dd6c0; --bad:#ff8f5a; --bad-soft:#35180d;
   --shadow:0 1px 2px rgba(0,0,0,.3),0 12px 32px -16px rgba(0,0,0,.6);
   color-scheme:dark;
 }}
 :root[data-theme="dark"]{
-  --bg:#0c0e11; --surface:#15181d; --raised:#1a1e24; --ink:#eceef0; --ink-2:#c9cdd2; --muted:#949aa2; --line:#262b32; --line-2:#1f2329;
+  --bg:#0c0e11; --surface:#15181d; --raised:#1a1e24; --ink:#eceef0; --ink-2:#c9cdd2; --muted:#949aa2; --line:#262b32; --line-2:#1f2329; --toast-bg:#283241;
   --accent:#3dd6c0; --accent-ink:#04201c; --accent-soft:#0f2e2a; --navy:#0b2545;
   --aa:#f5a524; --aa-soft:#2e2210; --rec:#ff6369; --rec-soft:#3a1719; --ok:#3dd6c0; --bad:#ff8f5a; --bad-soft:#35180d;
   --shadow:0 1px 2px rgba(0,0,0,.3),0 12px 32px -16px rgba(0,0,0,.6);
@@ -227,6 +227,20 @@ details#d-biaya summary::-webkit-details-marker{display:none}
 .lembar>div{max-height:92vh;overflow-y:auto;width:100%;max-width:40rem;background:var(--surface);border-radius:var(--r-lg) var(--r-lg) 0 0;padding:.75rem 1.25rem calc(1.5rem + env(safe-area-inset-bottom));animation:naik .22s cubic-bezier(.2,.8,.2,1)}
 .lembar .pegangan{width:2.5rem;height:.3rem;border-radius:99px;background:var(--line);margin:0 auto 1rem}
 .lembar h3{font-size:1.125rem;margin:0 0 .25rem;letter-spacing:-.02em}
+#atur-model select{display:none}
+.pm-tombol{width:100%;display:flex;align-items:center;gap:.75rem;justify-content:space-between;text-align:left;padding:.8rem .95rem;border:1px solid var(--line);border-radius:var(--r-sm);background:var(--raised);color:var(--ink);font-weight:600;min-height:3.25rem}
+.pm-tombol small{display:block;color:var(--muted);font-weight:500;font-size:.75rem;margin-top:.1rem}
+.pm-tombol::after{content:"";flex:none;width:.45rem;height:.45rem;border-right:2px solid var(--muted);border-bottom:2px solid var(--muted);transform:rotate(-45deg);margin-right:.2rem}
+.pm-tombol:disabled{opacity:.55}
+#pm-daftar{margin-top:.9rem}
+#pm-daftar .grup{font-size:.75rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:1.1rem 0 .4rem}
+#pm-daftar button{width:100%;display:flex;align-items:center;gap:.75rem;text-align:left;padding:.75rem .85rem;margin-bottom:.4rem;border:1px solid var(--line);border-radius:var(--r-sm);background:var(--surface);color:var(--ink);font-weight:600;min-height:3rem}
+#pm-daftar button .nm{flex:1}
+#pm-daftar button .hg{color:var(--muted);font-weight:600;font-size:.8125rem;white-space:nowrap}
+#pm-daftar button::before{content:"";flex:none;width:1.1rem;height:1.1rem;border-radius:50%;border:2px solid var(--line);box-sizing:border-box}
+#pm-daftar button.on{border-color:var(--accent,#0f7a6c);background:color-mix(in srgb,var(--accent,#0f7a6c) 8%,var(--surface))}
+#pm-daftar button.on::before{border:5px solid var(--accent,#0f7a6c)}
+#pm-daftar button.on .hg{color:var(--ink-2)}
 .ke-panduan{width:100%;margin-top:1.5rem;justify-content:flex-start;background:var(--raised);border-color:var(--line);font-weight:600}
 #panduan .alur{margin:1rem 0 .75rem;padding:0;list-style:none;counter-reset:a;display:grid;gap:.5rem}
 #panduan .alur li{counter-increment:a;display:flex;gap:.65rem;align-items:center;font-size:.875rem;color:var(--ink-2,var(--ink))}
@@ -257,7 +271,8 @@ body.ada-player .aksi{bottom:4.5rem}
 .line{cursor:pointer;border-radius:.5rem;transition:background .2s}
 .line .ts{color:var(--accent);font-weight:700}
 .line.aktif{background:var(--accent-soft);box-shadow:-.5rem 0 0 var(--accent-soft),.5rem 0 0 var(--accent-soft)}
-.toast{position:fixed;left:50%;bottom:calc(1.5rem + env(safe-area-inset-bottom));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:.7rem 1.1rem;border-radius:999px;font-size:.875rem;font-weight:600;z-index:60;max-width:90vw;box-shadow:var(--shadow)}
+.toast{position:fixed;left:50%;bottom:calc(1.25rem + env(safe-area-inset-bottom));transform:translateX(-50%);width:max-content;max-width:min(24rem,calc(100vw - 2rem));background:var(--toast-bg);color:#eef2f6;border:1px solid rgba(255,255,255,.08);padding:.75rem 1rem;border-radius:.9rem;font-size:.875rem;font-weight:500;line-height:1.45;z-index:60;box-shadow:0 10px 30px rgba(0,0,0,.28);animation:toastMasuk .2s ease}
+@keyframes toastMasuk{from{opacity:0;transform:translate(-50%,.5rem)}}
 
 /* ---------- pratinjau infografis & slide (ukuran tetap, diskalakan) ---------- */
 .ig{position:absolute;top:0;left:0;width:1080px;transform-origin:0 0;background:#fff;color:#15191e;font-family:Arial,Helvetica,sans-serif}
@@ -512,7 +527,7 @@ body.ada-player .aksi{bottom:4.5rem}
     <div id="atur-model">
       <label style="margin-top:0">Untuk notulen</label>
       <select id="atur-model-notulen" data-k="model_notulen">
-        <option value="otomatis">Otomatis (gpt-4.1, rapat panjang → mini)</option>
+        <option value="otomatis">Otomatis</option>
         <optgroup label="Teliti">
           <option value="claude-sonnet-5">Claude Sonnet 5 · ±Rp1.150/jam rapat</option>
           <option value="gpt-4.1">GPT-4.1 · ±Rp1.100</option>
@@ -530,7 +545,7 @@ body.ada-player .aksi{bottom:4.5rem}
       </select>
       <label>Untuk paparan</label>
       <select id="atur-model-paparan" data-k="model_paparan">
-        <option value="otomatis">Otomatis (gpt-4.1, rapat panjang → mini)</option>
+        <option value="otomatis">Otomatis</option>
         <optgroup label="Teliti">
           <option value="claude-sonnet-5">Claude Sonnet 5 · ±Rp1.150/jam rapat</option>
           <option value="gpt-4.1">GPT-4.1 · ±Rp1.100</option>
@@ -649,6 +664,15 @@ body.ada-player .aksi{bottom:4.5rem}
     </details>
 
     <button style="width:100%;margin-top:1.25rem" onclick="tutupPanduan()">Siap, paham</button>
+  </div>
+</div>
+
+<div id="pilih-model" class="lembar hidden" onclick="if(event.target===this)tutupPilihModel()">
+  <div>
+    <div class="pegangan"></div>
+    <h3 id="pm-judul">Model AI</h3>
+    <div class="muted" style="font-size:.8125rem">Harga = perkiraan biaya per 1 jam rapat.</div>
+    <div id="pm-daftar"></div>
   </div>
 </div>
 
@@ -1647,16 +1671,53 @@ function bukaAtur() {
   $('atur').classList.remove('hidden');
   muatModel();
 }
+// ---- pemilih model (pengganti dropdown bawaan HP yang jelek) ----
+const pecahOpsi = (o) => { const [nm, hg] = o.text.split(' · '); return { nm: nm.trim(), hg: (hg || '').replace('/jam rapat', '').trim() }; };
+function segarkanTombolModel() {
+  document.querySelectorAll('#atur-model select').forEach(sel => {
+    let b = sel.nextElementSibling;
+    if (!b || !b.classList.contains('pm-tombol')) {
+      b = document.createElement('button'); b.type = 'button'; b.className = 'pm-tombol';
+      b.onclick = () => bukaPilihModel(sel); sel.after(b);
+    }
+    const o = sel.options[sel.selectedIndex] || sel.options[0], { nm, hg } = pecahOpsi(o);
+    const grup = o.parentElement.tagName === 'OPTGROUP' ? o.parentElement.label : '';
+    b.innerHTML = `<span>${esc(nm)}<small>${esc([grup, hg && hg + '/jam rapat'].filter(Boolean).join(' · ') || 'gpt-4.1, rapat panjang pakai versi mini')}</small></span>`;
+    b.disabled = sel.disabled;
+  });
+}
+function bukaPilihModel(sel) {
+  $('pm-judul').textContent = sel.dataset.k === 'model_paparan' ? 'Model AI untuk paparan' : 'Model AI untuk notulen';
+  let html = '';
+  for (const el of sel.children) {
+    const opsi = el.tagName === 'OPTGROUP' ? [...el.children] : [el];
+    if (el.tagName === 'OPTGROUP') html += `<div class="grup">${esc(el.label)}</div>`;
+    for (const o of opsi) {
+      const { nm, hg } = pecahOpsi(o);
+      html += `<button data-v="${esc(o.value)}" class="${o.value === sel.value ? 'on' : ''}"><span class="nm">${esc(nm)}</span><span class="hg">${esc(hg)}</span></button>`;
+    }
+  }
+  $('pm-daftar').innerHTML = html;
+  $('pm-daftar').onclick = (e) => {
+    const b = e.target.closest('button'); if (!b) return;
+    if (b.dataset.v !== sel.value) { sel.value = b.dataset.v; sel.dispatchEvent(new Event('change')); }
+    segarkanTombolModel(); tutupPilihModel();
+  };
+  $('pilih-model').classList.remove('hidden');
+}
+function tutupPilihModel() { $('pilih-model').classList.add('hidden'); }
+
 async function muatModel() {
   const sel = document.querySelectorAll('#atur-model select');
-  sel.forEach(x => x.disabled = true);
+  sel.forEach(x => x.disabled = true); segarkanTombolModel();
   const { data, error } = await sb.from('pengaturan_app').select('model_notulen,model_paparan').eq('id', 1).maybeSingle();
   if (error || !data) { $('atur-model-info').textContent = 'Pilihan model belum aktif — jalankan setup/8-pengaturan-model.sql di Supabase.'; return; }
   sel.forEach(x => { x.value = data[x.dataset.k] || 'otomatis'; x.disabled = false; });
+  segarkanTombolModel();
 }
 document.querySelectorAll('#atur-model select').forEach(x => x.addEventListener('change', async () => {
   const { error } = await sb.from('pengaturan_app').update({ [x.dataset.k]: x.value }).eq('id', 1);
-  toast(error ? pesanAa(error.message) : 'Siap, Aa pakai ' + x.options[x.selectedIndex].text.split(' · ')[0].replace(/ \(.*\)$/, '') + '.');
+  toast(error ? pesanAa(error.message) : x.value === 'otomatis' ? 'Siap, Aa pilih modelnya sendiri sesuai panjang rapat.' : 'Siap, Aa pakai ' + x.options[x.selectedIndex].text.split(' · ')[0].replace(/ \(.*\)$/, '') + '.');
 }));
 function bukaPanduan() { $('panduan').classList.remove('hidden'); $('panduan').firstElementChild.scrollTop = 0; simpanLS('panduan_dibaca', '1'); }
 function tutupPanduan() { $('panduan').classList.add('hidden'); }
