@@ -95,6 +95,10 @@ header.top h1{font-size:1.0625rem;font-weight:700;margin:0;flex:1;white-space:no
 .cta small{display:block;font-weight:500;color:#aebdcc;font-size:.8125rem;margin-top:.15rem;font-style:italic}
 .cta .wave{position:absolute;right:-.5rem;bottom:-.25rem;display:flex;gap:.22rem;align-items:flex-end;opacity:.18;height:4.5rem}
 .cta .wave i{display:block;width:.3rem;border-radius:.2rem;background:#fff}
+.sumber{display:flex;align-items:center;gap:.75rem;margin:-.15rem 0 .75rem}
+.sumber>span{font-size:.8125rem;font-weight:600;color:var(--muted);white-space:nowrap}
+.sumber .seg{flex:1}
+.sumber .seg button{min-height:2.25rem;font-size:.8125rem}
 .sekunder{display:flex;gap:.625rem}
 .sekunder button{flex:1;justify-content:flex-start;background:var(--surface);border-color:var(--line);font-weight:600}
 .catatan{font-size:.8125rem;color:var(--muted);margin:.75rem .25rem 0}
@@ -350,6 +354,14 @@ body.ada-player .aksi{bottom:4.5rem}
       <span><b>Rekam rapat</b><small>Rapat itu berat. Biar Aa aja yang nyatet.</small></span>
       <span class="wave" aria-hidden="true"><i style="height:30%"></i><i style="height:60%"></i><i style="height:45%"></i><i style="height:85%"></i><i style="height:55%"></i><i style="height:100%"></i><i style="height:65%"></i><i style="height:40%"></i><i style="height:75%"></i><i style="height:35%"></i><i style="height:55%"></i><i style="height:25%"></i></span>
     </button>
+    <div class="sumber hidden" id="sumber-box">
+      <span>Sumber suara</span>
+      <div class="seg" id="sumber">
+        <button data-v="mic">Mic</button>
+        <button data-v="campur">Mic + laptop</button>
+        <button data-v="laptop">Laptop</button>
+      </div>
+    </div>
     <div class="sekunder">
       <button onclick="document.getElementById('file').click()"><svg class="i"><use href="#i-upload"/></svg>Upload rekaman</button>
     </div>
@@ -376,7 +388,7 @@ body.ada-player .aksi{bottom:4.5rem}
       <div class="rb"><button id="r-pause" onclick="jedaRekam()" disabled aria-label="Jeda"><svg class="i" style="width:1.5rem;height:1.5rem"><use href="#i-pause"/></svg></button><span id="r-pause-lbl">Jeda</span></div>
       <div class="rb"><button id="r-stop" class="stop" onclick="selesaiRekam()" disabled aria-label="Selesai"></button><span>Selesai</span></div>
     </div>
-    <div class="tips">Biar rekaman ga putus: <b>layar tetap nyala</b>, colok charger, dan jangan pindah ke aplikasi lain. Mau layarnya ga silau? Tekan ikon bulan di pojok kanan atas buat <b>mode tidur</b>.</div>
+    <div class="tips" id="r-tips">Biar rekaman ga putus: <b>layar tetap nyala</b>, colok charger, dan jangan pindah ke aplikasi lain. Mau layarnya ga silau? Tekan ikon bulan di pojok kanan atas buat <b>mode tidur</b>.</div>
   </div>
 </section>
 
@@ -794,19 +806,86 @@ function pilihMime() {
   return opsi.find(m => window.MediaRecorder && MediaRecorder.isTypeSupported(m)) || '';
 }
 
+// ---- sumber suara (khusus laptop/PC): mic, suara laptop, atau campuran ----
+const BISA_LAPTOP = !!(navigator.mediaDevices && navigator.mediaDevices.getDisplayMedia) && !/Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
+let sumberSuara = BISA_LAPTOP ? (bacaLS('sumber_suara') || 'mic') : 'mic';
+function tandaiSumber() {
+  document.querySelectorAll('#sumber button').forEach(b => b.classList.toggle('on', b.dataset.v === sumberSuara));
+}
+if (BISA_LAPTOP) {
+  $('sumber-box').classList.remove('hidden'); tandaiSumber();
+  $('sumber').addEventListener('click', (e) => {
+    const b = e.target.closest('button'); if (!b) return;
+    sumberSuara = b.dataset.v; simpanLS('sumber_suara', sumberSuara); tandaiSumber();
+    if (sumberSuara !== 'mic') toast('Nanti pilih tab/layar yang mau direkam, lalu nyalakan “Bagikan audio”.', 5000);
+  });
+}
+async function ambilSuaraLaptop() {
+  const s = await navigator.mediaDevices.getDisplayMedia({
+    video: { frameRate: 1, width: { max: 640 }, height: { max: 360 } },   // video wajib diminta, tapi tidak direkam
+    audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false },
+    systemAudio: 'include', windowAudio: 'system', selfBrowserSurface: 'exclude', surfaceSwitching: 'include',
+  });
+  if (!s.getAudioTracks().length) {
+    s.getTracks().forEach(t => t.stop());
+    throw new Error('tanpa-audio');
+  }
+  return s;
+}
+function hentikanSumber() {
+  (rekam.mentah || []).forEach(s => s.getTracks().forEach(t => t.stop()));
+  rekam.mentah = [];
+  try { rekam.ctxCampur && rekam.ctxCampur.close(); } catch (_) {}
+  rekam.ctxCampur = null;
+}
+
 async function bukaRekam() {
   if (!window.MediaRecorder || !navigator.mediaDevices) return toast('Browser ini ga bisa dipakai Aa buat merekam. Pakai Chrome atau Safari terbaru ya.', 5000);
   ke('rec');
   $('r-judul').value = ''; $('r-time').textContent = '00:00:00'; $('r-saved').textContent = 'Tersimpan aman di HP: 0 menit';
   $('r-state').textContent = 'Menyiapkan mikrofon…'; $('rec-box').classList.remove('paused');
-  try {
-    rekam.stream = await navigator.mediaDevices.getUserMedia({
-      audio: { channelCount: 1, echoCancellation: true, noiseSuppression: true, autoGainControl: true },
-    });
-  } catch (e) {
-    toast('Aa ga dikasih izin pakai mic. Buka pengaturan browser → izinkan Mikrofon.', 6000); return ke('home');
+  if (!rekam.tipsAsli) rekam.tipsAsli = $('r-tips').innerHTML;
+  $('r-tips').innerHTML = sumberSuara === 'mic' ? rekam.tipsAsli
+    : 'Boleh pindah ke Zoom/tab lain. <b>Jangan tutup tab ini</b> dan jangan klik “Berhenti berbagi”.' +
+      (sumberSuara === 'campur' ? ' Pakai <b>headset/earphone</b> biar suara Zoom ga kerekam dobel lewat mic.' : '');
+  rekam.mentah = [];
+  const pakaiLaptop = sumberSuara === 'campur' || sumberSuara === 'laptop';
+  const pakaiMic = sumberSuara !== 'laptop';
+  let laptop = null, mic = null;
+  if (pakaiLaptop) {                 // harus diminta duluan, selagi masih "baru diklik"
+    $('r-state').textContent = 'Pilih tab/layar yang mau direkam…';
+    try { laptop = await ambilSuaraLaptop(); rekam.mentah.push(laptop); }
+    catch (e) {
+      toast(e.message === 'tanpa-audio'
+        ? 'Suaranya ga ikut. Ulangi, dan pas milih tab/layar nyalakan “Bagikan audio tab” / “Bagikan audio sistem”.'
+        : 'Batal milih tab/layar, Aa ga jadi merekam.', 7000);
+      return ke('home');
+    }
   }
-  if ($('v-rec').classList.contains('hidden')) { rekam.stream.getTracks().forEach(t => t.stop()); return; } // keburu dibatalkan
+  if (pakaiMic) {
+    try {
+      mic = await navigator.mediaDevices.getUserMedia({
+        audio: { channelCount: 1, echoCancellation: true, noiseSuppression: true, autoGainControl: true },
+      });
+      rekam.mentah.push(mic);
+    } catch (e) {
+      hentikanSumber();
+      toast('Aa ga dikasih izin pakai mic. Buka pengaturan browser → izinkan Mikrofon.', 6000); return ke('home');
+    }
+  }
+  if ($('v-rec').classList.contains('hidden')) { hentikanSumber(); return; } // keburu dibatalkan
+  if (laptop && mic) {               // campur dua sumber jadi satu jalur
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const tujuan = ctx.createMediaStreamDestination(); tujuan.channelCount = 1;
+    ctx.createMediaStreamSource(laptop).connect(tujuan);
+    ctx.createMediaStreamSource(mic).connect(tujuan);
+    rekam.ctxCampur = ctx; rekam.stream = tujuan.stream;
+  } else {
+    rekam.stream = new MediaStream((laptop || mic).getAudioTracks());
+  }
+  if (laptop) laptop.getAudioTracks()[0].onended = () => {
+    if (rekam.mr && rekam.mr.state !== 'inactive') { toast('Berbagi tab/layar dihentikan, Aa berhenti merekam. Yang udah kerekam aman.', 6000); selesaiRekam(); }
+  };
   const mime = pilihMime();
   rekam.id = crypto.randomUUID();
   rekam.potongan = 0; rekam.akumulasi = 0; rekam.jeda = false; rekam.t0 = 0;
@@ -827,7 +906,7 @@ async function bukaRekam() {
       $('r-saved').textContent = `Tersimpan aman di HP: ${Math.floor(detikSekarang() / 60)} menit`;
     } catch (err) { toast('Aa gagal nyimpen potongan rekaman — memori HP mungkin penuh.', 6000); }
   }
-  rekam.stream.getAudioTracks()[0].onended = () => {
+  if (mic) mic.getAudioTracks()[0].onended = () => {
     if (rekam.mr && rekam.mr.state !== 'inactive') { toast('Mic-nya keputus, Aa berhenti merekam. Yang udah kerekam aman kok.', 6000); selesaiRekam(); }
   };
   rekam.mr.start(10000);           // potongan tiap 10 detik → langsung disimpan
@@ -866,7 +945,7 @@ async function batalRekam() {
   await new Promise(res => { mr.onstop = res; mr.stop(); });
   await rekam.antrian;
   bangun(); clearInterval(rekam.timer); meterStop(); lepasLayar();
-  rekam.stream.getTracks().forEach(t => t.stop());
+  rekam.stream.getTracks().forEach(t => t.stop()); hentikanSumber();
   window.onbeforeunload = null;
   try { await chunkDel(id); await recDel(id); } catch (_) {}
   ke('home');
@@ -881,7 +960,7 @@ async function selesaiRekam() {
   await new Promise(r => setTimeout(r, 50));
   await rekam.antrian;                           // tunggu potongan terakhir tersimpan
   bangun(); clearInterval(rekam.timer); meterStop(); lepasLayar();
-  rekam.stream.getTracks().forEach(t => t.stop());
+  rekam.stream.getTracks().forEach(t => t.stop()); hentikanSumber();
   window.onbeforeunload = null;
   const id = rekam.id;
   const judul = $('r-judul').value.trim() || ('Rapat ' + new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long' }));

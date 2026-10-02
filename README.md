@@ -60,6 +60,18 @@ Di tab **Paparan** pada detail rapat: pilih sumber (resume atau transkrip), teka
 Pasang sekali: jalankan [`setup/6-paparan.sql`](setup/6-paparan.sql), lalu impor dan aktifkan [`setup/7-n8n-paparan.json`](setup/7-n8n-paparan.json) (pilih credential Kunci Notulen, Supabase Notulen, dan OpenAI).
 Isi paparan ditulis AI dalam format JSON (prompt: `setup/prompt-deck.txt`). Desainnya dibuat oleh app, jadi teks dan angkanya persis sama dengan yang ditulis AI.
 
+## Rekam suara Zoom / tab lain (di laptop)
+Di laptop/PC (Chrome atau Edge), di bawah tombol *Rekam rapat* ada pilihan **Sumber suara**:
+- **Mic**: suara ruangan lewat mikrofon.
+- **Mic + laptop**: suara dari laptop (Zoom, Meet, YouTube) dicampur dengan suara lo dari mic. Ini cocok buat rapat online. Pakai headset supaya suara Zoom ga kerekam dobel.
+- **Laptop**: hanya suara dari laptop.
+
+Waktu mulai merekam, browser minta lo pilih yang mau dibagikan:
+- **Suara tab lain** (Meet di browser, YouTube): pilih *Tab* → tab-nya → nyalakan **Bagikan audio tab**.
+- **Aplikasi Zoom**: pilih *Seluruh layar* → nyalakan **Bagikan audio sistem**. Di Windows bisa langsung. Di Mac butuh macOS 14.2+ dan Chrome 141+; kalau versinya lebih lama, buka Zoom lewat browser lalu pilih tab-nya.
+
+Videonya tidak direkam, cuma audionya. Kalau lo klik "Berhenti berbagi", rekaman otomatis selesai dan diunggah.
+
 ## Batasan
 - Maks **50 MB per file** (paket free Supabase). Rekaman dari app ±13 MB/jam di Android/Chrome, jadi 3 jam masih aman. Di iPhone ukuran filenya bisa lebih besar.
 - Rekaman berhenti kalau layar mati atau pindah aplikasi, terutama di iPhone. Yang sudah terekam tetap tersimpan di HP dan bisa diunggah.
