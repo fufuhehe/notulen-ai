@@ -351,6 +351,7 @@ body.ada-player .aksi{bottom:4.5rem}
   <symbol id="i-bantu" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.6 9.4a2.5 2.5 0 0 1 4.8.9c0 1.7-2.4 2.2-2.4 3.7M12 17.2v.1"/></symbol>
   <symbol id="i-slide" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M12 16v4M8.5 20h7M7.5 12.5l3-3 2 2 4-4"/></symbol>
   <symbol id="i-orang" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0M16 4.5a3.5 3.5 0 0 1 0 7M18 14.5a6.5 6.5 0 0 1 3.5 5.5"/></symbol>
+  <symbol id="i-kunci" viewBox="0 0 24 24"><rect x="4.5" y="10.5" width="15" height="10" rx="2.5"/><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3M12 14.5v2.5"/></symbol>
   <symbol id="i-ulang" viewBox="0 0 24 24"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/></symbol>
   <symbol id="i-copy" viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="12" rx="2.5"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></symbol>
   <symbol id="i-bagi" viewBox="0 0 24 24"><circle cx="18" cy="5.5" r="2.5"/><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="18.5" r="2.5"/><path d="M8.2 10.8l7.6-4.1M8.2 13.2l7.6 4.1"/></symbol>
@@ -597,6 +598,12 @@ body.ada-player .aksi{bottom:4.5rem}
       </select>
       <div class="muted" id="atur-model-info" style="margin-top:.4rem;font-size:.75rem">Perkiraan biaya per 1 jam rapat. Berlaku untuk proses berikutnya.</div>
     </div>
+    <button class="ke-panduan" onclick="formSandi()" id="gs-btn"><svg class="i"><use href="#i-kunci"/></svg>Ganti password</button>
+    <div id="gs-form" class="ak-form hidden">
+      <label>Password baru</label><input id="gs-1" type="password" autocomplete="new-password" placeholder="min. 8 karakter">
+      <label>Ulangi password baru</label><input id="gs-2" type="password" autocomplete="new-password">
+      <div class="row" style="margin-top:1rem"><button onclick="formSandi(false)">Batal</button><button class="primary" id="gs-simpan" onclick="gantiSandi()">Simpan</button></div>
+    </div>
     <button class="ke-panduan khusus-admin" onclick="tutupAtur();bukaAkun()"><svg class="i"><use href="#i-orang"/></svg>Kelola akun</button>
     <button class="ke-panduan" onclick="tutupAtur();bukaPanduan()"><svg class="i"><use href="#i-bantu"/></svg>Panduan pakai Notulen AI</button>
     <div class="row" style="margin-top:1rem">
@@ -703,7 +710,7 @@ body.ada-player .aksi{bottom:4.5rem}
       <ul>
         <li>Rapat yang lo rekam atau upload <b>cuma bisa dilihat lo sendiri</b> (dan admin).</li>
         <li>Pilihan model AI di Pengaturan berlaku untuk akun lo aja.</li>
-        <li>Lupa password? Minta admin buat gantiin.</li>
+        <li>Ganti password sendiri: Pengaturan → <b>Ganti password</b>. Lupa password? Minta admin buat gantiin.</li>
         <li class="khusus-admin"><b>Admin:</b> di atas daftar rapat ada saringan <b>Semua / Saya / nama orang</b>. Rapat milik orang lain ditandai namanya.</li>
         <li class="khusus-admin"><b>Admin:</b> Pengaturan → <b>Kelola akun</b> buat tambah akun (info login otomatis disalin), ganti nama/password, jadikan admin, atau nonaktifkan. Biaya bulan ini per orang juga ada di sana.</li>
       </ul>
@@ -1975,9 +1982,25 @@ async function ubahAkun(id, apa) {
   } catch (e) { toast(pesanAa(e.message), 5000); }
 }
 
+function formSandi(buka = true) {
+  $('gs-form').classList.toggle('hidden', !buka); $('gs-btn').classList.toggle('hidden', buka);
+  $('gs-1').value = ''; $('gs-2').value = ''; if (buka) $('gs-1').focus();
+}
+async function gantiSandi() {
+  const a = $('gs-1').value, b = $('gs-2').value;
+  if (a.length < 8) return toast('Password minimal 8 karakter.');
+  if (a !== b) return toast('Dua password-nya beda. Cek lagi ya.');
+  const t = $('gs-simpan'); t.disabled = true; t.textContent = 'Menyimpan…';
+  const { error } = await sb.auth.updateUser({ password: a });
+  t.disabled = false; t.textContent = 'Simpan';
+  if (error) return toast(/different from the old|same/i.test(error.message) ? 'Password barunya sama dengan yang lama.'
+    : /reauth|recent/i.test(error.message) ? 'Demi keamanan, keluar lalu masuk lagi dulu, baru ganti password.' : pesanAa(error.message), 5000);
+  formSandi(false); toast('Password udah diganti. Pakai yang baru pas login berikutnya.', 4000);
+}
+
 function bukaPanduan() { $('panduan').classList.remove('hidden'); $('panduan').firstElementChild.scrollTop = 0; simpanLS('panduan_dibaca', '1'); }
 function tutupPanduan() { $('panduan').classList.add('hidden'); }
-function tutupAtur() { $('atur').classList.add('hidden'); }
+function tutupAtur() { $('atur').classList.add('hidden'); formSandi(false); }
 $('atur-tema').addEventListener('click', e => {
   const b = e.target.closest('button'); if (!b) return;
   simpanLS('tema', b.dataset.v); terapkanTema(b.dataset.v);
