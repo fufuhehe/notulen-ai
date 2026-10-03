@@ -391,8 +391,8 @@ body.ada-player .aksi{bottom:4.5rem}
       <div class="aa">(Aa Ibot)</div>
       <p class="tagline">“Rapat itu berat. Biar Aa aja yang nyatet.”</p>
     </div>
-    <label>Email</label>
-    <input id="l-email" type="email" autocomplete="username">
+    <label>Email atau username</label>
+    <input id="l-email" type="text" autocomplete="username" autocapitalize="none" spellcheck="false" placeholder="email atau username">
     <label>Password</label>
     <input id="l-pass" type="password" autocomplete="current-password">
     <button id="l-btn" class="primary" style="width:100%;margin-top:1.25rem" onclick="login()">Masuk</button>
@@ -746,7 +746,7 @@ body.ada-player .aksi{bottom:4.5rem}
     <button class="primary" style="width:100%;margin-top:1rem" onclick="formAkun()" id="ak-tambah-btn">+ Tambah akun</button>
     <div id="ak-form" class="ak-form hidden">
       <label>Nama</label><input id="ak-nama" placeholder="mis. Budi Santoso" autocomplete="off">
-      <label>Email</label><input id="ak-email" type="email" placeholder="nama@contoh.com" autocomplete="off">
+      <label>Username atau email</label><input id="ak-email" type="text" placeholder="mis. budi  atau  budi@kantor.go.id" autocomplete="off" autocapitalize="none" spellcheck="false">
       <label>Password awal</label>
       <div class="row"><input id="ak-sandi" autocomplete="off" style="flex:1"><button type="button" onclick="$('ak-sandi').value=sandiAcak()" style="flex:none">Acak</button></div>
       <div class="muted" style="font-size:.75rem;margin-top:.35rem">Kasih tahu password ini ke orangnya. Bisa diganti nanti.</div>
@@ -767,6 +767,10 @@ body.ada-player .aksi{bottom:4.5rem}
 'use strict';
 // ================= util =================
 const $ = (id) => document.getElementById(id);
+// Username tanpa "@" disimpan sebagai email semu (Supabase wajib email). Tidak ada email yang dikirim.
+const DOMAIN_USER = 'pengguna.notulen-ai.app';
+const keEmail = (v) => { v = String(v || '').trim().toLowerCase(); return v && !v.includes('@') ? v + '@' + DOMAIN_USER : v; };
+const tampilEmail = (e) => String(e || '').replace('@' + DOMAIN_USER, '');
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const jam = (d) => [Math.floor(d / 3600), Math.floor(d / 60) % 60, Math.floor(d % 60)].map(n => String(n).padStart(2, '0')).join(':');
 const MAKS_BYTE = 50 * 1024 * 1024;
@@ -848,7 +852,8 @@ const POLA_ERROR = [
   [/banned|dinonaktifkan/i, 'Akun ini lagi dinonaktifkan admin. Hubungi admin ya.'],
   [/Requested function was not found|kelola-akun.*not found|Failed to send a request to the Edge Function/i, 'Fungsi “kelola-akun” belum dipasang di Supabase. Lihat setup/11-fungsi-kelola-akun.ts.'],
   [/Khusus admin/i, 'Menu ini khusus admin.'],
-  [/Email itu sudah punya akun/i, 'Email itu udah punya akun.'],
+  [/Email itu sudah punya akun/i, 'Username/email itu udah punya akun.'],
+  [/Email tidak valid/i, 'Username/email-nya ga valid.'],
   [/Password minimal 8/i, 'Password minimal 8 karakter.'],
   [/Ga bisa (nurunin|nonaktifkan)/i, null],
   [/insufficient_quota|quota|billing|balance|credit/i, 'Duh, Aa laper nih, ga bisa kerja. Saldo AI-nya kayaknya habis — isi dulu saldo OpenAI, terus tekan Coba lagi ya.'],
@@ -862,7 +867,7 @@ const POLA_ERROR = [
   [/terpotong|terlalu panjang|length/i, 'Notulennya kepanjangan sampai kepotong di akhir. Coba buat ulang, atau ringkas lewat tab Paparan.'],
   [/Bahan kosong/i, 'Bahannya belum ada, jadi Aa belum bisa nyusun apa-apa.'],
   [/Format balasan AI/i, 'Aa salah format pas nyusun slide. Tekan Buat ulang ya.'],
-  [/Invalid login credentials/i, 'Email atau password-nya salah, Aa ga kenal nih.'],
+  [/Invalid login credentials/i, 'Username/email atau password-nya salah, Aa ga kenal nih.'],
   [/Email not confirmed/i, 'Akun ini belum dikonfirmasi. Centang “Auto Confirm” waktu bikin user di Supabase.'],
   [/JWT|session|expired/i, 'Sesi login-nya udah basi. Keluar terus masuk lagi ya.'],
   [/permission denied|row-level security|violates/i, 'Aa ga punya izin buat itu. Cek pengaturan akses (SQL setup) di Supabase.'],
@@ -947,7 +952,7 @@ function resetSetup() {
 }
 async function login() {
   const b = $('l-btn'); b.disabled = true; b.textContent = 'Masuk…';
-  const { error } = await sb.auth.signInWithPassword({ email: $('l-email').value.trim(), password: $('l-pass').value });
+  const { error } = await sb.auth.signInWithPassword({ email: keEmail($('l-email').value), password: $('l-pass').value });
   b.disabled = false; b.textContent = 'Masuk';
   if (error) return toast(pesanAa(error.message), 5000);
   if (!(await muatSaya())) return;
@@ -1041,14 +1046,14 @@ async function muatDaftar() {
     state.poll = setInterval(() => { if (!$('v-home').classList.contains('hidden')) muatDaftar(); }, 10000);
   }
 }
-const namaPemilik = (r) => r.profil ? (r.profil.nama || r.profil.email || 'Tanpa nama') : 'Akun terhapus';
+const namaPemilik = (r) => r.profil ? (r.profil.nama || tampilEmail(r.profil.email) || 'Tanpa nama') : 'Akun terhapus';
 // chip saringan (khusus admin): Semua · Saya · tiap akun
 async function isiSaringan() {
   if (!state.daftarAkun) {
     const { data } = await sb.from('profil').select('id,nama,email').order('created_at');
     state.daftarAkun = data || [];
   }
-  const pil = [['', 'Semua'], [state.uid, 'Saya'], ...state.daftarAkun.filter(a => a.id !== state.uid).map(a => [a.id, a.nama || a.email])];
+  const pil = [['', 'Semua'], [state.uid, 'Saya'], ...state.daftarAkun.filter(a => a.id !== state.uid).map(a => [a.id, a.nama || tampilEmail(a.email)])];
   $('saring').innerHTML = pil.map(([v, t]) => `<button data-v="${esc(v)}" class="${v === (state.filterPemilik || '') ? 'on' : ''}">${esc(t)}</button>`).join('');
 }
 $('saring').addEventListener('click', e => {
@@ -1829,7 +1834,7 @@ function bukaAtur() {
   document.querySelectorAll('#atur-tema button').forEach(b => b.classList.toggle('on', b.dataset.v === t));
   const f = parseFloat(bacaLS('skala_teks')) || 1;
   $('atur-skala').value = Math.max(0, SKALA.indexOf(f));
-  sb && sb.auth.getSession().then(({ data }) => { $('atur-email').textContent = data.session ? 'Masuk sebagai ' + ((state.saya && state.saya.nama) || data.session.user.email) + (state.admin ? ' · Admin' : '') : ''; });
+  sb && sb.auth.getSession().then(({ data }) => { $('atur-email').textContent = data.session ? 'Masuk sebagai ' + ((state.saya && state.saya.nama) || tampilEmail(data.session.user.email)) + (state.admin ? ' · Admin' : '') : ''; });
   $('atur').classList.remove('hidden');
   muatModel();
 }
@@ -1914,6 +1919,9 @@ async function bukaAkun() {
 }
 function tutupAkun() { $('akun').classList.add('hidden'); state.daftarAkun = null; if (!$('v-home').classList.contains('hidden')) muatDaftar(); }
 async function muatAkun() {
+  try { await muatAkunInti(); } catch (e) { $('ak-daftar').innerHTML = kotakGagal('Gagal menampilkan akun: ' + (e && e.message || e)); }
+}
+async function muatAkunInti() {
   $('ak-daftar').innerHTML = '<div class="muted">Memuat…</div>';
   let res;
   try { res = await panggilAkun({ aksi: 'daftar' }); }
@@ -1929,13 +1937,13 @@ async function muatAkun() {
   for (const r of rr || []) { const p = pakai[r.pemilik] || (pakai[r.pemilik] = { n: 0, rp: 0 }); p.n++; p.rp += hitungBiaya(r).total; }
   state.akun = res.akun;
   $('ak-daftar').innerHTML = res.akun.map(a => {
-    const p = pakai[a.id] || { n: 0, rp: 0 }, nm = a.nama || a.email, saya = a.id === res.saya;
+    const p = pakai[a.id] || { n: 0, rp: 0 }, nm = a.nama || tampilEmail(a.email), saya = a.id === res.saya;
     const masuk = a.terakhir_masuk ? 'masuk ' + tglPendek(a.terakhir_masuk) : 'belum pernah masuk';
     return `<div class="ak-kartu ${a.aktif ? '' : 'mati'}" id="ak-${a.id}">
       <button onclick="this.parentElement.classList.toggle('buka')">
         <span class="ak-ava">${esc((nm || '?').trim().charAt(0).toUpperCase())}</span>
         <span class="grow">${esc(nm)}${saya ? ' <span class="muted">(lo)</span>' : ''}${a.peran === 'admin' ? '<span class="ak-tag admin">Admin</span>' : ''}${a.aktif ? '' : '<span class="ak-tag mati">Nonaktif</span>'}
-          <small>${a.nama ? esc(a.email) + ' · ' : ''}${masuk}</small>
+          <small>${a.nama ? esc(tampilEmail(a.email)) + ' · ' : ''}${masuk}</small>
           <small>Bulan ini: ${p.n} rapat · ±${rupiah(p.rp)}</small></span>
       </button>
       <div class="ak-aksi">
@@ -1950,10 +1958,11 @@ async function muatAkun() {
 async function tambahAkun() {
   const b = $('ak-simpan'); b.disabled = true; b.textContent = 'Membuat…';
   try {
-    const email = $('ak-email').value.trim(), sandi = $('ak-sandi').value;
+    const masuk = $('ak-email').value.trim().toLowerCase(), email = keEmail(masuk), sandi = $('ak-sandi').value;
+    if (!/^[a-z0-9._-]{3,}$/.test(masuk) && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(masuk)) { b.disabled = false; b.textContent = 'Buat akun'; return toast('Username minimal 3 huruf/angka (boleh . _ -), atau pakai email.', 5000); }
     await panggilAkun({ aksi: 'tambah', nama: $('ak-nama').value.trim(), email, password: sandi,
       peran: $('ak-peran').querySelector('.on').dataset.v });
-    try { await Promise.race([new Promise(r => setTimeout(r, 1500)), navigator.clipboard.writeText(`Notulen AI\n${location.origin + location.pathname}\nEmail: ${email}\nPassword: ${sandi}`)]); } catch (_) {}
+    try { await Promise.race([new Promise(r => setTimeout(r, 1500)), navigator.clipboard.writeText(`Notulen AI\n${location.origin + location.pathname}\nLogin: ${masuk}\nPassword: ${sandi}`)]); } catch (_) {}
     toast('Akun jadi. Info loginnya udah Aa salin, tinggal tempel ke orangnya.', 5000);
     formAkun(false); muatAkun();
   } catch (e) { toast(pesanAa(e.message), 5000); }
@@ -1961,10 +1970,10 @@ async function tambahAkun() {
 }
 async function ubahAkun(id, apa) {
   const a = (state.akun || []).find(x => x.id === id); if (!a) return;
-  const nm = a.nama || a.email;
+  const nm = a.nama || tampilEmail(a.email);
   let body = { aksi: 'ubah', id };
   if (apa === 'nama') {
-    const v = prompt('Nama untuk ' + a.email + ':', a.nama || ''); if (v === null) return;
+    const v = prompt('Nama untuk ' + tampilEmail(a.email) + ':', a.nama || ''); if (v === null) return;
     body.nama = v;
   } else if (apa === 'sandi') {
     const v = prompt('Password baru untuk ' + nm + ' (min. 8 karakter):', sandiAcak()); if (v === null) return;
