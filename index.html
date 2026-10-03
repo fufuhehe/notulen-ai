@@ -1887,7 +1887,8 @@ document.querySelectorAll('#atur-model select').forEach(x => x.addEventListener(
 }));
 // ================= Kelola akun (khusus admin) =================
 async function panggilAkun(body) {
-  const { data, error } = await sb.functions.invoke('kelola-akun', { body });
+  const lama = new Promise((_, rej) => setTimeout(() => rej(new Error('Waktu habis: fungsi kelola-akun ga jawab dalam 25 detik (aksi: ' + body.aksi + ').')), 25000));
+  const { data, error } = await Promise.race([sb.functions.invoke('kelola-akun', { body }), lama]);
   if (error) {
     let m = error.message;
     try { const j = await error.context.json(); if (j && j.error) m = j.error; } catch (_) {}
@@ -1917,9 +1918,11 @@ async function muatAkun() {
   let res;
   try { res = await panggilAkun({ aksi: 'daftar' }); }
   catch (e) { $('ak-daftar').innerHTML = kotakGagal(e.message); return; }
+  if (!res || !Array.isArray(res.akun)) { $('ak-daftar').innerHTML = kotakGagal('Balasan fungsi kelola-akun aneh: ' + JSON.stringify(res).slice(0, 300)); return; }
   // biaya & jumlah rapat bulan ini per akun
   const awal = new Date(); awal.setDate(1); awal.setHours(0, 0, 0, 0);
-  const ambil = (k) => sb.from('rapat').select(k).gte('created_at', awal.toISOString());
+  const ambil = (k) => Promise.race([sb.from('rapat').select(k).gte('created_at', awal.toISOString()),
+    new Promise(r => setTimeout(() => r({ data: [], error: null }), 15000))]);
   let { data: rr, error } = await ambil('pemilik,created_at,stt_model,stt_detik,ai_model,ai_token_in,ai_token_out,kurs');
   if (error) ({ data: rr } = await ambil('pemilik,created_at,stt_model,stt_detik,ai_model,ai_token_in,ai_token_out'));
   const pakai = {};
@@ -1950,7 +1953,7 @@ async function tambahAkun() {
     const email = $('ak-email').value.trim(), sandi = $('ak-sandi').value;
     await panggilAkun({ aksi: 'tambah', nama: $('ak-nama').value.trim(), email, password: sandi,
       peran: $('ak-peran').querySelector('.on').dataset.v });
-    try { await navigator.clipboard.writeText(`Notulen AI\n${location.origin + location.pathname}\nEmail: ${email}\nPassword: ${sandi}`); } catch (_) {}
+    try { await Promise.race([new Promise(r => setTimeout(r, 1500)), navigator.clipboard.writeText(`Notulen AI\n${location.origin + location.pathname}\nEmail: ${email}\nPassword: ${sandi}`)]); } catch (_) {}
     toast('Akun jadi. Info loginnya udah Aa salin, tinggal tempel ke orangnya.', 5000);
     formAkun(false); muatAkun();
   } catch (e) { toast(pesanAa(e.message), 5000); }
