@@ -265,6 +265,7 @@ body.admin span.khusus-admin,body.admin li.khusus-admin{display:list-item!import
 .ak-aksi{display:none;grid-template-columns:1fr 1fr;gap:.4rem;padding:0 .9rem .9rem}
 .ak-kartu.buka .ak-aksi{display:grid}
 .ak-aksi button{min-height:2.5rem;font-size:.8125rem}
+.ke-panduan+.ke-panduan,#gs-form.hidden+.ke-panduan{margin-top:.5rem}
 .ke-panduan{width:100%;margin-top:1.5rem;justify-content:flex-start;background:var(--raised);border-color:var(--line);font-weight:600}
 #panduan .alur{margin:1rem 0 .75rem;padding:0;list-style:none;counter-reset:a;display:grid;gap:.5rem}
 #panduan .alur li{counter-increment:a;display:flex;gap:.65rem;align-items:center;font-size:.875rem;color:var(--ink-2,var(--ink))}
@@ -604,6 +605,7 @@ body.ada-player .aksi{bottom:4.5rem}
       <label>Ulangi password baru</label><input id="gs-2" type="password" autocomplete="new-password">
       <div class="row" style="margin-top:1rem"><button onclick="formSandi(false)">Batal</button><button class="primary" id="gs-simpan" onclick="gantiSandi()">Simpan</button></div>
     </div>
+    <button class="ke-panduan khusus-admin" onclick="salinUndangan()"><svg class="i"><use href="#i-bagi"/></svg>Salin link undangan</button>
     <button class="ke-panduan khusus-admin" onclick="tutupAtur();bukaAkun()"><svg class="i"><use href="#i-orang"/></svg>Kelola akun</button>
     <button class="ke-panduan" onclick="tutupAtur();bukaPanduan()"><svg class="i"><use href="#i-bantu"/></svg>Panduan pakai Notulen AI</button>
     <div class="row" style="margin-top:1rem">
@@ -712,7 +714,7 @@ body.ada-player .aksi{bottom:4.5rem}
         <li>Pilihan model AI di Pengaturan berlaku untuk akun lo aja.</li>
         <li>Ganti password sendiri: Pengaturan → <b>Ganti password</b>. Lupa password? Minta admin buat gantiin.</li>
         <li class="khusus-admin"><b>Admin:</b> di atas daftar rapat ada saringan <b>Semua / Saya / nama orang</b>. Rapat milik orang lain ditandai namanya.</li>
-        <li class="khusus-admin"><b>Admin:</b> Pengaturan → <b>Kelola akun</b> buat tambah akun (info login otomatis disalin), ganti nama/password, jadikan admin, atau nonaktifkan. Biaya bulan ini per orang juga ada di sana.</li>
+        <li class="khusus-admin"><b>Admin:</b> Pengaturan → <b>Kelola akun</b> buat tambah akun (info login + link undangan otomatis disalin; yang buka link ga perlu isi setup Supabase), ganti nama/password, jadikan admin, atau nonaktifkan. Biaya bulan ini per orang juga ada di sana.</li>
       </ul>
     </details>
 
@@ -996,7 +998,7 @@ async function muatSaya() {
 async function mulai() {
   if (!initSb()) return ke('setup');
   const { data } = await sb.auth.getSession();
-  if (!data.session) return ke('login');
+  if (!data.session) { ke('login'); if (state.loginAwal) { $('l-email').value = state.loginAwal; $('l-pass').focus(); } return; }
   if (!(await muatSaya())) return;
   const m = location.hash.match(/^#r\/([0-9a-f-]{36})$/);
   ke(m ? 'detail' : 'home', m && m[1]);
@@ -1962,7 +1964,7 @@ async function tambahAkun() {
     if (!/^[a-z0-9._-]{3,}$/.test(masuk) && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(masuk)) { b.disabled = false; b.textContent = 'Buat akun'; return toast('Username minimal 3 huruf/angka (boleh . _ -), atau pakai email.', 5000); }
     await panggilAkun({ aksi: 'tambah', nama: $('ak-nama').value.trim(), email, password: sandi,
       peran: $('ak-peran').querySelector('.on').dataset.v });
-    try { await Promise.race([new Promise(r => setTimeout(r, 1500)), navigator.clipboard.writeText(`Notulen AI\n${location.origin + location.pathname}\nLogin: ${masuk}\nPassword: ${sandi}`)]); } catch (_) {}
+    try { await Promise.race([new Promise(r => setTimeout(r, 1500)), navigator.clipboard.writeText(`Notulen AI (Aa Ibot)\nBuka link ini di HP/laptop:\n${linkUndangan(masuk)}\n\nLogin: ${masuk}\nPassword: ${sandi}\n(Ganti password sendiri di Pengaturan)`)]); } catch (_) {}
     toast('Akun jadi. Info loginnya udah Aa salin, tinggal tempel ke orangnya.', 5000);
     formAkun(false); muatAkun();
   } catch (e) { toast(pesanAa(e.message), 5000); }
@@ -2032,6 +2034,35 @@ function isiSapaan() {
   $('sapa').innerHTML = `${salam}, ${esc(nama)}.<br><span>Rapat apa hari ini?</span>`;
 }
 
+// ================= Link undangan =================
+// Link berisi alamat Supabase + publishable key (aman dibagikan; data tetap dijaga login & RLS),
+// jadi user baru ga perlu isi setup manual.
+const b64u = (t) => btoa(unescape(encodeURIComponent(t))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+const unb64u = (t) => decodeURIComponent(escape(atob(t.replace(/-/g, '+').replace(/_/g, '/'))));
+function linkUndangan(login) {
+  const isi = { u: bacaLS('supa_url'), k: bacaLS('supa_key') };
+  if (login) isi.n = login;
+  return location.origin + location.pathname + '#pasang=' + b64u(JSON.stringify(isi));
+}
+function terimaUndangan() {
+  const m = location.hash.match(/^#pasang=([A-Za-z0-9_-]+)$/);
+  if (!m) return;
+  try {
+    const d = JSON.parse(unb64u(m[1]));
+    if (/^https:\/\/.+/.test(d.u) && d.k && !/^sb_secret_/.test(d.k)) {
+      const ganti = bacaLS('supa_url') && bacaLS('supa_url') !== d.u;
+      simpanLS('supa_url', d.u); simpanLS('supa_key', d.k);
+      if (ganti) try { localStorage.removeItem(Object.keys(localStorage).find(k => /^sb-.*-auth-token$/.test(k))); } catch (_) {}
+      if (d.n) state.loginAwal = d.n;
+    }
+  } catch (_) {}
+  history.replaceState(null, '', location.pathname);
+}
+async function salinUndangan() {
+  try { await navigator.clipboard.writeText(linkUndangan()); toast('Link undangan disalin. Orangnya tinggal buka link itu lalu login.', 4500); }
+  catch (_) { prompt('Salin link ini:', linkUndangan()); }
+}
+
 // ================= mulai =================
 window.addEventListener('hashchange', () => {
   if (!sb || $('v-rec').classList.contains('hidden') === false) return;
@@ -2042,6 +2073,7 @@ if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catc
 if (!window.supabase || !window.tus) {
   document.body.innerHTML = '<div class="wrap"><h1>Tidak ada internet</h1><p class="muted">Aplikasi butuh koneksi untuk pertama kali dibuka.</p></div>';
 } else {
+  terimaUndangan();
   mulai();
 }
 </script>
