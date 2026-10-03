@@ -714,7 +714,7 @@ body.ada-player .aksi{bottom:4.5rem}
         <li>Pilihan model AI di Pengaturan berlaku untuk akun lo aja.</li>
         <li>Ganti password sendiri: Pengaturan → <b>Ganti password</b>. Lupa password? Minta admin buat gantiin.</li>
         <li class="khusus-admin"><b>Admin:</b> di atas daftar rapat ada saringan <b>Semua / Saya / nama orang</b>. Rapat milik orang lain ditandai namanya.</li>
-        <li class="khusus-admin"><b>Admin:</b> Pengaturan → <b>Kelola akun</b> buat tambah akun (info login + link undangan otomatis disalin; yang buka link ga perlu isi setup Supabase), ganti nama/password, jadikan admin, atau nonaktifkan. Biaya bulan ini per orang juga ada di sana.</li>
+        <li class="khusus-admin"><b>Admin:</b> Pengaturan → <b>Kelola akun</b> buat tambah akun (info login + link undangan otomatis disalin; yang buka link ga perlu isi setup Supabase). Ketuk akun → <b>Salin info login</b> buat kirim ulang link + username; password lama ga bisa dilihat, jadi pakai <b>Ganti password</b> kalau perlu yang baru, ganti nama/password, jadikan admin, atau nonaktifkan. Biaya bulan ini per orang juga ada di sana.</li>
       </ul>
     </details>
 
@@ -1903,6 +1903,16 @@ async function panggilAkun(body) {
   }
   return data;
 }
+// Teks info login siap kirim. Password lama tidak bisa dilihat lagi (tersimpan teracak),
+// jadi tanpa password baru isinya pengingat saja.
+function teksLogin(login, sandi) {
+  return `Notulen AI (Aa Ibot)\nBuka link ini di HP/laptop:\n${linkUndangan(login)}\n\nLogin: ${login}\n` +
+    (sandi ? `Password: ${sandi}\n(Ganti password sendiri di Pengaturan)` : 'Password: pakai yang sudah dikasih sebelumnya. Lupa? Minta admin buat ganti.');
+}
+async function salinTeks(t, pesan) {
+  try { await Promise.race([navigator.clipboard.writeText(t), new Promise((_, r) => setTimeout(() => r(new Error('lama')), 1500))]); toast(pesan, 4500); }
+  catch (_) { prompt('Salin teks ini:', t); }
+}
 function sandiAcak() {
   const h = 'abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789';
   return Array.from(crypto.getRandomValues(new Uint32Array(10)), n => h[n % h.length]).join('');
@@ -1949,6 +1959,7 @@ async function muatAkunInti() {
           <small>Bulan ini: ${p.n} rapat · ±${rupiah(p.rp)}</small></span>
       </button>
       <div class="ak-aksi">
+        <button onclick="salinInfo('${a.id}')" style="grid-column:1/-1"><svg class="i"><use href="#i-copy"/></svg>Salin info login</button>
         <button onclick="ubahAkun('${a.id}','nama')">Ganti nama</button>
         <button onclick="ubahAkun('${a.id}','sandi')">Ganti password</button>
         ${saya ? '' : `<button onclick="ubahAkun('${a.id}','peran')">${a.peran === 'admin' ? 'Jadikan user' : 'Jadikan admin'}</button>
@@ -1964,11 +1975,15 @@ async function tambahAkun() {
     if (!/^[a-z0-9._-]{3,}$/.test(masuk) && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(masuk)) { b.disabled = false; b.textContent = 'Buat akun'; return toast('Username minimal 3 huruf/angka (boleh . _ -), atau pakai email.', 5000); }
     await panggilAkun({ aksi: 'tambah', nama: $('ak-nama').value.trim(), email, password: sandi,
       peran: $('ak-peran').querySelector('.on').dataset.v });
-    try { await Promise.race([new Promise(r => setTimeout(r, 1500)), navigator.clipboard.writeText(`Notulen AI (Aa Ibot)\nBuka link ini di HP/laptop:\n${linkUndangan(masuk)}\n\nLogin: ${masuk}\nPassword: ${sandi}\n(Ganti password sendiri di Pengaturan)`)]); } catch (_) {}
+    try { await Promise.race([new Promise(r => setTimeout(r, 1500)), navigator.clipboard.writeText(teksLogin(masuk, sandi))]); } catch (_) {}
     toast('Akun jadi. Info loginnya udah Aa salin, tinggal tempel ke orangnya.', 5000);
     formAkun(false); muatAkun();
   } catch (e) { toast(pesanAa(e.message), 5000); }
   b.disabled = false; b.textContent = 'Buat akun';
+}
+function salinInfo(id) {
+  const a = (state.akun || []).find(x => x.id === id); if (!a) return;
+  salinTeks(teksLogin(tampilEmail(a.email)), 'Info login (link + username) disalin. Password ga ikut karena ga bisa dilihat lagi — pakai Ganti password kalau perlu yang baru.');
 }
 async function ubahAkun(id, apa) {
   const a = (state.akun || []).find(x => x.id === id); if (!a) return;
@@ -1990,7 +2005,7 @@ async function ubahAkun(id, apa) {
   }
   try {
     await panggilAkun(body);
-    if (apa === 'sandi') { try { await navigator.clipboard.writeText(body.password); } catch (_) {} toast('Password diganti & disalin.'); }
+    if (apa === 'sandi') salinTeks(teksLogin(tampilEmail(a.email), body.password), 'Password diganti. Info login lengkap (link + username + password baru) udah disalin.');
     else toast('Siap, udah Aa ubah.');
     muatAkun();
   } catch (e) { toast(pesanAa(e.message), 5000); }
