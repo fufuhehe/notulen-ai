@@ -60,6 +60,14 @@ Di tab **Paparan** pada detail rapat: pilih sumber (resume atau transkrip), teka
 Pasang sekali: jalankan [`setup/6-paparan.sql`](setup/6-paparan.sql), lalu impor dan aktifkan [`setup/7-n8n-paparan.json`](setup/7-n8n-paparan.json) (pilih credential Kunci Notulen, Supabase Notulen, dan OpenAI).
 Isi paparan ditulis AI dalam format JSON (prompt: `setup/prompt-deck.txt`). Desainnya dibuat oleh app, jadi teks dan angkanya persis sama dengan yang ditulis AI.
 
+## Banyak akun (opsional)
+Tiap akun cuma lihat rapatnya sendiri. Admin lihat semua rapat (bisa disaring per orang) dan mengelola akun dari app.
+1. **SQL Editor** → jalankan [`setup/10-multi-akun.sql`](setup/10-multi-akun.sql). Akun paling lama otomatis jadi admin, dan semua rapat lama jadi miliknya. Tabel hasil di bagian bawah menunjukkan peran tiap akun.
+2. **Edge Functions → Deploy a new function → Via Editor**, beri nama `kelola-akun`, tempel isi [`setup/11-fungsi-kelola-akun.ts`](setup/11-fungsi-kelola-akun.ts), lalu Deploy. Setelah itu buka fungsinya → *Details* → matikan **Verify JWT with legacy secret** → Save.
+3. Di app: Pengaturan → **Kelola akun** → *Tambah akun*. Info login otomatis disalin, tinggal kirim ke orangnya.
+
+Pilihan model AI tersimpan per akun. n8n tidak perlu diubah.
+
 ## Rekam suara Zoom / tab lain (di laptop)
 Di laptop/PC (Chrome atau Edge), di bawah tombol *Rekam rapat* ada pilihan **Sumber suara**:
 - **Mic**: suara ruangan lewat mikrofon.

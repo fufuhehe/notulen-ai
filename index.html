@@ -242,6 +242,29 @@ details#d-biaya summary::-webkit-details-marker{display:none}
 #pm-daftar button.on{border-color:var(--accent,#0f7a6c);background:color-mix(in srgb,var(--accent,#0f7a6c) 8%,var(--surface))}
 #pm-daftar button.on::before{border:5px solid var(--accent,#0f7a6c)}
 #pm-daftar button.on .hg{color:var(--ink-2)}
+.khusus-admin{display:none!important}
+body.admin .khusus-admin{display:flex!important}
+body.admin span.khusus-admin,body.admin li.khusus-admin{display:list-item!important}
+.saring{display:flex;gap:.4rem;overflow-x:auto;margin:-.25rem 0 .75rem;padding-bottom:.15rem;scrollbar-width:none}
+.saring:empty{display:none}
+.saring button{flex:none;min-height:2rem;padding:.25rem .8rem;border-radius:99px;font-size:.8125rem;font-weight:600;background:var(--surface);border:1px solid var(--line);color:var(--muted)}
+.saring button.on{background:var(--ink);color:var(--surface);border-color:var(--ink)}
+.item .milik{display:inline-block;margin-top:.3rem;font-size:.75rem;font-weight:600;color:var(--ink-2);background:var(--raised);border:1px solid var(--line-2);border-radius:99px;padding:.05rem .5rem}
+.ak-form{margin-top:1rem;padding:1rem;border:1px solid var(--line);border-radius:var(--r-sm);background:var(--raised)}
+.ak-form label{display:block;font-size:.8125rem;font-weight:700;color:var(--muted);margin:.75rem 0 .35rem}
+.ak-form label:first-child{margin-top:0}
+.ak-daftar{margin-top:1.25rem;display:grid;gap:.5rem}
+.ak-kartu{border:1px solid var(--line);border-radius:var(--r-sm);background:var(--surface)}
+.ak-kartu>button{width:100%;display:flex;align-items:center;justify-content:flex-start;gap:.75rem;text-align:left;background:none;border:0;padding:.8rem .9rem;color:var(--ink);font-weight:600;min-height:0}
+.ak-ava{flex:none;width:2.25rem;height:2.25rem;border-radius:50%;display:grid;place-items:center;background:var(--accent-soft);color:var(--accent);font-weight:800;font-size:.875rem}
+.ak-kartu.mati .ak-ava{background:var(--raised);color:var(--muted)}
+.ak-kartu .grow small{display:block;color:var(--muted);font-weight:500;font-size:.75rem;margin-top:.1rem}
+.ak-tag{font-size:.6875rem;font-weight:700;border-radius:99px;padding:.1rem .5rem;margin-left:.35rem;vertical-align:middle}
+.ak-tag.admin{background:var(--pp-soft);color:var(--pp)}
+.ak-tag.mati{background:var(--bad-soft);color:var(--bad)}
+.ak-aksi{display:none;grid-template-columns:1fr 1fr;gap:.4rem;padding:0 .9rem .9rem}
+.ak-kartu.buka .ak-aksi{display:grid}
+.ak-aksi button{min-height:2.5rem;font-size:.8125rem}
 .ke-panduan{width:100%;margin-top:1.5rem;justify-content:flex-start;background:var(--raised);border-color:var(--line);font-weight:600}
 #panduan .alur{margin:1rem 0 .75rem;padding:0;list-style:none;counter-reset:a;display:grid;gap:.5rem}
 #panduan .alur li{counter-increment:a;display:flex;gap:.65rem;align-items:center;font-size:.875rem;color:var(--ink-2,var(--ink))}
@@ -327,6 +350,7 @@ body.ada-player .aksi{bottom:4.5rem}
   <symbol id="i-bulan" viewBox="0 0 24 24"><path d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5z"/></symbol>
   <symbol id="i-bantu" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.6 9.4a2.5 2.5 0 0 1 4.8.9c0 1.7-2.4 2.2-2.4 3.7M12 17.2v.1"/></symbol>
   <symbol id="i-slide" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M12 16v4M8.5 20h7M7.5 12.5l3-3 2 2 4-4"/></symbol>
+  <symbol id="i-orang" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0M16 4.5a3.5 3.5 0 0 1 0 7M18 14.5a6.5 6.5 0 0 1 3.5 5.5"/></symbol>
   <symbol id="i-ulang" viewBox="0 0 24 24"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/></symbol>
   <symbol id="i-copy" viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="12" rx="2.5"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></symbol>
   <symbol id="i-bagi" viewBox="0 0 24 24"><circle cx="18" cy="5.5" r="2.5"/><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="18.5" r="2.5"/><path d="M8.2 10.8l7.6-4.1M8.2 13.2l7.6 4.1"/></symbol>
@@ -408,6 +432,7 @@ body.ada-player .aksi{bottom:4.5rem}
     <div id="pending"></div>
 
     <div class="bagian"><h2>Rapat</h2><div class="muted" id="total-biaya"></div></div>
+    <div id="saring" class="saring"></div>
     <div id="daftar" class="list"><div class="item kosong">Memuat…</div></div>
   </div>
 </section>
@@ -572,6 +597,7 @@ body.ada-player .aksi{bottom:4.5rem}
       </select>
       <div class="muted" id="atur-model-info" style="margin-top:.4rem;font-size:.75rem">Perkiraan biaya per 1 jam rapat. Berlaku untuk proses berikutnya.</div>
     </div>
+    <button class="ke-panduan khusus-admin" onclick="tutupAtur();bukaAkun()"><svg class="i"><use href="#i-orang"/></svg>Kelola akun</button>
     <button class="ke-panduan" onclick="tutupAtur();bukaPanduan()"><svg class="i"><use href="#i-bantu"/></svg>Panduan pakai Notulen AI</button>
     <div class="row" style="margin-top:1rem">
       <button onclick="tutupAtur()">Tutup</button>
@@ -673,6 +699,17 @@ body.ada-player .aksi{bottom:4.5rem}
     </details>
 
     <details>
+      <summary>Akun</summary>
+      <ul>
+        <li>Rapat yang lo rekam atau upload <b>cuma bisa dilihat lo sendiri</b> (dan admin).</li>
+        <li>Pilihan model AI di Pengaturan berlaku untuk akun lo aja.</li>
+        <li>Lupa password? Minta admin buat gantiin.</li>
+        <li class="khusus-admin"><b>Admin:</b> di atas daftar rapat ada saringan <b>Semua / Saya / nama orang</b>. Rapat milik orang lain ditandai namanya.</li>
+        <li class="khusus-admin"><b>Admin:</b> Pengaturan → <b>Kelola akun</b> buat tambah akun (info login otomatis disalin), ganti nama/password, jadikan admin, atau nonaktifkan. Biaya bulan ini per orang juga ada di sana.</li>
+      </ul>
+    </details>
+
+    <details>
       <summary>Hal yang perlu diingat</summary>
       <ul>
         <li>Notulen buatan AI adalah <b>draf</b>. Cek lagi nama, angka, dan keputusan sebelum dikirim ke pimpinan.</li>
@@ -691,6 +728,26 @@ body.ada-player .aksi{bottom:4.5rem}
     <h3 id="pm-judul">Model AI</h3>
     <div class="muted" style="font-size:.8125rem">Harga = perkiraan biaya per 1 jam rapat.</div>
     <div id="pm-daftar"></div>
+  </div>
+</div>
+
+<div id="akun" class="lembar hidden" onclick="if(event.target===this)tutupAkun()">
+  <div>
+    <div class="pegangan"></div>
+    <h3>Kelola akun</h3>
+    <div class="muted" style="font-size:.8125rem">Tiap akun cuma lihat rapatnya sendiri. Admin lihat semua. Pendaftaran umum tetap tertutup.</div>
+    <button class="primary" style="width:100%;margin-top:1rem" onclick="formAkun()" id="ak-tambah-btn">+ Tambah akun</button>
+    <div id="ak-form" class="ak-form hidden">
+      <label>Nama</label><input id="ak-nama" placeholder="mis. Budi Santoso" autocomplete="off">
+      <label>Email</label><input id="ak-email" type="email" placeholder="nama@contoh.com" autocomplete="off">
+      <label>Password awal</label>
+      <div class="row"><input id="ak-sandi" autocomplete="off" style="flex:1"><button type="button" onclick="$('ak-sandi').value=sandiAcak()" style="flex:none">Acak</button></div>
+      <div class="muted" style="font-size:.75rem;margin-top:.35rem">Kasih tahu password ini ke orangnya. Bisa diganti nanti.</div>
+      <label>Peran</label>
+      <div class="seg" id="ak-peran"><button data-v="user" class="on">User</button><button data-v="admin">Admin</button></div>
+      <div class="row" style="margin-top:1rem"><button onclick="formAkun(false)">Batal</button><button class="primary" id="ak-simpan" onclick="tambahAkun()">Buat akun</button></div>
+    </div>
+    <div id="ak-daftar" class="ak-daftar"><div class="muted">Memuat…</div></div>
   </div>
 </div>
 
@@ -781,6 +838,12 @@ const chip = (s) => { const [t, c] = STATUS[s] || [s, '']; return `<span class="
 
 // ================= Pesan error ala Aa =================
 const POLA_ERROR = [
+  [/banned|dinonaktifkan/i, 'Akun ini lagi dinonaktifkan admin. Hubungi admin ya.'],
+  [/Requested function was not found|kelola-akun.*not found|Failed to send a request to the Edge Function/i, 'Fungsi “kelola-akun” belum dipasang di Supabase. Lihat setup/11-fungsi-kelola-akun.ts.'],
+  [/Khusus admin/i, 'Menu ini khusus admin.'],
+  [/Email itu sudah punya akun/i, 'Email itu udah punya akun.'],
+  [/Password minimal 8/i, 'Password minimal 8 karakter.'],
+  [/Ga bisa (nurunin|nonaktifkan)/i, null],
   [/insufficient_quota|quota|billing|balance|credit/i, 'Duh, Aa laper nih, ga bisa kerja. Saldo AI-nya kayaknya habis — isi dulu saldo OpenAI, terus tekan Coba lagi ya.'],
   [/too many requests|429|rate.?limit|tokens per min|TPM/i, 'Duh, Aa laper nih, ga kuat mikir. Kemungkinan saldo AI habis, atau rapatnya kepanjangan buat jatah per menit akun AI. Isi saldo dulu, atau ganti model ke yang “mini”, lalu Coba lagi.'],
   [/401|403|unauthori[sz]ed|invalid.*(api|key)|incorrect api key|forbidden|kunci salah/i, 'Aa ga dikasih masuk — kunci API-nya salah atau kedaluwarsa. Cek credential di n8n ya.'],
@@ -802,7 +865,7 @@ const POLA_ERROR = [
 ];
 function pesanAa(raw) {
   const t = String(raw || '');
-  for (const [p, m] of POLA_ERROR) if (p.test(t)) return m;
+  for (const [p, m] of POLA_ERROR) if (p.test(t)) return m || t;
   return 'Waduh, ada yang ga beres. Coba lagi ya — kalau masih gagal, kirim detailnya ke yang bikin app.';
 }
 function kotakGagal(raw, tombol) {
@@ -835,7 +898,7 @@ async function idb(store, mode, fn) {
     tx.onabort = () => rej(tx.error);
   });
 }
-const recPut = (r) => idb('recs', 'readwrite', s => s.put(r));
+const recPut = (r) => idb('recs', 'readwrite', s => s.put({ ...r, uid: r.uid || state.uid || null }));
 const recAll = () => idb('recs', 'readonly', s => s.getAll());
 const recDel = (id) => idb('recs', 'readwrite', s => s.delete(id));
 const chunkAdd = (rec, blob) => idb('chunks', 'readwrite', s => s.add({ rec, blob }));
@@ -880,9 +943,14 @@ async function login() {
   const { error } = await sb.auth.signInWithPassword({ email: $('l-email').value.trim(), password: $('l-pass').value });
   b.disabled = false; b.textContent = 'Masuk';
   if (error) return toast(pesanAa(error.message), 5000);
+  if (!(await muatSaya())) return;
   ke('home');
 }
-async function logout() { await sb.auth.signOut(); ke('login'); }
+async function logout() {
+  await sb.auth.signOut();
+  state.uid = null; state.saya = null; state.admin = false; state.filterPemilik = '';
+  document.body.classList.remove('admin'); ke('login');
+}
 
 // ================= Navigasi =================
 function ke(v, arg) {
@@ -897,17 +965,35 @@ function ke(v, arg) {
   if (location.hash !== hash) history.replaceState(null, '', location.pathname + hash);
 }
 
+// Profil akun yang sedang login. state.multi = fitur banyak akun sudah dipasang (setup/10).
+async function muatSaya() {
+  const { data: s } = await sb.auth.getSession();
+  const u = s.session && s.session.user;
+  state.uid = u ? u.id : null; state.email = u ? u.email : '';
+  const { data, error } = await sb.from('profil').select('*').eq('id', state.uid).maybeSingle();
+  state.multi = !error; state.saya = error ? null : data;
+  state.admin = !!(data && data.peran === 'admin' && data.aktif);
+  document.body.classList.toggle('admin', state.admin);
+  if (state.multi && (!data || !data.aktif)) {
+    toast('Akun ini lagi dinonaktifkan admin. Hubungi admin ya.', 6000);
+    await sb.auth.signOut(); ke('login'); return false;
+  }
+  return true;
+}
+
 async function mulai() {
   if (!initSb()) return ke('setup');
   const { data } = await sb.auth.getSession();
   if (!data.session) return ke('login');
+  if (!(await muatSaya())) return;
   const m = location.hash.match(/^#r\/([0-9a-f-]{36})$/);
   ke(m ? 'detail' : 'home', m && m[1]);
 }
 
 // ================= Beranda =================
 async function muatDaftar() {
-  const kolom = 'id,created_at,judul,status,durasi_detik,stt_model,stt_detik,ai_model,ai_token_in,ai_token_out,deck';
+  const kolom = 'id,created_at,judul,status,durasi_detik,stt_model,stt_detik,ai_model,ai_token_in,ai_token_out,deck' +
+    (state.multi ? ',pemilik' : '') + (state.admin ? ',profil(nama,email)' : '');
   const ambil = (k) => sb.from('rapat').select(k).order('created_at', { ascending: false }).limit(100);
   let { data, error } = await ambil(kolom + ',kurs');
   if (error && /kurs/i.test(error.message)) ({ data, error } = await ambil(kolom));   // kolom kurs belum dibuat
@@ -915,9 +1001,14 @@ async function muatDaftar() {
     if (/JWT|auth/i.test(error.message)) return ke('login');
     $('daftar').innerHTML = `<div class="item kosong">${esc(pesanAa(error.message))}</div>`; return;
   }
+  if (state.admin) {                              // admin: saring per pemilik
+    if (state.filterPemilik) data = data.filter(r => r.pemilik === state.filterPemilik);
+    isiSaringan();
+  } else $('saring').innerHTML = '';
   const awalBulan = new Date(); awalBulan.setDate(1); awalBulan.setHours(0, 0, 0, 0);
   const bulanIni = data.filter(r => new Date(r.created_at) >= awalBulan).reduce((a, r) => a + hitungBiaya(r).total, 0);
   $('total-biaya').textContent = bulanIni ? `Biaya bulan ini ±${rupiah(bulanIni)}` : '';
+  if (!data.length && state.filterPemilik) { $('daftar').innerHTML = '<div class="item kosong">Orang ini belum punya rapat.</div>'; return; }
   if (!data.length) { $('daftar').innerHTML = '<div class="item kosong">Belum ada rapat.<br>Aa nganggur nih — tekan “Rekam rapat”.</div>'; return; }
   let grupLalu = '';
   $('daftar').innerHTML = data.map(r => {
@@ -934,6 +1025,7 @@ async function muatDaftar() {
       <div class="grow">
         <div class="t">${esc(r.judul)}</div>
         <div class="m">${jamSaja(r.created_at)}${r.durasi_detik ? ' · ' + menit(r.durasi_detik) : ''}${biaya ? ' · ±' + rupiah(biaya) : ''}</div>
+        ${state.admin && r.pemilik !== state.uid ? `<div class="milik">${esc(namaPemilik(r))}</div>` : ''}
       </div>
       ${r.status === 'selesai' ? '' : chip(r.status)}
     </div>`;
@@ -942,6 +1034,20 @@ async function muatDaftar() {
     state.poll = setInterval(() => { if (!$('v-home').classList.contains('hidden')) muatDaftar(); }, 10000);
   }
 }
+const namaPemilik = (r) => r.profil ? (r.profil.nama || r.profil.email || 'Tanpa nama') : 'Akun terhapus';
+// chip saringan (khusus admin): Semua · Saya · tiap akun
+async function isiSaringan() {
+  if (!state.daftarAkun) {
+    const { data } = await sb.from('profil').select('id,nama,email').order('created_at');
+    state.daftarAkun = data || [];
+  }
+  const pil = [['', 'Semua'], [state.uid, 'Saya'], ...state.daftarAkun.filter(a => a.id !== state.uid).map(a => [a.id, a.nama || a.email])];
+  $('saring').innerHTML = pil.map(([v, t]) => `<button data-v="${esc(v)}" class="${v === (state.filterPemilik || '') ? 'on' : ''}">${esc(t)}</button>`).join('');
+}
+$('saring').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  state.filterPemilik = b.dataset.v; muatDaftar();
+});
 const punyaPaparan = (r) => !!(r.deck && (r.deck.resume || r.deck.transkrip));
 const jamSaja = (s) => new Date(s).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
 function labelHari(s) {
@@ -958,6 +1064,7 @@ async function muatPending() {
   let recs = [];
   try { recs = await recAll(); } catch (_) {}
   if (rekam.id) recs = recs.filter(r => r.id !== rekam.id);
+  recs = recs.filter(r => !r.uid || !state.uid || r.uid === state.uid);   // rekaman akun lain di HP yang sama disembunyikan
   $('pending').innerHTML = recs.map(r => {
     const naik = state.uploading[r.id];
     return `<div class="card">
@@ -1302,12 +1409,13 @@ async function unggah(blob, mime, judul, id, ext, detik) {
 
 // ================= Detail =================
 async function bukaDetail(id, diam) {
-  const { data: r, error } = await sb.from('rapat').select('*').eq('id', id).maybeSingle();
+  const { data: r, error } = await sb.from('rapat').select(state.admin ? '*,profil(nama,email)' : '*').eq('id', id).maybeSingle();
   if (error || !r) { toast('Aa nyari rapatnya tapi ga ketemu. Mungkin udah dihapus.'); return ke('home'); }
   const sebelumnya = state.rapat && state.rapat.id === id ? state.rapat : null;
   state.rapat = r;
   $('d-judul').textContent = r.judul;
-  $('d-meta').textContent = new Date(r.created_at).toLocaleString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' }) + (r.durasi_detik ? ' · ' + menit(r.durasi_detik) : '');
+  $('d-meta').textContent = new Date(r.created_at).toLocaleString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' }) + (r.durasi_detik ? ' · ' + menit(r.durasi_detik) : '') +
+    (state.admin && r.pemilik !== state.uid ? ' · milik ' + namaPemilik(r) : '');
   $('d-status').outerHTML = chip(r.status).replace('<span', '<span id="d-status"');
   const b = hitungBiaya(r);
   $('d-biaya').classList.toggle('hidden', !b.total && !r.ai_token_in);
@@ -1714,7 +1822,7 @@ function bukaAtur() {
   document.querySelectorAll('#atur-tema button').forEach(b => b.classList.toggle('on', b.dataset.v === t));
   const f = parseFloat(bacaLS('skala_teks')) || 1;
   $('atur-skala').value = Math.max(0, SKALA.indexOf(f));
-  sb && sb.auth.getSession().then(({ data }) => { $('atur-email').textContent = data.session ? 'Masuk sebagai ' + data.session.user.email : ''; });
+  sb && sb.auth.getSession().then(({ data }) => { $('atur-email').textContent = data.session ? 'Masuk sebagai ' + ((state.saya && state.saya.nama) || data.session.user.email) + (state.admin ? ' · Admin' : '') : ''; });
   $('atur').classList.remove('hidden');
   muatModel();
 }
@@ -1757,15 +1865,116 @@ function tutupPilihModel() { $('pilih-model').classList.add('hidden'); }
 async function muatModel() {
   const sel = document.querySelectorAll('#atur-model select');
   sel.forEach(x => x.disabled = true); segarkanTombolModel();
-  const { data, error } = await sb.from('pengaturan_app').select('model_notulen,model_paparan').eq('id', 1).maybeSingle();
+  const { data, error } = state.multi
+    ? await sb.from('profil').select('model_notulen,model_paparan').eq('id', state.uid).maybeSingle()
+    : await sb.from('pengaturan_app').select('model_notulen,model_paparan').eq('id', 1).maybeSingle();
   if (error || !data) { $('atur-model-info').textContent = 'Pilihan model belum aktif — jalankan setup/8-pengaturan-model.sql di Supabase.'; return; }
   sel.forEach(x => { x.value = data[x.dataset.k] || 'otomatis'; x.disabled = false; });
   segarkanTombolModel();
 }
 document.querySelectorAll('#atur-model select').forEach(x => x.addEventListener('change', async () => {
-  const { error } = await sb.from('pengaturan_app').update({ [x.dataset.k]: x.value }).eq('id', 1);
+  const { error } = state.multi
+    ? await sb.from('profil').update({ [x.dataset.k]: x.value }).eq('id', state.uid)
+    : await sb.from('pengaturan_app').update({ [x.dataset.k]: x.value }).eq('id', 1);
   toast(error ? pesanAa(error.message) : x.value === 'otomatis' ? 'Siap, Aa pilih modelnya sendiri sesuai panjang rapat.' : 'Siap, Aa pakai ' + x.options[x.selectedIndex].text.split(' · ')[0].replace(/ \(.*\)$/, '') + '.');
 }));
+// ================= Kelola akun (khusus admin) =================
+async function panggilAkun(body) {
+  const { data, error } = await sb.functions.invoke('kelola-akun', { body });
+  if (error) {
+    let m = error.message;
+    try { const j = await error.context.json(); if (j && j.error) m = j.error; } catch (_) {}
+    throw new Error(m);
+  }
+  return data;
+}
+function sandiAcak() {
+  const h = 'abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  return Array.from(crypto.getRandomValues(new Uint32Array(10)), n => h[n % h.length]).join('');
+}
+function formAkun(buka = true) {
+  $('ak-form').classList.toggle('hidden', !buka); $('ak-tambah-btn').classList.toggle('hidden', buka);
+  if (buka) { $('ak-nama').value = ''; $('ak-email').value = ''; $('ak-sandi').value = sandiAcak(); $('ak-nama').focus(); }
+}
+$('ak-peran').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  $('ak-peran').querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b));
+});
+async function bukaAkun() {
+  if (!state.admin) return;
+  $('akun').classList.remove('hidden'); formAkun(false); muatAkun();
+}
+function tutupAkun() { $('akun').classList.add('hidden'); state.daftarAkun = null; if (!$('v-home').classList.contains('hidden')) muatDaftar(); }
+async function muatAkun() {
+  $('ak-daftar').innerHTML = '<div class="muted">Memuat…</div>';
+  let res;
+  try { res = await panggilAkun({ aksi: 'daftar' }); }
+  catch (e) { $('ak-daftar').innerHTML = kotakGagal(e.message); return; }
+  // biaya & jumlah rapat bulan ini per akun
+  const awal = new Date(); awal.setDate(1); awal.setHours(0, 0, 0, 0);
+  const ambil = (k) => sb.from('rapat').select(k).gte('created_at', awal.toISOString());
+  let { data: rr, error } = await ambil('pemilik,created_at,stt_model,stt_detik,ai_model,ai_token_in,ai_token_out,kurs');
+  if (error) ({ data: rr } = await ambil('pemilik,created_at,stt_model,stt_detik,ai_model,ai_token_in,ai_token_out'));
+  const pakai = {};
+  for (const r of rr || []) { const p = pakai[r.pemilik] || (pakai[r.pemilik] = { n: 0, rp: 0 }); p.n++; p.rp += hitungBiaya(r).total; }
+  state.akun = res.akun;
+  $('ak-daftar').innerHTML = res.akun.map(a => {
+    const p = pakai[a.id] || { n: 0, rp: 0 }, nm = a.nama || a.email, saya = a.id === res.saya;
+    const masuk = a.terakhir_masuk ? 'masuk ' + tglPendek(a.terakhir_masuk) : 'belum pernah masuk';
+    return `<div class="ak-kartu ${a.aktif ? '' : 'mati'}" id="ak-${a.id}">
+      <button onclick="this.parentElement.classList.toggle('buka')">
+        <span class="ak-ava">${esc((nm || '?').trim().charAt(0).toUpperCase())}</span>
+        <span class="grow">${esc(nm)}${saya ? ' <span class="muted">(lo)</span>' : ''}${a.peran === 'admin' ? '<span class="ak-tag admin">Admin</span>' : ''}${a.aktif ? '' : '<span class="ak-tag mati">Nonaktif</span>'}
+          <small>${a.nama ? esc(a.email) + ' · ' : ''}${masuk}</small>
+          <small>Bulan ini: ${p.n} rapat · ±${rupiah(p.rp)}</small></span>
+      </button>
+      <div class="ak-aksi">
+        <button onclick="ubahAkun('${a.id}','nama')">Ganti nama</button>
+        <button onclick="ubahAkun('${a.id}','sandi')">Ganti password</button>
+        ${saya ? '' : `<button onclick="ubahAkun('${a.id}','peran')">${a.peran === 'admin' ? 'Jadikan user' : 'Jadikan admin'}</button>
+        <button class="${a.aktif ? 'danger' : ''}" onclick="ubahAkun('${a.id}','aktif')">${a.aktif ? 'Nonaktifkan' : 'Aktifkan lagi'}</button>`}
+      </div>
+    </div>`;
+  }).join('') || '<div class="muted">Belum ada akun.</div>';
+}
+async function tambahAkun() {
+  const b = $('ak-simpan'); b.disabled = true; b.textContent = 'Membuat…';
+  try {
+    const email = $('ak-email').value.trim(), sandi = $('ak-sandi').value;
+    await panggilAkun({ aksi: 'tambah', nama: $('ak-nama').value.trim(), email, password: sandi,
+      peran: $('ak-peran').querySelector('.on').dataset.v });
+    try { await navigator.clipboard.writeText(`Notulen AI\n${location.origin + location.pathname}\nEmail: ${email}\nPassword: ${sandi}`); } catch (_) {}
+    toast('Akun jadi. Info loginnya udah Aa salin, tinggal tempel ke orangnya.', 5000);
+    formAkun(false); muatAkun();
+  } catch (e) { toast(pesanAa(e.message), 5000); }
+  b.disabled = false; b.textContent = 'Buat akun';
+}
+async function ubahAkun(id, apa) {
+  const a = (state.akun || []).find(x => x.id === id); if (!a) return;
+  const nm = a.nama || a.email;
+  let body = { aksi: 'ubah', id };
+  if (apa === 'nama') {
+    const v = prompt('Nama untuk ' + a.email + ':', a.nama || ''); if (v === null) return;
+    body.nama = v;
+  } else if (apa === 'sandi') {
+    const v = prompt('Password baru untuk ' + nm + ' (min. 8 karakter):', sandiAcak()); if (v === null) return;
+    body = { aksi: 'sandi', id, password: v };
+  } else if (apa === 'peran') {
+    const tuju = a.peran === 'admin' ? 'user' : 'admin';
+    if (!confirm(tuju === 'admin' ? `Jadikan ${nm} admin? Admin bisa lihat semua rapat dan kelola akun.` : `Turunkan ${nm} jadi user biasa?`)) return;
+    body.peran = tuju;
+  } else if (apa === 'aktif') {
+    if (a.aktif && !confirm(`Nonaktifkan ${nm}? Dia ga bisa login lagi. Rapatnya tetap tersimpan.`)) return;
+    body.aktif = !a.aktif;
+  }
+  try {
+    await panggilAkun(body);
+    if (apa === 'sandi') { try { await navigator.clipboard.writeText(body.password); } catch (_) {} toast('Password diganti & disalin.'); }
+    else toast('Siap, udah Aa ubah.');
+    muatAkun();
+  } catch (e) { toast(pesanAa(e.message), 5000); }
+}
+
 function bukaPanduan() { $('panduan').classList.remove('hidden'); $('panduan').firstElementChild.scrollTop = 0; simpanLS('panduan_dibaca', '1'); }
 function tutupPanduan() { $('panduan').classList.add('hidden'); }
 function tutupAtur() { $('atur').classList.add('hidden'); }
@@ -1784,7 +1993,8 @@ terapkanTema(bacaLS('tema') || 'auto');
 function isiSapaan() {
   const h = new Date().getHours();
   const salam = h < 11 ? 'Pagi' : h < 15 ? 'Siang' : h < 18 ? 'Sore' : 'Malam';
-  $('sapa').innerHTML = `${salam}, Aa.<br><span>Rapat apa hari ini?</span>`;
+  const nama = !state.admin && state.saya && state.saya.nama ? state.saya.nama.trim().split(/\s+/)[0] : 'Aa';
+  $('sapa').innerHTML = `${salam}, ${esc(nama)}.<br><span>Rapat apa hari ini?</span>`;
 }
 
 // ================= mulai =================
