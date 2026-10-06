@@ -1021,6 +1021,7 @@ async function login() {
 }
 async function logout() {
   await sb.auth.signOut();
+  try { localStorage.removeItem('profil_cache'); localStorage.removeItem('daftar_cache'); } catch (_) {}
   state.uid = null; state.saya = null; state.admin = false; state.filterPemilik = ''; state.cari = ''; state.halaman = 1; state.adaRapat = false;
   try { $('cari').value = ''; } catch (_) {}
   document.body.classList.remove('admin'); ke('login');
@@ -1040,14 +1041,26 @@ function ke(v, arg) {
 }
 
 // Profil akun yang sedang login. state.multi = fitur banyak akun sudah dipasang (setup/10).
+function terapkanSaya(multi, data) {
+  state.multi = multi; state.saya = multi ? data : null;
+  state.admin = !!(data && data.peran === 'admin' && data.aktif);
+  document.body.classList.toggle('admin', state.admin);
+}
+// Pakai profil tersimpan dulu biar beranda langsung tampil; cek ke server jalan di belakang.
+function sayaCepat(uid) {
+  try { const c = JSON.parse(bacaLS('profil_cache') || 'null'); if (c && c.uid === uid) { terapkanSaya(c.multi, c.data); return true; } } catch (_) {}
+  return false;
+}
 async function muatSaya() {
   const { data: s } = await sb.auth.getSession();
   const u = s.session && s.session.user;
   state.uid = u ? u.id : null; state.email = u ? u.email : '';
   const { data, error } = await sb.from('profil').select('*').eq('id', state.uid).maybeSingle();
-  state.multi = !error; state.saya = error ? null : data;
-  state.admin = !!(data && data.peran === 'admin' && data.aktif);
-  document.body.classList.toggle('admin', state.admin);
+  if (error && !/profil|schema cache|does not exist|PGRST20/i.test(error.message)) return true;   // gangguan jaringan: pakai yang ada
+  const adminLama = state.admin;
+  terapkanSaya(!error, data);
+  simpanLS('profil_cache', JSON.stringify({ uid: state.uid, multi: !error, data: error ? null : data }));
+  if (adminLama !== state.admin && !$('v-home').classList.contains('hidden')) { state.daftarAkun = null; muatDaftar(); }
   if (state.multi && (!data || !data.aktif)) {
     toast('Akun ini lagi dinonaktifkan admin. Hubungi admin ya.', 6000);
     await sb.auth.signOut(); ke('login'); return false;
@@ -1059,14 +1072,22 @@ async function mulai() {
   if (!initSb()) return ke('setup');
   const { data } = await sb.auth.getSession();
   if (!data.session) { ke('login'); if (state.loginAwal) { $('l-email').value = state.loginAwal; $('l-pass').focus(); } return; }
-  if (!(await muatSaya())) return;
+  state.uid = data.session.user.id;
+  if (sayaCepat(state.uid)) muatSaya();            // langsung lanjut, verifikasi di belakang
+  else if (!(await muatSaya())) return;
   const m = location.hash.match(/^#r\/([0-9a-f-]{36})$/);
   ke(m ? 'detail' : 'home', m && m[1]);
 }
 
 // ================= Beranda =================
+function cacheDaftarKey() { return 'daftar_cache'; }
 async function muatDaftar() {
-  const kolom = 'id,created_at,judul,status,durasi_detik,stt_model,stt_detik,ai_model,ai_token_in,ai_token_out,deck' +
+  // tampilkan daftar terakhir dulu (kalau ada) supaya ga nunggu jaringan
+  if (/Memuat/.test($('daftar').textContent) && !state.cari && !state.filterPemilik) {
+    try { const c = JSON.parse(bacaLS(cacheDaftarKey()) || 'null'); if (c && c.uid === state.uid && c.html) { $('daftar').innerHTML = c.html; $('total-biaya').textContent = c.total || ''; } } catch (_) {}
+  }
+  // deck cuma dicek ada/tidaknya (isinya bisa besar), jadi ambil judulnya saja
+  const kolom = 'id,created_at,judul,status,durasi_detik,stt_model,stt_detik,ai_model,ai_token_in,ai_token_out,pp_r:deck->resume->>judul,pp_t:deck->transkrip->>judul' +
     (state.multi ? ',pemilik' : '') + (state.admin ? ',profil(nama,email)' : '');
   const PER = 30, batas = PER * (state.halaman || 1);
   const q = (state.cari || '').trim().replace(/[%,()*\\]/g, ' ').replace(/\s+/g, ' ').trim();
@@ -1111,6 +1132,9 @@ async function muatDaftar() {
       ${r.status === 'selesai' ? '' : chip(r.status)}
     </div>`;
   }).join('') + (adaLagi ? `<button class="lagi" onclick="state.halaman=(state.halaman||1)+1;muatDaftar()">Tampilkan rapat lebih lama</button>` : '');
+  if (!q && !state.filterPemilik && (state.halaman || 1) === 1) {
+    setTimeout(() => simpanLS(cacheDaftarKey(), JSON.stringify({ uid: state.uid, html: $('daftar').innerHTML, total: $('total-biaya').textContent })), 1500);
+  }
   if (data.some(r => SEDANG.includes(r.status)) && !state.poll) {
     state.poll = setInterval(() => { if (!$('v-home').classList.contains('hidden')) muatDaftar(); }, 10000);
   }
@@ -1147,7 +1171,7 @@ $('saring').addEventListener('click', e => {
   const b = e.target.closest('button'); if (!b) return;
   state.filterPemilik = b.dataset.v; state.halaman = 1; muatDaftar();
 });
-const punyaPaparan = (r) => !!(r.deck && (r.deck.resume || r.deck.transkrip));
+const punyaPaparan = (r) => !!(r.pp_r || r.pp_t || (r.deck && (r.deck.resume || r.deck.transkrip)));
 const jamSaja = (s) => new Date(s).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
 function labelHari(s) {
   const d = new Date(s), h = new Date(); h.setHours(0, 0, 0, 0);
@@ -1555,7 +1579,13 @@ async function bukaDetail(id, diam) {
   }
   clearInterval(state.poll); state.poll = null;
   if (SEDANG.includes(r.status) || r.status === 'mengunggah' || ['minta', 'proses'].includes(r.deck_status)) {
-    state.poll = setInterval(() => { if (!$('v-detail').classList.contains('hidden')) bukaDetail(id, true); }, 8000);
+    // cek ringan dulu (status saja); muat ulang penuh hanya kalau ada yang berubah
+    state.poll = setInterval(async () => {
+      if ($('v-detail').classList.contains('hidden')) return;
+      const { data: c } = await sb.from('rapat').select('status,deck_status,error,deck_error').eq('id', id).maybeSingle();
+      const r0 = state.rapat;
+      if (!c || !r0 || c.status !== r0.status || c.deck_status !== r0.deck_status || c.error !== r0.error || c.deck_error !== r0.deck_error) bukaDetail(id, true);
+    }, 8000);
   }
 }
 const tanpaLabel = (t) => String(t || '').replace(/^(\s*\*?)\s*NOTULEN\s*:\s*/i, '$1');
