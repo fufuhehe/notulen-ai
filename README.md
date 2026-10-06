@@ -68,6 +68,13 @@ Tiap akun cuma lihat rapatnya sendiri. Admin lihat semua rapat (bisa disaring pe
 
 Pilihan model AI tersimpan per akun. n8n tidak perlu diubah.
 
+## Edit, revisi, dan pilih bagian rekaman
+- **Edit**: ubah teks notulen langsung di app.
+- **Minta revisi**: tulis instruksi; AI menulis ulang notulen berdasarkan notulen sekarang + instruksi + transkrip.
+- **Pilih bagian** (tab Transkrip): notulen & paparan hanya dibuat dari rentang yang dipilih, tanpa transkrip ulang.
+
+Pasang sekali: jalankan [`setup/12-edit-rentang.sql`](setup/12-edit-rentang.sql), lalu impor ulang workflow Resume dan Paparan.
+
 ## Rekam suara Zoom / tab lain (di laptop)
 Di laptop/PC (Chrome atau Edge), di bawah tombol *Rekam rapat* ada pilihan **Sumber suara**:
 - **Mic**: suara ruangan lewat mikrofon.

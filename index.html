@@ -265,6 +265,19 @@ body.admin span.khusus-admin,body.admin li.khusus-admin{display:list-item!import
 .ak-aksi{display:none;grid-template-columns:1fr 1fr;gap:.4rem;padding:0 .9rem .9rem}
 .ak-kartu.buka .ak-aksi{display:grid}
 .ak-aksi button{min-height:2.5rem;font-size:.8125rem}
+.alat{display:flex;gap:.4rem;flex-wrap:wrap;margin:0 0 1rem}
+.alat button{min-height:2.25rem;padding:.3rem .8rem;font-size:.8125rem;font-weight:600;border-radius:99px;background:var(--surface);border:1px solid var(--line)}
+.alat button svg.i{width:1rem;height:1rem}
+.rentang-info{font-size:.8125rem;color:var(--ink-2);background:var(--aa-soft);border-radius:var(--r-sm);padding:.55rem .8rem;margin-bottom:1rem}
+.rentang-info b{color:var(--aa)}
+.edit-teks{width:100%;min-height:60vh;font:inherit;font-size:.9375rem;line-height:1.6;padding:.85rem .95rem;border:1px solid var(--line);border-radius:var(--r-sm);background:var(--surface);color:var(--ink);resize:vertical;box-sizing:border-box}
+.edit-teks:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.rv-contoh{display:flex;flex-wrap:wrap;gap:.4rem;margin-top:.6rem}
+.rv-contoh button{min-height:2rem;padding:.25rem .7rem;font-size:.75rem;font-weight:600;border-radius:99px;background:var(--raised);border:1px solid var(--line-2);color:var(--muted)}
+.rg-bar{position:sticky;top:3.6rem;z-index:3;background:var(--surface);border:1px solid var(--aa);border-radius:var(--r-sm);padding:.75rem .9rem;margin-bottom:.75rem;font-size:.875rem;box-shadow:var(--shadow)}
+.rg-bar b{color:var(--aa)}
+.line.luar{opacity:.35}
+.line.batas{box-shadow:inset 3px 0 0 var(--aa);padding-left:.6rem}
 .ke-panduan+.ke-panduan,#gs-form.hidden+.ke-panduan{margin-top:.5rem}
 .ke-panduan{width:100%;margin-top:1.5rem;justify-content:flex-start;background:var(--raised);border-color:var(--line);font-weight:600}
 #panduan .alur{margin:1rem 0 .75rem;padding:0;list-style:none;counter-reset:a;display:grid;gap:.5rem}
@@ -353,6 +366,8 @@ body.ada-player .aksi{bottom:4.5rem}
   <symbol id="i-slide" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M12 16v4M8.5 20h7M7.5 12.5l3-3 2 2 4-4"/></symbol>
   <symbol id="i-orang" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0M16 4.5a3.5 3.5 0 0 1 0 7M18 14.5a6.5 6.5 0 0 1 3.5 5.5"/></symbol>
   <symbol id="i-kunci" viewBox="0 0 24 24"><rect x="4.5" y="10.5" width="15" height="10" rx="2.5"/><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3M12 14.5v2.5"/></symbol>
+  <symbol id="i-kilau" viewBox="0 0 24 24"><path d="M12 3.5l1.8 4.7 4.7 1.8-4.7 1.8L12 16.5l-1.8-4.7L5.5 10l4.7-1.8z"/><path d="M18.5 15.5l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8z"/></symbol>
+  <symbol id="i-gunting" viewBox="0 0 24 24"><circle cx="6" cy="6" r="2.5"/><circle cx="6" cy="18" r="2.5"/><path d="M8 7.5l12 9M8 16.5l12-9"/></symbol>
   <symbol id="i-ulang" viewBox="0 0 24 24"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/></symbol>
   <symbol id="i-copy" viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="12" rx="2.5"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></symbol>
   <symbol id="i-bagi" viewBox="0 0 24 24"><circle cx="18" cy="5.5" r="2.5"/><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="18.5" r="2.5"/><path d="M8.2 10.8l7.6-4.1M8.2 13.2l7.6 4.1"/></symbol>
@@ -487,16 +502,33 @@ body.ada-player .aksi{bottom:4.5rem}
     </div>
 
     <div id="t-resume" class="panel">
+      <div class="alat hidden" id="d-alat">
+        <button onclick="mulaiEdit()"><svg class="i"><use href="#i-pen"/></svg>Edit</button>
+        <button onclick="bukaRevisi()"><svg class="i"><use href="#i-kilau"/></svg>Minta revisi</button>
+        <button onclick="buatUlangNotulen()"><svg class="i"><use href="#i-ulang"/></svg>Buat ulang</button>
+      </div>
+      <div id="d-rentang-info" class="rentang-info hidden"></div>
       <div id="d-resume" class="resume muted">Notulen belum ada.</div>
+      <div id="d-edit" class="hidden">
+        <textarea id="d-edit-teks" class="edit-teks" spellcheck="false"></textarea>
+        <div class="muted" style="font-size:.75rem;margin-top:.4rem">Format WhatsApp: *tebal*, _miring_, daftar pakai "- ".</div>
+        <div class="row" style="margin-top:.75rem"><button onclick="batalEdit()">Batal</button><button class="primary" id="d-edit-simpan" onclick="simpanEdit()">Simpan</button></div>
+      </div>
       <div class="aksi" id="d-resume-btn">
-        <button class="ulang" onclick="buatUlangNotulen()" title="Buat ulang notulen" aria-label="Buat ulang notulen"><svg class="i"><use href="#i-ulang"/></svg></button>
         <button onclick="salin(denganTtd(state.rapat.resume))"><svg class="i"><use href="#i-copy"/></svg>Salin</button>
         <button class="accent" onclick="bagikan()"><svg class="i"><use href="#i-bagi"/></svg>Bagikan</button>
       </div>
     </div>
 
     <div id="t-transkrip" class="panel hidden">
-      <div class="row" style="margin-bottom:.5rem"><button onclick="salin(teksTranskrip())"><svg class="i"><use href="#i-copy"/></svg>Salin transkrip</button></div>
+      <div class="row" style="margin-bottom:.5rem">
+        <button onclick="salin(teksTranskrip())"><svg class="i"><use href="#i-copy"/></svg>Salin transkrip</button>
+        <button onclick="modePilih()" id="rg-btn"><svg class="i"><use href="#i-gunting"/></svg>Pilih bagian</button>
+      </div>
+      <div id="rg-bar" class="rg-bar hidden">
+        <div id="rg-teks"></div>
+        <div class="row" style="margin-top:.6rem"><button onclick="resetRentang()">Semua</button><button onclick="modePilih(false)">Batal</button><button class="primary" onclick="simpanRentang()">Simpan</button></div>
+      </div>
       <div id="d-transkrip" class="muted">Transkrip belum ada.</div>
     </div>
 
@@ -679,7 +711,10 @@ body.ada-player .aksi{bottom:4.5rem}
       <summary>Notulen, transkrip & pembicara</summary>
       <ul>
         <li><b>Notulen</b>: tekan <b>Salin</b> atau <b>Bagikan</b> (WA, email, dll). Formatnya sudah rapi untuk WhatsApp.</li>
-        <li><b>↻</b> = tulis ulang notulen, misalnya setelah ganti model AI.</li>
+        <li><b>Edit</b>: benerin langsung kata/frasa yang salah, lalu Simpan. Gratis.</li>
+        <li><b>Minta revisi</b>: tulis instruksi (mis. "Bakom maksudnya BAKTI", "bagian anggaran kurang lengkap"), Aa nulis ulang notulennya. Biaya ±sama dengan bikin notulen sekali lagi.</li>
+        <li><b>Buat ulang</b>: tulis ulang dari nol, misalnya setelah ganti model AI. Hasil edit/revisi sebelumnya ketimpa.</li>
+        <li><b>Buang bagian yang ga perlu</b> (mis. obrolan sebelum rapat mulai): tab Transkrip → <b>Pilih bagian</b> → ketuk baris pertama lalu baris terakhir yang dipakai → Simpan. Notulen & paparan cuma dibuat dari bagian itu, tanpa transkrip ulang.</li>
         <li><b>Transkrip</b>: ketuk satu baris untuk dengar audionya dari titik itu.</li>
         <li><b>Pembicara</b>: dengar cuplikan ▶ tiap suara, isi namanya, lalu <b>Simpan nama</b>. Notulen ditulis ulang pakai nama asli.</li>
         <li>Judul rapat bisa diganti lewat ikon pensil di kanan atas.</li>
@@ -757,6 +792,22 @@ body.ada-player .aksi{bottom:4.5rem}
       <div class="row" style="margin-top:1rem"><button onclick="formAkun(false)">Batal</button><button class="primary" id="ak-simpan" onclick="tambahAkun()">Buat akun</button></div>
     </div>
     <div id="ak-daftar" class="ak-daftar"><div class="muted">Memuat…</div></div>
+  </div>
+</div>
+
+<div id="revisi" class="lembar hidden" onclick="if(event.target===this)tutupRevisi()">
+  <div>
+    <div class="pegangan"></div>
+    <h3>Minta Aa revisi</h3>
+    <div class="muted" style="font-size:.8125rem">Tulis apa yang perlu dibenerin. Aa nulis ulang notulennya pakai instruksi ini, notulen sekarang, dan transkrip. Biayanya kira-kira sama dengan bikin notulen sekali lagi.</div>
+    <textarea id="rv-teks" class="edit-teks" style="min-height:8rem;margin-top:1rem" placeholder="mis. Bakom maksudnya BAKTI. Tindak lanjut nomor 2 PIC-nya Pak Budi. Tambahin angka anggaran yang disebut di menit 40-an."></textarea>
+    <div class="rv-contoh">
+      <button type="button">Perbaiki nama/istilah: … maksudnya …</button>
+      <button type="button">Bagian … kurang lengkap, tambahin detailnya</button>
+      <button type="button">Buang bagian basa-basi pembukaan</button>
+      <button type="button">Buat lebih ringkas</button>
+    </div>
+    <div class="row" style="margin-top:1rem"><button onclick="tutupRevisi()">Batal</button><button class="primary" id="rv-kirim" onclick="kirimRevisi()">Kirim ke Aa</button></div>
   </div>
 </div>
 
@@ -974,7 +1025,7 @@ function ke(v, arg) {
   window.scrollTo(0, 0);
   if (v === 'home') { isiSapaan(); muatDaftar(); muatPending(); }
   if (v === 'detail') bukaDetail(arg);
-  if (v !== 'detail') tutupPlayer();
+  if (v !== 'detail') { tutupPlayer(); if (state.mengedit) batalEdit(); if (state.pilih) modePilih(false); }
   const hash = v === 'detail' ? '#r/' + arg : v === 'home' ? '' : '#' + v;
   if (location.hash !== hash) history.replaceState(null, '', location.pathname + hash);
 }
@@ -1426,6 +1477,7 @@ async function bukaDetail(id, diam) {
   const { data: r, error } = await sb.from('rapat').select(state.admin ? '*,profil(nama,email)' : '*').eq('id', id).maybeSingle();
   if (error || !r) { toast('Aa nyari rapatnya tapi ga ketemu. Mungkin udah dihapus.'); return ke('home'); }
   const sebelumnya = state.rapat && state.rapat.id === id ? state.rapat : null;
+  if (!sebelumnya) { if (state.mengedit) batalEdit(); if (state.pilih) modePilih(false); }
   state.rapat = r;
   $('d-judul').textContent = r.judul;
   $('d-meta').textContent = new Date(r.created_at).toLocaleString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' }) + (r.durasi_detik ? ' · ' + menit(r.durasi_detik) : '') +
@@ -1452,9 +1504,13 @@ async function bukaDetail(id, diam) {
     (r.status === 'selesai' && r.error ? `<div class="warn">${esc(pesanAa(r.error))}</div>` : '');
 
   if (!sebelumnya || sebelumnya.resume !== r.resume) {
-    $('d-resume').innerHTML = r.resume ? waHtml(r.resume) : 'Notulen belum ada.';
+    if (!state.mengedit) $('d-resume').innerHTML = r.resume ? waHtml(r.resume) : 'Notulen belum ada.';
+    $('d-alat').classList.toggle('hidden', !r.resume || state.mengedit || SEDANG.includes(r.status));
+    const rg = r.rentang;
+    $('d-rentang-info').classList.toggle('hidden', !rg || state.mengedit);
+    if (rg) $('d-rentang-info').innerHTML = `Notulen hanya dari bagian <b>${rg.mulai != null ? jam(rg.mulai) : 'awal'} – ${rg.akhir != null ? jam(rg.akhir) : 'akhir'}</b> rekaman. Atur di tab Transkrip.`;
     $('d-resume').classList.toggle('muted', !r.resume);
-    $('d-resume-btn').classList.toggle('hidden', !r.resume);
+    $('d-resume-btn').classList.toggle('hidden', !r.resume || state.mengedit);
   }
   if (!sebelumnya || !sebelumnya.transkrip !== !r.transkrip || JSON.stringify(sebelumnya.nama_speaker) !== JSON.stringify(r.nama_speaker)) {
     renderTranskrip(); if (!diam || !document.activeElement || !document.activeElement.closest('#d-speaker')) renderSpeaker();
@@ -1485,9 +1541,117 @@ function gabung() {
 function renderTranskrip() {
   const b = gabung();
   $('d-transkrip').innerHTML = b.length
-    ? b.map(u => `<div class="line" data-m="${u.m}" onclick="putar(${u.m})"><span class="ts">▶ ${jam(u.m)}</span><b>${esc(labelSpk(u.s))}</b>: ${esc(u.t)}</div>`).join('')
+    ? b.map((u, i) => `<div class="line" data-m="${u.m}" data-i="${i}" onclick="ketukBaris(${i}, ${u.m})"><span class="ts">▶ ${jam(u.m)}</span><b>${esc(labelSpk(u.s))}</b>: ${esc(u.t)}</div>`).join('')
     : 'Transkrip belum ada.';
   $('d-transkrip').classList.toggle('muted', !b.length);
+  $('rg-btn').classList.toggle('hidden', !b.length || !('rentang' in state.rapat));
+  tandaiRentang();
+}
+
+// ---- Pilih bagian rekaman (rentang) ----
+// rentang = { mulai: detik (ikut), akhir: detik (tidak ikut) }; akhir = awal baris SETELAH baris terakhir yang dipilih
+function rentangAktif() { return state.pilih ? state.pilih : (state.rapat.rentang || {}); }
+function dalamRentang(m, rg) { return (rg.mulai == null || m >= rg.mulai) && (rg.akhir == null || m < rg.akhir); }
+function tandaiRentang() {
+  const rg = rentangAktif(), ada = rg.mulai != null || rg.akhir != null;
+  document.querySelectorAll('#d-transkrip .line').forEach(el => {
+    const m = +el.dataset.m;
+    el.classList.toggle('luar', ada && !dalamRentang(m, rg));
+    el.classList.toggle('batas', ada && (m === rg.mulai));
+  });
+  if (state.pilih) {
+    const b = gabung();
+    const awal = rg.mulai != null ? jam(rg.mulai) : 'awal rekaman';
+    const ak = rg.akhir != null ? jam(rg.akhir) : 'akhir rekaman';
+    const n = b.filter(u => dalamRentang(u.m, rg)).length;
+    $('rg-teks').innerHTML = (state.pilihLangkah === 'akhir'
+      ? 'Sekarang ketuk <b>baris terakhir</b> yang mau dipakai.'
+      : 'Ketuk <b>baris pertama</b> yang mau dipakai, lalu baris terakhirnya.') +
+      `<br><span class="muted">Dipakai: ${awal} – ${ak} · ${n} baris</span>`;
+  }
+}
+function modePilih(buka = true) {
+  if (buka) {
+    const r = state.rapat.rentang || {};
+    state.pilih = { mulai: r.mulai ?? null, akhir: r.akhir ?? null }; state.pilihLangkah = 'mulai';
+  } else state.pilih = null;
+  $('rg-bar').classList.toggle('hidden', !buka); $('rg-btn').classList.toggle('hidden', buka);
+  $('d-transkrip').classList.toggle('memilih', buka);
+  tandaiRentang();
+}
+function ketukBaris(i, m) {
+  if (!state.pilih) return putar(m);
+  const b = gabung();
+  if (state.pilihLangkah === 'mulai') {
+    state.pilih = { mulai: i === 0 ? null : m, akhir: null }; state.pilihLangkah = 'akhir';
+  } else {
+    const awal = state.pilih.mulai ?? 0;
+    if (m < awal) { state.pilih = { mulai: i === 0 ? null : m, akhir: null }; }   // ketuk di atas awal = jadi awal baru
+    else { state.pilih.akhir = i + 1 < b.length ? b[i + 1].m : null; state.pilihLangkah = 'mulai'; }
+  }
+  tandaiRentang();
+}
+function resetRentang() { state.pilih = { mulai: null, akhir: null }; state.pilihLangkah = 'mulai'; tandaiRentang(); }
+async function simpanRentang() {
+  const rg = state.pilih, kosong = rg.mulai == null && rg.akhir == null;
+  if (!kosong && !gabung().some(u => dalamRentang(u.m, rg))) return toast('Bagian yang dipilih kosong. Pilih lagi ya.');
+  const r = state.rapat, nilai = kosong ? null : rg;
+  const sama = JSON.stringify(r.rentang || null) === JSON.stringify(nilai);
+  modePilih(false);
+  if (sama) return;
+  const buat = !!r.resume && confirm('Bagian rekaman disimpan. Buat ulang notulen dari bagian ini sekarang?');
+  const ubah = { rentang: nilai };
+  if (buat) Object.assign(ubah, { status: 'minta_resume', error: null, revisi: null });
+  const { error } = await sb.from('rapat').update(ubah).eq('id', r.id);
+  if (error) return toast(pesanAa(error.message), 5000);
+  toast(buat ? 'Siap, Aa tulis ulang notulen dari bagian itu…' : kosong ? 'Sekarang semua rekaman dipakai.' : 'Bagian rekaman disimpan. Tekan Buat ulang di tab Notulen kalau mau dipakai.', 4500);
+  if (buat) pilihTab('resume');
+  bukaDetail(r.id);
+}
+
+// ---- Edit notulen langsung ----
+function mulaiEdit() {
+  state.mengedit = true;
+  $('d-edit-teks').value = tanpaLabel(state.rapat.resume || '');
+  ['d-resume', 'd-resume-btn', 'd-alat'].forEach(id => $(id).classList.add('hidden'));
+  $('d-edit').classList.remove('hidden');
+  $('d-edit-teks').focus();
+}
+function batalEdit() {
+  state.mengedit = false;
+  $('d-edit').classList.add('hidden');
+  ['d-resume', 'd-resume-btn', 'd-alat'].forEach(id => $(id).classList.remove('hidden'));
+}
+async function simpanEdit() {
+  const t = $('d-edit-teks').value.trim();
+  if (!t) return toast('Notulennya kosong. Kalau mau dibuat ulang, pakai Buat ulang.');
+  const b = $('d-edit-simpan'); b.disabled = true; b.textContent = 'Menyimpan…';
+  const { error } = await sb.from('rapat').update({ resume: t }).eq('id', state.rapat.id);
+  b.disabled = false; b.textContent = 'Simpan';
+  if (error) return toast(pesanAa(error.message), 5000);
+  state.rapat.resume = t; $('d-resume').innerHTML = waHtml(t);
+  batalEdit(); toast('Notulen disimpan.');
+}
+
+// ---- Minta revisi ke AI ----
+function bukaRevisi() {
+  if (!('revisi' in state.rapat)) return toast('Fitur revisi belum aktif — jalankan setup/12-edit-rentang.sql di Supabase.', 5000);
+  $('rv-teks').value = ''; $('revisi').classList.remove('hidden'); setTimeout(() => $('rv-teks').focus(), 50);
+}
+function tutupRevisi() { $('revisi').classList.add('hidden'); }
+document.querySelector('#revisi .rv-contoh').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  const t = $('rv-teks'); t.value = (t.value.trim() ? t.value.trim() + '\n' : '') + b.textContent; t.focus();
+});
+async function kirimRevisi() {
+  const ins = $('rv-teks').value.trim();
+  if (ins.length < 5) return toast('Tulis dulu apa yang perlu direvisi ya.');
+  const b = $('rv-kirim'); b.disabled = true;
+  await sb.from('rapat').update({ status: 'gagal' }).eq('id', state.rapat.id).neq('status', 'selesai');   // pastikan status berubah
+  const { error } = await sb.from('rapat').update({ revisi: ins, status: 'minta_resume', error: null }).eq('id', state.rapat.id);
+  b.disabled = false;
+  if (error) return toast(pesanAa(error.message), 5000);
+  tutupRevisi(); toast('Siap, Aa revisi dulu notulennya…'); bukaDetail(state.rapat.id);
 }
 function teksTranskrip() { return gabung().map(u => `[${jam(u.m)}] ${labelSpk(u.s)}: ${u.t}`).join('\n'); }
 
@@ -1571,7 +1735,7 @@ function tandaiBaris(t) {
 async function simpanNama() {
   const nama = {};
   document.querySelectorAll('#d-speaker input[data-spk]').forEach(i => { if (i.value.trim()) nama[i.dataset.spk] = i.value.trim(); });
-  const { error } = await sb.from('rapat').update({ nama_speaker: nama, status: 'minta_resume', error: null }).eq('id', state.rapat.id);
+  const { error } = await sb.from('rapat').update({ nama_speaker: nama, status: 'minta_resume', error: null, ...('revisi' in state.rapat ? { revisi: null } : {}) }).eq('id', state.rapat.id);
   if (error) return toast(pesanAa(error.message), 5000);
   toast('Tersimpan. Aa lagi nulis ulang notulennya…');
   pilihTab('resume'); bukaDetail(state.rapat.id);
@@ -1592,7 +1756,7 @@ async function buatUlangNotulen() {
   const r = state.rapat;
   if (!Array.isArray(r.transkrip) || !r.transkrip.length) return toast('Transkripnya belum ada, jadi notulen belum bisa dibuat ulang.');
   if (!confirm('Buat ulang notulen pakai model di Pengaturan? Notulen yang sekarang akan diganti.')) return;
-  const { error } = await sb.from('rapat').update({ status: 'minta_resume', error: null }).eq('id', r.id);
+  const { error } = await sb.from('rapat').update({ status: 'minta_resume', error: null, ...('revisi' in r ? { revisi: null } : {}) }).eq('id', r.id);
   if (error) return toast(pesanAa(error.message), 5000);
   toast('Siap, Aa tulis ulang notulennya…'); bukaDetail(r.id);
 }

@@ -14,8 +14,11 @@ let bahan = '';
 if (sumber === 'resume') {
   bahan = (r.resume || '').trim();
 } else if (Array.isArray(r.transkrip) && r.transkrip.length) {
+  // ikut rentang pilihan user (mulai ikut, akhir tidak ikut)
+  const rg = r.rentang || {};
+  const mulai = Number.isFinite(rg.mulai) ? rg.mulai : null, akhir = Number.isFinite(rg.akhir) ? rg.akhir : null;
   const baris = [];
-  for (const u of r.transkrip) {
+  for (const u of r.transkrip.filter(u => (mulai === null || u.m >= mulai) && (akhir === null || u.m < akhir))) {
     const a = baris[baris.length - 1];
     if (a && a.s === u.s) a.t += ' ' + u.t; else baris.push({ s: u.s, m: u.m, t: u.t });
   }
