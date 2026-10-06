@@ -14,15 +14,27 @@ if (bahan.gagal || res.error || !res.choices) {
   return [{ json: { deck_status: 'gagal', deck_error: String(e).slice(0, 500), ...tambahToken(res.usage) } }];
 }
 
-let isi = res.choices[0].message && res.choices[0].message.content;
-if (typeof isi === 'string') {
+const pilihan = res.choices[0] || {};
+const mentah = String((pilihan.message && pilihan.message.content) || '');
+let isi = null;
+{
   // sebagian model membungkus JSON dengan ```json ... ``` atau teks lain — ambil dari { pertama s/d } terakhir
-  const a = isi.indexOf('{'), z = isi.lastIndexOf('}');
-  try { isi = JSON.parse(a >= 0 && z > a ? isi.slice(a, z + 1) : isi); } catch (_) { isi = null; }
+  const a = mentah.indexOf('{'), z = mentah.lastIndexOf('}');
+  const potong = a >= 0 && z > a ? mentah.slice(a, z + 1) : mentah;
+  try { isi = JSON.parse(potong); }
+  catch (_) {
+    // perbaikan ringan: koma sebelum } atau ], dan kutip miring
+    try { isi = JSON.parse(potong.replace(/,\s*([}\]])/g, '$1').replace(/[\u201C\u201D]/g, '"')); } catch (__) { isi = null; }
+  }
 }
 const daftar = (x) => (Array.isArray(x) ? x : []);
 if (!isi || typeof isi !== 'object' || !isi.judul) {
-  return [{ json: { deck_status: 'gagal', deck_error: 'Format balasan AI tidak sesuai. Coba buat ulang.', ...tambahToken(res.usage) } }];
+  const sebab = pilihan.finish_reason === 'length'
+    ? 'Balasan AI kepotong (kepanjangan / kehabisan jatah token). Coba buat ulang, atau pilih model lain untuk paparan.'
+    : !mentah.trim() ? 'AI ga ngasih isi apa-apa. Coba buat ulang atau ganti model paparan.'
+    : 'Format balasan AI tidak sesuai. Coba buat ulang.';
+  const detail = ` [model: ${res.model || '-'}, selesai: ${pilihan.finish_reason || '-'}, panjang: ${mentah.length} huruf, awal: ${mentah.slice(0, 120).replace(/\s+/g, ' ')}]`;
+  return [{ json: { deck_status: 'gagal', deck_error: (sebab + detail).slice(0, 500), ...tambahToken(res.usage) } }];
 }
 
 const u = res.usage || {};

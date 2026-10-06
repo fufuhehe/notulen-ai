@@ -180,7 +180,7 @@ const w4 = wf('Notulen - 4 Paparan', [
   }),
   code('Susun bahan', 'susun-bahan-deck.js', [440, 0]),
   promptSistem(PROMPT_DECK, [660, 0]),
-  nodeAI('model_paparan', 4000, [880, 0]),
+  nodeAI('model_paparan', 12000, [880, 0]),   // longgar: model 'berpikir' ikut menghabiskan jatah token
   code('Rakit deck', 'rakit-deck.js', [1100, 0]),
   supa('Simpan deck', [1320, 0], { body: '={{ JSON.stringify($json) }}' }),
 ], {

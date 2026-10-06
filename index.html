@@ -910,6 +910,8 @@ const chip = (s) => { const [t, c] = STATUS[s] || [s, '']; return `<span class="
 
 // ================= Pesan error ala Aa =================
 const POLA_ERROR = [
+  [/Balasan AI kepotong/i, 'Balasan AI-nya kepotong di tengah (kehabisan jatah token). Coba buat ulang, atau ganti model paparan di Pengaturan.'],
+  [/AI ga ngasih isi/i, 'AI-nya ga ngasih jawaban apa-apa. Coba buat ulang, atau ganti model paparan di Pengaturan.'],
   [/banned|dinonaktifkan/i, 'Akun ini lagi dinonaktifkan admin. Hubungi admin ya.'],
   [/Requested function was not found|kelola-akun.*not found|Failed to send a request to the Edge Function/i, 'Fungsi “kelola-akun” belum dipasang di Supabase. Lihat setup/11-fungsi-kelola-akun.ts.'],
   [/Khusus admin/i, 'Menu ini khusus admin.'],
