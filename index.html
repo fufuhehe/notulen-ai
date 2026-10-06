@@ -278,6 +278,11 @@ body.admin span.khusus-admin,body.admin li.khusus-admin{display:list-item!import
 .rg-bar b{color:var(--aa)}
 .line.luar{opacity:.35}
 .line.batas{box-shadow:inset 3px 0 0 var(--aa);padding-left:.6rem}
+.cari{position:relative;margin:-.25rem 0 .75rem}
+.cari svg.i{position:absolute;left:.85rem;top:50%;transform:translateY(-50%);color:var(--muted);width:1.1rem;height:1.1rem;pointer-events:none}
+.cari input{width:100%;padding:.7rem .9rem .7rem 2.5rem;border-radius:99px;border:1px solid var(--line);background:var(--surface);font:inherit;font-size:.9375rem;color:var(--ink);box-sizing:border-box}
+.cari input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+button.lagi{width:100%;margin-top:.75rem;background:var(--surface);border:1px dashed var(--line);color:var(--muted);font-weight:600}
 .ke-panduan+.ke-panduan,#gs-form.hidden+.ke-panduan{margin-top:.5rem}
 .ke-panduan{width:100%;margin-top:1.5rem;justify-content:flex-start;background:var(--raised);border-color:var(--line);font-weight:600}
 #panduan .alur{margin:1rem 0 .75rem;padding:0;list-style:none;counter-reset:a;display:grid;gap:.5rem}
@@ -368,6 +373,7 @@ body.ada-player .aksi{bottom:4.5rem}
   <symbol id="i-kunci" viewBox="0 0 24 24"><rect x="4.5" y="10.5" width="15" height="10" rx="2.5"/><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3M12 14.5v2.5"/></symbol>
   <symbol id="i-kilau" viewBox="0 0 24 24"><path d="M12 3.5l1.8 4.7 4.7 1.8-4.7 1.8L12 16.5l-1.8-4.7L5.5 10l4.7-1.8z"/><path d="M18.5 15.5l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8z"/></symbol>
   <symbol id="i-gunting" viewBox="0 0 24 24"><circle cx="6" cy="6" r="2.5"/><circle cx="6" cy="18" r="2.5"/><path d="M8 7.5l12 9M8 16.5l12-9"/></symbol>
+  <symbol id="i-cari" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.2-4.2"/></symbol>
   <symbol id="i-ulang" viewBox="0 0 24 24"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/></symbol>
   <symbol id="i-copy" viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="12" rx="2.5"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></symbol>
   <symbol id="i-bagi" viewBox="0 0 24 24"><circle cx="18" cy="5.5" r="2.5"/><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="18.5" r="2.5"/><path d="M8.2 10.8l7.6-4.1M8.2 13.2l7.6 4.1"/></symbol>
@@ -449,6 +455,7 @@ body.ada-player .aksi{bottom:4.5rem}
     <div id="pending"></div>
 
     <div class="bagian"><h2>Rapat</h2><div class="muted" id="total-biaya"></div></div>
+    <div id="cari-box" class="cari hidden"><svg class="i"><use href="#i-cari"/></svg><input id="cari" type="search" placeholder="Cari judul atau isi notulen" oninput="ketikCari(this.value)" autocomplete="off"></div>
     <div id="saring" class="saring"></div>
     <div id="daftar" class="list"><div class="item kosong">Memuat…</div></div>
   </div>
@@ -697,6 +704,7 @@ body.ada-player .aksi{bottom:4.5rem}
       <ul>
         <li>Statusnya jalan sendiri: <b>Mengunggah → Antri → Ditranskrip → Bikin notulen → Selesai</b>. Biasanya beres dalam beberapa menit, tergantung panjang rapat.</li>
         <li>App boleh ditutup, prosesnya jalan di server.</li>
+        <li>Daftar rapat menampilkan 30 terbaru; tekan <b>Tampilkan rapat lebih lama</b> di paling bawah untuk yang lebih lama. Pakai kolom <b>Cari</b> buat nyari judul atau isi notulen.</li>
         <li>Arti ikon di daftar rapat:
           <span class="lg"><i class="ikon run"><svg class="i"><use href="#i-jam"/></svg></i>lagi diproses</span>
           <span class="lg"><i class="ikon ok"><svg class="i"><use href="#i-doc"/></svg></i>notulen jadi</span>
@@ -1013,7 +1021,8 @@ async function login() {
 }
 async function logout() {
   await sb.auth.signOut();
-  state.uid = null; state.saya = null; state.admin = false; state.filterPemilik = '';
+  state.uid = null; state.saya = null; state.admin = false; state.filterPemilik = ''; state.cari = ''; state.halaman = 1; state.adaRapat = false;
+  try { $('cari').value = ''; } catch (_) {}
   document.body.classList.remove('admin'); ke('login');
 }
 
@@ -1059,20 +1068,27 @@ async function mulai() {
 async function muatDaftar() {
   const kolom = 'id,created_at,judul,status,durasi_detik,stt_model,stt_detik,ai_model,ai_token_in,ai_token_out,deck' +
     (state.multi ? ',pemilik' : '') + (state.admin ? ',profil(nama,email)' : '');
-  const ambil = (k) => sb.from('rapat').select(k).order('created_at', { ascending: false }).limit(100);
+  const PER = 30, batas = PER * (state.halaman || 1);
+  const q = (state.cari || '').trim().replace(/[%,()*\\]/g, ' ').replace(/\s+/g, ' ').trim();
+  const saring = (x) => {
+    if (state.admin && state.filterPemilik) x = x.eq('pemilik', state.filterPemilik);
+    if (q) x = x.or(`judul.ilike.*${q}*,resume.ilike.*${q}*`);
+    return x;
+  };
+  const ambil = (k) => saring(sb.from('rapat').select(k)).order('created_at', { ascending: false }).limit(batas + 1);
   let { data, error } = await ambil(kolom + ',kurs');
   if (error && /kurs/i.test(error.message)) ({ data, error } = await ambil(kolom));   // kolom kurs belum dibuat
   if (error) {
     if (/JWT|auth/i.test(error.message)) return ke('login');
     $('daftar').innerHTML = `<div class="item kosong">${esc(pesanAa(error.message))}</div>`; return;
   }
-  if (state.admin) {                              // admin: saring per pemilik
-    if (state.filterPemilik) data = data.filter(r => r.pemilik === state.filterPemilik);
-    isiSaringan();
-  } else $('saring').innerHTML = '';
-  const awalBulan = new Date(); awalBulan.setDate(1); awalBulan.setHours(0, 0, 0, 0);
-  const bulanIni = data.filter(r => new Date(r.created_at) >= awalBulan).reduce((a, r) => a + hitungBiaya(r).total, 0);
-  $('total-biaya').textContent = bulanIni ? `Biaya bulan ini ±${rupiah(bulanIni)}` : '';
+  const adaLagi = data.length > batas; data = data.slice(0, batas);
+  if (state.admin) isiSaringan(); else $('saring').innerHTML = '';
+  // total biaya bulan ini dihitung terpisah (tidak terpengaruh jumlah yang ditampilkan / pencarian)
+  totalBulanIni();
+  $('cari-box').classList.toggle('hidden', !data.length && !q && !state.adaRapat);
+  if (data.length) state.adaRapat = true;
+  if (!data.length && q) { $('daftar').innerHTML = `<div class="item kosong">Ga ketemu rapat dengan kata “${esc(q)}”.</div>`; return; }
   if (!data.length && state.filterPemilik) { $('daftar').innerHTML = '<div class="item kosong">Orang ini belum punya rapat.</div>'; return; }
   if (!data.length) { $('daftar').innerHTML = '<div class="item kosong">Belum ada rapat.<br>Aa nganggur nih — tekan “Rekam rapat”.</div>'; return; }
   let grupLalu = '';
@@ -1094,10 +1110,28 @@ async function muatDaftar() {
       </div>
       ${r.status === 'selesai' ? '' : chip(r.status)}
     </div>`;
-  }).join('');
+  }).join('') + (adaLagi ? `<button class="lagi" onclick="state.halaman=(state.halaman||1)+1;muatDaftar()">Tampilkan rapat lebih lama</button>` : '');
   if (data.some(r => SEDANG.includes(r.status)) && !state.poll) {
     state.poll = setInterval(() => { if (!$('v-home').classList.contains('hidden')) muatDaftar(); }, 10000);
   }
+}
+async function totalBulanIni() {
+  const awal = new Date(); awal.setDate(1); awal.setHours(0, 0, 0, 0);
+  const k = 'created_at,stt_model,stt_detik,ai_model,ai_token_in,ai_token_out';
+  const ambil = (kol) => {
+    let x = sb.from('rapat').select(kol).gte('created_at', awal.toISOString());
+    if (state.admin && state.filterPemilik) x = x.eq('pemilik', state.filterPemilik);
+    return x;
+  };
+  let { data, error } = await ambil(k + ',kurs');
+  if (error) ({ data } = await ambil(k));
+  const tot = (data || []).reduce((a, r) => a + hitungBiaya(r).total, 0);
+  $('total-biaya').textContent = tot ? `Biaya bulan ini ±${rupiah(tot)}` : '';
+}
+let cariT;
+function ketikCari(v) {
+  clearTimeout(cariT);
+  cariT = setTimeout(() => { state.cari = v; state.halaman = 1; muatDaftar(); }, 350);
 }
 const namaPemilik = (r) => r.profil ? (r.profil.nama || tampilEmail(r.profil.email) || 'Tanpa nama') : 'Akun terhapus';
 // chip saringan (khusus admin): Semua · Saya · tiap akun
@@ -1111,7 +1145,7 @@ async function isiSaringan() {
 }
 $('saring').addEventListener('click', e => {
   const b = e.target.closest('button'); if (!b) return;
-  state.filterPemilik = b.dataset.v; muatDaftar();
+  state.filterPemilik = b.dataset.v; state.halaman = 1; muatDaftar();
 });
 const punyaPaparan = (r) => !!(r.deck && (r.deck.resume || r.deck.transkrip));
 const jamSaja = (s) => new Date(s).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
