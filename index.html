@@ -1567,10 +1567,10 @@ async function bukaDetail(id, diam) {
     if (!state.mengedit) $('d-resume').innerHTML = r.resume ? waHtml(r.resume) : 'Notulen belum ada.';
     $('d-alat').classList.toggle('hidden', !r.resume || state.mengedit || SEDANG.includes(r.status));
     const rg = r.rentang;
-    $('d-rentang-info').classList.toggle('hidden', !rg || state.mengedit);
+    $('d-rentang-info').classList.toggle('hidden', !rg || !!state.mengedit);
     if (rg) $('d-rentang-info').innerHTML = `Notulen hanya dari bagian <b>${rg.mulai != null ? jam(rg.mulai) : 'awal'} – ${rg.akhir != null ? jam(rg.akhir) : 'akhir'}</b> rekaman. Atur di tab Transkrip.`;
     $('d-resume').classList.toggle('muted', !r.resume);
-    $('d-resume-btn').classList.toggle('hidden', !r.resume || state.mengedit);
+    $('d-resume-btn').classList.toggle('hidden', !r.resume || !!state.mengedit);
   }
   if (!sebelumnya || !sebelumnya.transkrip !== !r.transkrip || JSON.stringify(sebelumnya.nama_speaker) !== JSON.stringify(r.nama_speaker)) {
     renderTranskrip(); if (!diam || !document.activeElement || !document.activeElement.closest('#d-speaker')) renderSpeaker();
