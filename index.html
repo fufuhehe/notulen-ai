@@ -651,6 +651,7 @@ body.ada-player .aksi{bottom:4.5rem}
       <button onclick="tutupAtur()">Tutup</button>
       <button class="danger" onclick="tutupAtur();logout()">Keluar</button>
     </div>
+    <div class="muted" id="versi" style="text-align:center;font-size:.75rem;margin-top:1rem"></div>
   </div>
 </div>
 
@@ -837,6 +838,7 @@ const jam = (d) => [Math.floor(d / 3600), Math.floor(d / 60) % 60, Math.floor(d 
 const MAKS_BYTE = 50 * 1024 * 1024;
 
 // ===== Harga (USD). Ubah di sini kalau harga berubah. =====
+const VERSI = 'v40';   // samakan dengan CACHE di sw.js
 const KURS = 16500;                        // kurs cadangan (dipakai rapat lama & kalau kurs harian gagal diambil)
 // Kurs harian USD→IDR: diambil sekali sehari, lalu DIKUNCI di tiap rapat saat dibuat (kolom rapat.kurs),
 // jadi biaya rapat yang sudah lewat tidak ikut berubah.
@@ -2062,6 +2064,7 @@ function terapkanTema(t) {
   document.querySelector('meta[name=theme-color]').content = gelap ? '#0c0e11' : '#f5f4f0';
 }
 function bukaAtur() {
+  $('versi').textContent = 'Notulen AI ' + VERSI;
   const t = bacaLS('tema') || 'auto';
   document.querySelectorAll('#atur-tema button').forEach(b => b.classList.toggle('on', b.dataset.v === t));
   const f = parseFloat(bacaLS('skala_teks')) || 1;
