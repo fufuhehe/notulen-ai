@@ -59,6 +59,5 @@ return [{ json: {
   deck,
   deck_status: 'selesai',
   deck_error: null,
-  ai_model: res.model,
   ...tambahToken(u),
 } }];

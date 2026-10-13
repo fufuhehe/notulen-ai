@@ -54,4 +54,4 @@ const notulensi = {
 };
 if (!notulensi.pengantar.length && !notulensi.diskusi.length) return gagal('AI ga menghasilkan isi notulensi. Coba buat ulang.');
 
-return [{ json: { notulensi, notulensi_status: 'selesai', notulensi_error: null, ai_model: res.model, ...token } }];
+return [{ json: { notulensi, notulensi_status: 'selesai', notulensi_error: null, ...token } }];

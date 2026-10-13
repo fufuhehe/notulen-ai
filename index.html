@@ -905,7 +905,7 @@ const jam = (d) => [Math.floor(d / 3600), Math.floor(d / 60) % 60, Math.floor(d 
 const MAKS_BYTE = 50 * 1024 * 1024;
 
 // ===== Harga (USD). Ubah di sini kalau harga berubah. =====
-const VERSI = 'v42';   // samakan dengan CACHE di sw.js
+const VERSI = 'v43';   // samakan dengan CACHE di sw.js
 const KURS = 16500;                        // kurs cadangan (dipakai rapat lama & kalau kurs harian gagal diambil)
 // Kurs harian USD→IDR: diambil sekali sehari, lalu DIKUNCI di tiap rapat saat dibuat (kolom rapat.kurs),
 // jadi biaya rapat yang sudah lewat tidak ikut berubah.
@@ -944,15 +944,43 @@ const kunciHarga = (model) => {
   const m = String(model || '').toLowerCase().replace(/^[a-z0-9_-]+\//, '');
   return Object.keys(HARGA_AI).sort((a, b) => b.length - a.length).find(k => m.startsWith(k));
 };
+// Biaya per rapat = transkrip (AssemblyAI) + semua panggilan AI.
+// Paparan & notulensi dihitung pakai model & token masing-masing; sisanya (ringkasan, revisi, proses ulang) pakai ai_model.
+function bagianAi(r) {
+  const ambil = (obj, p) => obj && obj.model ? { model: obj.model, tin: +obj.token_in || 0, tout: +obj.token_out || 0 }
+    : (r[p + '_m'] ? { model: r[p + '_m'], tin: +r[p + '_in'] || 0, tout: +r[p + '_out'] || 0 } : null);
+  const deck = r.deck || {};
+  return [
+    ['Notulensi', ambil(r.notulensi && r.notulensi.model ? r.notulensi : null, 'nt')],
+    ['Paparan dari ringkasan', ambil(deck.resume, 'dr')],
+    ['Paparan dari transkrip', ambil(deck.transkrip, 'dt')],
+  ].filter(x => x[1]);
+}
+function hargaToken(model, tin, tout, kurs) {
+  const k = kunciHarga(model); if (!k) return null;
+  return (tin * HARGA_AI[k][0] + tout * HARGA_AI[k][1]) / 1e6 * kurs;
+}
 function hitungBiaya(r) {
   const jamAudio = (r.stt_detik || 0) / 3600;
   const tarif = HARGA_STT[r.stt_model] ?? HARGA_STT._lain;
   const kurs = kursRapat(r);
   const stt = jamAudio * (tarif + HARGA_DIARISASI) * kurs;
-  const kunci = kunciHarga(r.ai_model);
-  const hAi = kunci ? HARGA_AI[kunci] : null;
-  const ai = hAi ? ((r.ai_token_in || 0) * hAi[0] + (r.ai_token_out || 0) * hAi[1]) / 1e6 * kurs : 0;
-  return { stt, ai, total: stt + ai, aiDikenal: !!hAi || !r.ai_model };
+  const rinci = [];
+  let sisaIn = r.ai_token_in || 0, sisaOut = r.ai_token_out || 0, dikenal = true;
+  for (const [nama, b] of bagianAi(r)) {
+    const tin = Math.min(b.tin, sisaIn), tout = Math.min(b.tout, sisaOut);
+    sisaIn -= tin; sisaOut -= tout;
+    const rp = hargaToken(b.model, tin, tout, kurs);
+    if (rp === null) dikenal = false;
+    rinci.push({ nama, model: b.model, tin, tout, rp: rp || 0 });
+  }
+  if (sisaIn || sisaOut) {
+    const rp = r.ai_model ? hargaToken(r.ai_model, sisaIn, sisaOut, kurs) : 0;
+    if (rp === null) dikenal = false;
+    rinci.unshift({ nama: 'Ringkasan, revisi & proses ulang', model: r.ai_model, tin: sisaIn, tout: sisaOut, rp: rp || 0 });
+  }
+  const ai = rinci.reduce((a, x) => a + x.rp, 0);
+  return { stt, ai, total: stt + ai, aiDikenal: dikenal, rinci };
 }
 const rupiah = (n) => 'Rp' + Math.round(n).toLocaleString('id-ID');
 const ribu = (n) => n >= 1000 ? (n / 1000).toFixed(1).replace('.', ',') + ' rb' : String(n);
@@ -1158,7 +1186,8 @@ async function muatDaftar() {
     try { const c = JSON.parse(bacaLS(cacheDaftarKey()) || 'null'); if (c && c.uid === state.uid && c.html) { $('daftar').innerHTML = c.html; $('total-biaya').textContent = c.total || ''; } } catch (_) {}
   }
   // deck cuma dicek ada/tidaknya (isinya bisa besar), jadi ambil judulnya saja
-  const kolom = 'id,created_at,judul,status,durasi_detik,stt_model,stt_detik,ai_model,ai_token_in,ai_token_out,pp_r:deck->resume->>judul,pp_t:deck->transkrip->>judul' +
+  const kolom = 'id,created_at,judul,status,durasi_detik,stt_model,stt_detik,ai_model,ai_token_in,ai_token_out,pp_r:deck->resume->>judul,pp_t:deck->transkrip->>judul,' +
+    'dr_m:deck->resume->>model,dr_in:deck->resume->>token_in,dr_out:deck->resume->>token_out,dt_m:deck->transkrip->>model,dt_in:deck->transkrip->>token_in,dt_out:deck->transkrip->>token_out' +
     (state.multi ? ',pemilik' : '') + (state.admin ? ',profil(nama,email)' : '');
   const PER = 30, batas = PER * (state.halaman || 1);
   const q = (state.cari || '').trim().replace(/[%,()*\\]/g, ' ').replace(/\s+/g, ' ').trim();
@@ -1168,7 +1197,9 @@ async function muatDaftar() {
     return x;
   };
   const ambil = (k) => saring(sb.from('rapat').select(k)).order('created_at', { ascending: false }).limit(batas + 1);
-  let { data, error } = await ambil(kolom + ',kurs');
+  const NT = ',nt_m:notulensi->>model,nt_in:notulensi->>token_in,nt_out:notulensi->>token_out';
+  let { data, error } = await ambil(kolom + ',kurs' + NT);
+  if (error && /notulensi/i.test(error.message)) ({ data, error } = await ambil(kolom + ',kurs'));   // kolom notulensi belum dibuat
   if (error && /kurs/i.test(error.message)) ({ data, error } = await ambil(kolom));   // kolom kurs belum dibuat
   if (error) {
     if (/JWT|auth/i.test(error.message)) return ke('login');
@@ -1212,13 +1243,14 @@ async function muatDaftar() {
 }
 async function totalBulanIni() {
   const awal = new Date(); awal.setDate(1); awal.setHours(0, 0, 0, 0);
-  const k = 'created_at,stt_model,stt_detik,ai_model,ai_token_in,ai_token_out';
+  const k = 'created_at,stt_model,stt_detik,ai_model,ai_token_in,ai_token_out,dr_m:deck->resume->>model,dr_in:deck->resume->>token_in,dr_out:deck->resume->>token_out,dt_m:deck->transkrip->>model,dt_in:deck->transkrip->>token_in,dt_out:deck->transkrip->>token_out';
   const ambil = (kol) => {
     let x = sb.from('rapat').select(kol).gte('created_at', awal.toISOString());
     if (state.admin && state.filterPemilik) x = x.eq('pemilik', state.filterPemilik);
     return x;
   };
-  let { data, error } = await ambil(k + ',kurs');
+  let { data, error } = await ambil(k + ',kurs,nt_m:notulensi->>model,nt_in:notulensi->>token_in,nt_out:notulensi->>token_out');
+  if (error) ({ data, error } = await ambil(k + ',kurs'));
   if (error) ({ data } = await ambil(k));
   const tot = (data || []).reduce((a, r) => a + hitungBiaya(r).total, 0);
   $('total-biaya').textContent = tot ? `Biaya bulan ini ±${rupiah(tot)}` : '';
@@ -1617,9 +1649,10 @@ async function bukaDetail(id, diam) {
   $('d-biaya').querySelector('summary').textContent = `Biaya ±${rupiah(b.total)}`;
   $('d-biaya').querySelector('div').innerHTML =
     `Transkrip: ${menit(r.stt_detik || 0)} audio (${esc(r.stt_model || '-')}) → ±${rupiah(b.stt)}<br>` +
-    `AI (notulen & paparan): ${ribu(r.ai_token_in || 0)} token masuk + ${ribu(r.ai_token_out || 0)} token keluar (${esc(r.ai_model || '-')}) → ` +
-    (b.aiDikenal ? `±${rupiah(b.ai)}` : 'harga model belum diset') +
-    `<br><span style="font-size:12px">Jumlah audio & token dari AssemblyAI/OpenAI; rupiah dihitung dari tarif resmi, kurs Rp${kursRapat(r).toLocaleString('id-ID')}/USD${r.kurs ? ' (kurs hari rapat dibuat)' : ''}. Termasuk semua proses ulang.</span>`;
+    (b.rinci.length ? b.rinci.map(x => `AI ${esc(x.nama.toLowerCase())}: ${ribu(x.tin)} + ${ribu(x.tout)} token (${esc(x.model || '-')}) → ±${rupiah(x.rp)}`).join('<br>')
+      : 'AI: belum dipakai') +
+    (b.aiDikenal ? '' : '<br><span style="font-size:12px">Ada model yang harganya belum diset, jadi biaya AI-nya dihitung Rp0.</span>') +
+    `<br><span style="font-size:12px">Jumlah audio & token dari AssemblyAI/OpenAI; rupiah dihitung dari tarif resmi, kurs Rp${kursRapat(r).toLocaleString('id-ID')}/USD${r.kurs ? ' (kurs hari rapat dibuat)' : ''}. Termasuk semua proses ulang. Langganan bulanan (server n8n) tidak dihitung per rapat.</span>`;
   const info = {
     mengunggah: 'File belum selesai terunggah. Kalau macet, buka beranda dan unggah ulang rekaman dari HP.',
     antri: 'Antri, Aa siap-siap nyimak…',
@@ -2464,8 +2497,10 @@ async function muatAkunInti() {
   const awal = new Date(); awal.setDate(1); awal.setHours(0, 0, 0, 0);
   const ambil = (k) => Promise.race([sb.from('rapat').select(k).gte('created_at', awal.toISOString()),
     new Promise(r => setTimeout(() => r({ data: [], error: null }), 15000))]);
-  let { data: rr, error } = await ambil('pemilik,created_at,stt_model,stt_detik,ai_model,ai_token_in,ai_token_out,kurs');
-  if (error) ({ data: rr } = await ambil('pemilik,created_at,stt_model,stt_detik,ai_model,ai_token_in,ai_token_out'));
+  const kk = 'pemilik,created_at,stt_model,stt_detik,ai_model,ai_token_in,ai_token_out,dr_m:deck->resume->>model,dr_in:deck->resume->>token_in,dr_out:deck->resume->>token_out,dt_m:deck->transkrip->>model,dt_in:deck->transkrip->>token_in,dt_out:deck->transkrip->>token_out';
+  let { data: rr, error } = await ambil(kk + ',kurs,nt_m:notulensi->>model,nt_in:notulensi->>token_in,nt_out:notulensi->>token_out');
+  if (error) ({ data: rr, error } = await ambil(kk + ',kurs'));
+  if (error) ({ data: rr } = await ambil(kk));
   const pakai = {};
   for (const r of rr || []) { const p = pakai[r.pemilik] || (pakai[r.pemilik] = { n: 0, rp: 0 }); p.n++; p.rp += hitungBiaya(r).total; }
   state.akun = res.akun;
