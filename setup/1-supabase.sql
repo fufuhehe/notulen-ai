@@ -29,7 +29,11 @@ create table if not exists public.rapat (
   deck_error    text,
   kurs          numeric,                    -- kurs USD→IDR hari rapat dibuat (dikunci)
   rentang       jsonb,                      -- bagian transkrip yang dipakai {mulai, akhir}
-  revisi        text                        -- instruksi revisi notulen (sekali pakai)
+  revisi        text,                       -- instruksi revisi notulen (sekali pakai)
+  notulensi     jsonb,                      -- notulensi lengkap (per pembicara + tanggapan)
+  notulensi_status text,                    -- minta | proses | selesai | gagal
+  notulensi_error  text,
+  info_rapat    jsonb                       -- waktu, tempat, pimpinan, peserta, notulis, mengetahui
 );
 
 -- Hanya user yang login (akun lo sendiri) yang bisa akses.
@@ -65,7 +69,10 @@ create table if not exists private.pengaturan (
 create table if not exists public.pengaturan_app (
   id            int primary key default 1 check (id = 1),
   model_notulen text not null default 'otomatis',
-  model_paparan text not null default 'otomatis'
+  model_paparan text not null default 'otomatis',
+  kop1          text not null default '',      -- kop dokumen Word baris 1
+  kop2          text not null default '',      -- kop dokumen Word baris 2
+  kota          text not null default 'Jakarta'
 );
 insert into public.pengaturan_app (id) values (1) on conflict (id) do nothing;
 

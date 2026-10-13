@@ -1,0 +1,260 @@
+{
+  "name": "Notulen - 5 Notulensi",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "notulen-notulensi",
+        "authentication": "headerAuth",
+        "responseMode": "onReceived",
+        "options": {}
+      },
+      "id": "b9ff9ab1-d05b-4893-a6d7-0e86407caa10",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ],
+      "webhookId": "602d23d1-c51a-41e4-8ba0-f386416c909b",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "",
+          "name": "Kunci Notulen"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "={{ $('Webhook').first().json.body.supa_url }}/rest/v1/rapat?id=eq.{{ $('Webhook').first().json.body.rapat_id }}&select=judul,created_at,durasi_detik,transkrip,nama_speaker,rentang,ai_token_in,ai_token_out",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Prefer",
+              "value": "return=representation"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ notulensi_status: 'proses', notulensi_error: null }) }}",
+        "options": {}
+      },
+      "id": "5136ee9a-9f22-457e-8378-f779cf3e246a",
+      "name": "Tandai notulensi diproses",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        220,
+        0
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "",
+          "name": "Supabase Notulen"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Susun transkrip (ikut rentang pilihan user) untuk notulensi lengkap\nconst r = $input.first().json;\nif (!Array.isArray(r.transkrip) || !r.transkrip.length) {\n  return [{ json: { gagal: true, error: 'Transkrip belum ada untuk rapat ini' } }];\n}\nconst nama = r.nama_speaker || {};\nconst label = (s) => nama[s] || ('Speaker ' + s);\nconst jam = (d) => [Math.floor(d / 3600), Math.floor(d / 60) % 60, Math.floor(d % 60)]\n  .map(n => String(n).padStart(2, '0')).join(':');\n\nconst rg = r.rentang || {};\nconst mulai = Number.isFinite(rg.mulai) ? rg.mulai : null;\nconst akhir = Number.isFinite(rg.akhir) ? rg.akhir : null;\nconst dipakai = r.transkrip.filter(u => (mulai === null || u.m >= mulai) && (akhir === null || u.m < akhir));\nif (!dipakai.length) return [{ json: { gagal: true, error: 'Bagian rekaman yang dipilih kosong. Atur ulang rentangnya di tab Transkrip.' } }];\n\nconst baris = [];\nfor (const u of dipakai) {\n  const a = baris[baris.length - 1];\n  if (a && a.s === u.s) a.t += ' ' + u.t;\n  else baris.push({ s: u.s, m: u.m, t: u.t });\n}\nconst tanggal = new Date(r.created_at).toLocaleDateString('id-ID', {\n  timeZone: 'Asia/Jakarta', weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',\n});\nconst peserta = [...new Set(dipakai.map(u => u.s))].sort().map(label).join(', ');\n\nreturn [{ json: { gagal: false, prompt: `Judul rapat (dari pengguna, boleh diperbaiki): ${r.judul || 'Rapat'}\nTanggal: ${tanggal}\nPembicara yang terekam: ${peserta}\n\nTRANSKRIP:\n${baris.map(b => `[${jam(b.m)}] ${label(b.s)}: ${b.t}`).join('\\n')}` } }];\n"
+      },
+      "id": "5d454be4-efc7-402a-ae32-2ceff1c710ef",
+      "name": "Susun bahan",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        440,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "manual",
+        "assignments": {
+          "assignments": [
+            {
+              "id": "c88eb209-abe0-461b-9b3e-6681f0a8c755",
+              "name": "sistem",
+              "value": "Kamu notulis rapat profesional. Tugasmu menyusun NOTULENSI RAPAT resmi dari transkrip rapat otomatis. Ini BUKAN ringkasan: notulensi mencatat jalannya rapat, yaitu siapa menyampaikan apa, pertanyaan apa yang diajukan, dan tanggapan apa yang diberikan, secara berurutan dan lengkap.\n\nPRINSIP\n- Catat SEMUA substansi yang disampaikan: setiap gagasan, usulan, pertanyaan, data, arahan, dan jawaban menjadi satu poin tersendiri. Jangan menggabungkan beberapa gagasan menjadi satu kalimat umum, dan jangan meringkas sampai detailnya hilang.\n- Ikuti urutan pembicaraan di rapat.\n- Tulis dengan bahasa notulis yang rapi dan baku, bukan kutipan kata per kata: buang \"eh\", \"jadi gini\", pengulangan, dan basa-basi (salam, menawarkan minum, obrolan di luar agenda). Tetap pertahankan maksud dan nada pembicara (pertanyaan tetap ditulis sebagai pertanyaan, arahan tetap sebagai arahan).\n- WAJIB simpan hal konkret persis: angka (rupiah, persen, jumlah, tanggal), nama orang, nama lembaga, program, media, dan dokumen yang disebut.\n- Hanya pakai informasi yang ada di transkrip. Jangan mengarang, jangan menambah penilaian atau jabatan yang tidak disebut. Bagian yang tidak jelas terdengar dilewati saja.\n\nTRANSKRIP HASIL MESIN\nTranskrip ini bisa salah dengar. Perbaiki istilah yang jelas salah berdasarkan konteks (nama lembaga, jabatan, program, media, istilah teknis) dan pakai ejaan yang konsisten.\n(Opsional: tambahkan di sini daftar istilah yang sering salah dengar, format \"salah → benar\".)\nLabel \"Speaker X\" artinya nama orangnya belum diketahui. Kalau dari isi pembicaraan nama atau jabatannya jelas (misalnya disapa \"Bu Direktur\", \"Mas Vicky dari GNFI\"), pakai itu; kalau tidak, tulis \"Speaker X\" apa adanya.\n\nSTRUKTUR\n1. \"pengantar\": pembukaan rapat, biasanya oleh pimpinan/moderator (tujuan rapat, latar belakang, hal yang diminta). Satu entri per pembicara.\n2. \"diskusi\": inti rapat. Satu BLOK dibuka oleh pembicara yang mengangkat topik/usulan/pertanyaan (field \"pembicara\" dan \"poin\"), lalu \"tanggapan\" berisi respons orang lain terhadap blok itu, masing-masing dengan pembicara dan poinnya. Kalau pembicara yang sama mengangkat topik baru setelah topik lain selesai dibahas, buat blok baru.\n3. \"penutup\": kesimpulan, arahan akhir, kesepakatan, dan tindak lanjut di akhir rapat, sebagai daftar kalimat.\n4. \"pembicara\" ditulis \"Nama, Jabatan/Instansi\" kalau jabatan atau instansinya disebut; kalau tidak, cukup nama.\n\nKELUARAN: HANYA satu objek JSON valid (tanpa teks lain, tanpa ```), dengan struktur persis:\n{\n  \"judul\": \"nama/agenda rapat, singkat dan jelas\",\n  \"pimpinan\": \"nama, jabatan pemimpin rapat kalau bisa dipastikan; kalau tidak, string kosong\",\n  \"peserta\": [\"Nama, Jabatan/Instansi\", \"...\"],\n  \"pengantar\": [\n    { \"pembicara\": \"Nama, Jabatan\", \"poin\": [\"kalimat lengkap\", \"...\"] }\n  ],\n  \"diskusi\": [\n    {\n      \"pembicara\": \"Nama, Jabatan\",\n      \"poin\": [\"kalimat lengkap\", \"...\"],\n      \"tanggapan\": [\n        { \"pembicara\": \"Nama, Jabatan\", \"poin\": [\"kalimat lengkap\", \"...\"] }\n      ]\n    }\n  ],\n  \"penutup\": [\"kalimat lengkap\", \"...\"]\n}\n- \"peserta\": semua orang yang berbicara atau disebut hadir, tanpa duplikat.\n- Array yang tidak ada isinya ditulis [].\n- Jangan pakai tanda * atau format markdown di dalam teks.",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "id": "7115bc6e-2243-4242-8379-262cd594dd88",
+      "name": "Prompt sistem",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        660,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://ai.sumopod.com/v1/chat/completions",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "openAiApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ model: (() => { const m = $('Webhook').first().json.body.model_notulen || 'otomatis'; return m === 'otomatis' ? (String($json.prompt || '').length > 60000 ? 'gpt-4.1-mini' : 'gpt-4.1') : m; })(), temperature: 0.2, max_tokens: 16000, messages: [ { role: 'system', content: $json.sistem }, { role: 'user', content: $json.prompt || '(kosong)' } ] }) }}",
+        "options": {
+          "timeout": 600000,
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
+      },
+      "id": "edc46c71-a450-48be-835a-f2e8f52c76d9",
+      "name": "Minta AI",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        880,
+        0
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "",
+          "name": "OpenAI account"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 5000
+    },
+    {
+      "parameters": {
+        "jsCode": "// Ubah balasan AI jadi data notulensi, simpan ke rapat.notulensi\nconst lama = $('Tandai notulensi diproses').first().json;\nconst bahan = $('Susun bahan').first().json;\nconst res = $input.first().json;\nconst u = res.usage || {};\nconst token = {\n  ai_token_in: (lama.ai_token_in || 0) + (u.prompt_tokens || 0),\n  ai_token_out: (lama.ai_token_out || 0) + (u.completion_tokens || 0),\n};\nconst gagal = (pesan) => [{ json: { notulensi_status: 'gagal', notulensi_error: String(pesan).slice(0, 500), ...token } }];\n\nif (bahan.gagal) return gagal(bahan.error);\nif (res.error || !Array.isArray(res.choices) || !res.choices.length) {\n  return gagal('AI: ' + ((res.error && (res.error.message || (typeof res.error === 'string' ? res.error : JSON.stringify(res.error)))) || res.message || JSON.stringify(res).slice(0, 300)));\n}\n\nconst pilihan = res.choices[0] || {};\nconst mentah = String((pilihan.message && pilihan.message.content) || '');\nlet isi = null;\n{\n  const a = mentah.indexOf('{'), z = mentah.lastIndexOf('}');\n  const potong = a >= 0 && z > a ? mentah.slice(a, z + 1) : mentah;\n  try { isi = JSON.parse(potong); }\n  catch (_) {\n    try { isi = JSON.parse(potong.replace(/,\\s*([}\\]])/g, '$1').replace(/[“”]/g, '\"')); } catch (__) { isi = null; }\n  }\n}\nif (!isi || typeof isi !== 'object') {\n  const sebab = pilihan.finish_reason === 'length'\n    ? 'Balasan AI kepotong (kepanjangan / kehabisan jatah token). Coba pilih bagian rekaman yang lebih pendek atau ganti model.'\n    : !mentah.trim() ? 'AI ga ngasih isi apa-apa. Coba buat ulang atau ganti model.'\n    : 'Format balasan AI tidak sesuai. Coba buat ulang.';\n  return gagal(sebab + ` [model: ${res.model || '-'}, selesai: ${pilihan.finish_reason || '-'}, panjang: ${mentah.length} huruf, awal: ${mentah.slice(0, 120).replace(/\\s+/g, ' ')}]`);\n}\n\nconst daftar = (x) => (Array.isArray(x) ? x : []);\nconst teks = (x) => String(x || '').replace(/\\*\\*?/g, '').trim();\nconst poin = (x) => daftar(x).map(teks).filter(Boolean);\nconst blok = (b) => ({ pembicara: teks(b && b.pembicara), poin: poin(b && b.poin) });\n\nconst notulensi = {\n  judul: teks(isi.judul),\n  pimpinan: teks(isi.pimpinan),\n  peserta: poin(isi.peserta),\n  pengantar: daftar(isi.pengantar).map(blok).filter(b => b.poin.length),\n  diskusi: daftar(isi.diskusi).map(b => ({ ...blok(b), tanggapan: daftar(b && b.tanggapan).map(blok).filter(t => t.poin.length) }))\n    .filter(b => b.poin.length || b.tanggapan.length),\n  penutup: poin(isi.penutup),\n  model: res.model,\n  token_in: u.prompt_tokens || 0,\n  token_out: u.completion_tokens || 0,\n  terpotong: pilihan.finish_reason === 'length',\n  dibuat: new Date().toISOString(),\n};\nif (!notulensi.pengantar.length && !notulensi.diskusi.length) return gagal('AI ga menghasilkan isi notulensi. Coba buat ulang.');\n\nreturn [{ json: { notulensi, notulensi_status: 'selesai', notulensi_error: null, ai_model: res.model, ...token } }];\n"
+      },
+      "id": "75517373-aab2-45c6-a236-fea7c2c62073",
+      "name": "Rakit notulensi",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1100,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "={{ $('Webhook').first().json.body.supa_url }}/rest/v1/rapat?id=eq.{{ $('Webhook').first().json.body.rapat_id }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Prefer",
+              "value": "return=minimal"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json) }}",
+        "options": {}
+      },
+      "id": "f7417e22-50cd-4563-b162-09e4f1c13d3f",
+      "name": "Simpan notulensi",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1320,
+        0
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "",
+          "name": "Supabase Notulen"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Tandai notulensi diproses",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tandai notulensi diproses": {
+      "main": [
+        [
+          {
+            "node": "Susun bahan",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Susun bahan": {
+      "main": [
+        [
+          {
+            "node": "Prompt sistem",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prompt sistem": {
+      "main": [
+        [
+          {
+            "node": "Minta AI",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Minta AI": {
+      "main": [
+        [
+          {
+            "node": "Rakit notulensi",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Rakit notulensi": {
+      "main": [
+        [
+          {
+            "node": "Simpan notulensi",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataSuccessExecution": "none"
+  }
+}

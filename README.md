@@ -68,6 +68,10 @@ Tiap akun cuma lihat rapatnya sendiri. Admin lihat semua rapat (bisa disaring pe
 
 Pilihan model AI tersimpan per akun. n8n tidak perlu diubah.
 
+## Notulensi lengkap + dokumen Word
+Tab **Notulensi** menyusun catatan jalannya rapat (pengantar, diskusi + tanggapan per pembicara, penutup) dan bisa diunduh jadi **.docx** format notulen resmi (kop, tabel identitas, kolom tanda tangan). Info yang tidak ada di rekaman (tempat, notulis, yang mengetahui) diisi di **Info rapat**.
+Pasang sekali: jalankan [`setup/13-notulensi.sql`](setup/13-notulensi.sql) (butuh `10-multi-akun.sql`), lalu impor dan aktifkan [`setup/14-n8n-notulensi.json`](setup/14-n8n-notulensi.json) (credential Kunci Notulen, Supabase Notulen, dan OpenAI/Sumopod). Prompt: `setup/prompt-notulensi.txt`.
+
 ## Edit, revisi, dan pilih bagian rekaman
 - **Edit**: ubah teks notulen langsung di app.
 - **Minta revisi**: tulis instruksi; AI menulis ulang notulen berdasarkan notulen sekarang + instruksi + transkrip.

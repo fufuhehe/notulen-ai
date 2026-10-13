@@ -192,8 +192,32 @@ const w4 = wf('Notulen - 4 Paparan', [
   'Rakit deck': { main: [[L('Simpan deck')]] },
 });
 
+// ================= WORKFLOW 5: NOTULENSI LENGKAP (untuk dokumen Word) =================
+const PROMPT_NOTULENSI = fs.readFileSync(path.join(__dirname, 'prompt-notulensi.txt'), 'utf8').trim();
+const w5 = wf('Notulen - 5 Notulensi', [
+  webhook('notulen-notulensi'),
+  supa('Tandai notulensi diproses', [220, 0], {
+    url: rapatUrl + '&select=judul,created_at,durasi_detik,transkrip,nama_speaker,rentang,ai_token_in,ai_token_out',
+    body: `={{ JSON.stringify({ notulensi_status: 'proses', notulensi_error: null }) }}`,
+    representation: true,
+  }),
+  code('Susun bahan', 'susun-bahan-notulensi.js', [440, 0]),
+  promptSistem(PROMPT_NOTULENSI, [660, 0]),
+  nodeAI('model_notulen', 16000, [880, 0]),
+  code('Rakit notulensi', 'rakit-notulensi.js', [1100, 0]),
+  supa('Simpan notulensi', [1320, 0], { body: '={{ JSON.stringify($json) }}' }),
+], {
+  Webhook: { main: [[L('Tandai notulensi diproses')]] },
+  'Tandai notulensi diproses': { main: [[L('Susun bahan')]] },
+  'Susun bahan': { main: [[L('Prompt sistem')]] },
+  'Prompt sistem': { main: [[L('Minta AI')]] },
+  'Minta AI': { main: [[L('Rakit notulensi')]] },
+  'Rakit notulensi': { main: [[L('Simpan notulensi')]] },
+});
+
 const out = path.join(__dirname);
 fs.writeFileSync(path.join(out, '2-n8n-transkrip.json'), JSON.stringify(w1, null, 2));
 fs.writeFileSync(path.join(out, '3-n8n-resume.json'), JSON.stringify(w2, null, 2));
 fs.writeFileSync(path.join(out, '7-n8n-paparan.json'), JSON.stringify(w4, null, 2));
+fs.writeFileSync(path.join(out, '14-n8n-notulensi.json'), JSON.stringify(w5, null, 2));
 console.log('ok');

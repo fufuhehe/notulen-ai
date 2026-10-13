@@ -198,8 +198,8 @@ header.top h1{font-size:1.0625rem;font-weight:700;margin:0;flex:1;white-space:no
 details#d-biaya{font-size:.8125rem;color:var(--muted);margin-top:.5rem}
 details#d-biaya summary{cursor:pointer;font-weight:600;list-style:none}
 details#d-biaya summary::-webkit-details-marker{display:none}
-.tabs{display:flex;gap:1.25rem;border-bottom:1px solid var(--line);margin:1.25rem 0 0;overflow-x:auto;scrollbar-width:none}
-.tabs button{flex:none;border:0;background:none;border-radius:0;min-height:2.75rem;padding:.5rem 0;color:var(--muted);font-weight:600;border-bottom:2px solid transparent;margin-bottom:-1px}
+.tabs{display:flex;gap:.5rem;justify-content:space-between;border-bottom:1px solid var(--line);margin:1.25rem 0 0;overflow-x:auto;scrollbar-width:none}
+.tabs button{flex:none;border:0;background:none;border-radius:0;min-height:2.75rem;padding:.5rem 0;color:var(--muted);font-weight:600;font-size:.875rem;border-bottom:2px solid transparent;margin-bottom:-1px}
 .tabs button.on{color:var(--ink);border-bottom-color:var(--ink)}
 .seg{display:flex;background:var(--raised);border:1px solid var(--line-2);border-radius:var(--r-sm);padding:.2rem;gap:.2rem}
 .seg button{flex:1;border:0;background:none;min-height:2.5rem;border-radius:.6rem;color:var(--muted);font-weight:600;font-size:.875rem;flex-direction:column;gap:0;line-height:1.25}
@@ -283,6 +283,19 @@ body.admin span.khusus-admin,body.admin li.khusus-admin{display:list-item!import
 .cari input{width:100%;padding:.7rem .9rem .7rem 2.5rem;border-radius:99px;border:1px solid var(--line);background:var(--surface);font:inherit;font-size:.9375rem;color:var(--ink);box-sizing:border-box}
 .cari input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
 button.lagi{width:100%;margin-top:.75rem;background:var(--surface);border:1px dashed var(--line);color:var(--muted);font-weight:600}
+.alat button.accent-chip{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.nt-doc{margin-top:1rem;border:1px solid var(--line);border-radius:var(--r-sm);background:var(--surface);overflow:hidden;font-size:.875rem;line-height:1.55;color:var(--ink-2)}
+.nt-doc .nt-h{background:var(--accent-soft);color:var(--ink);font-weight:800;padding:.5rem .8rem;letter-spacing:.02em}
+.nt-doc .nt-sub{background:var(--raised);font-weight:700;padding:.4rem .8rem;color:var(--ink);border-top:1px solid var(--line-2)}
+.nt-doc .nt-blok{display:grid;grid-template-columns:minmax(6.5rem,30%) 1fr;border-top:1px solid var(--line-2)}
+.nt-doc .nt-blok>div:first-child{padding:.6rem .8rem;font-weight:700;color:var(--ink);border-right:1px solid var(--line-2)}
+.nt-doc .nt-blok>div:last-child{padding:.6rem .8rem}
+.nt-doc ul{margin:0;padding-left:1.1rem;display:grid;gap:.3rem}
+.nt-doc ul li::marker{content:"- ";color:var(--muted)}
+.nt-doc .tg{margin-top:.75rem;font-weight:700;color:var(--ink)}
+.nt-doc .nt-penutup{padding:.6rem .8rem;border-top:1px solid var(--line-2)}
+@media (max-width:30rem){.nt-doc .nt-blok{grid-template-columns:1fr}.nt-doc .nt-blok>div:first-child{border-right:0;padding-bottom:0}}
+.kop-box{margin-top:1rem;padding:.8rem;border:1px dashed var(--line);border-radius:var(--r-sm)}
 .ke-panduan+.ke-panduan,#gs-form.hidden+.ke-panduan{margin-top:.5rem}
 .ke-panduan{width:100%;margin-top:1.5rem;justify-content:flex-start;background:var(--raised);border-color:var(--line);font-weight:600}
 #panduan .alur{margin:1rem 0 .75rem;padding:0;list-style:none;counter-reset:a;display:grid;gap:.5rem}
@@ -502,7 +515,8 @@ body.ada-player .aksi{bottom:4.5rem}
     <div id="d-info"></div>
 
     <div class="tabs" id="d-tabs">
-      <button data-t="resume" class="on">Notulen</button>
+      <button data-t="resume" class="on">Ringkasan</button>
+      <button data-t="notulensi">Notulensi</button>
       <button data-t="transkrip">Transkrip</button>
       <button data-t="speaker">Pembicara</button>
       <button data-t="paparan">Paparan</button>
@@ -545,10 +559,27 @@ body.ada-player .aksi{bottom:4.5rem}
       <button class="primary" style="width:100%;margin-top:.5rem" id="d-simpan-nama" onclick="simpanNama()">Simpan nama &amp; buat ulang notulen</button>
     </div>
 
+    <div id="t-notulensi" class="panel hidden">
+      <div id="nt-kosong">
+        <p class="muted" style="margin-top:0">Notulensi resmi: siapa menyampaikan apa, pertanyaan, dan tanggapan, berurutan dan lengkap (bukan ringkasan). Bisa diunduh jadi dokumen Word.</p>
+      </div>
+      <div id="nt-status"></div>
+      <button id="nt-buat" class="primary" style="width:100%;margin-top:.75rem" onclick="buatNotulensi()">Buat notulensi</button>
+      <div id="nt-hasil" class="hidden">
+        <div class="alat" style="margin-top:1rem">
+          <button class="accent-chip" onclick="unduhDocx()"><svg class="i"><use href="#i-dl"/></svg>Unduh Word</button>
+          <button onclick="bukaInfo()"><svg class="i"><use href="#i-pen"/></svg>Info rapat</button>
+          <button onclick="buatNotulensi(true)"><svg class="i"><use href="#i-ulang"/></svg>Buat ulang</button>
+        </div>
+        <div id="nt-cek" class="rentang-info hidden"></div>
+        <div id="nt-doc" class="nt-doc"></div>
+      </div>
+    </div>
+
     <div id="t-paparan" class="panel hidden">
       <p class="muted" style="margin-top:0">Deck paparan (.pptx) + infografis 1 halaman. Hasil tiap sumber disimpan terpisah, jadi bisa dibandingkan.</p>
       <div class="seg" id="pp-src">
-        <button data-s="resume" class="on">Dari notulen</button>
+        <button data-s="resume" class="on">Dari ringkasan</button>
         <button data-s="transkrip">Dari transkrip</button>
       </div>
       <div id="pp-status"></div>
@@ -717,7 +748,7 @@ body.ada-player .aksi{bottom:4.5rem}
     </details>
 
     <details>
-      <summary>Notulen, transkrip & pembicara</summary>
+      <summary>Ringkasan, transkrip & pembicara</summary>
       <ul>
         <li><b>Notulen</b>: tekan <b>Salin</b> atau <b>Bagikan</b> (WA, email, dll). Formatnya sudah rapi untuk WhatsApp.</li>
         <li><b>Edit</b>: benerin langsung kata/frasa yang salah, lalu Simpan. Gratis.</li>
@@ -727,6 +758,18 @@ body.ada-player .aksi{bottom:4.5rem}
         <li><b>Transkrip</b>: ketuk satu baris untuk dengar audionya dari titik itu.</li>
         <li><b>Pembicara</b>: dengar cuplikan ▶ tiap suara, isi namanya, lalu <b>Simpan nama</b>. Notulen ditulis ulang pakai nama asli.</li>
         <li>Judul rapat bisa diganti lewat ikon pensil di kanan atas.</li>
+      </ul>
+    </details>
+
+    <details>
+      <summary>Notulensi & dokumen Word</summary>
+      <ul>
+        <li><b>Ringkasan</b> = poin-poin singkat buat WhatsApp. <b>Notulensi</b> = catatan jalannya rapat: siapa menyampaikan apa, pertanyaan, dan tanggapan, berurutan dan lengkap.</li>
+        <li>Buka tab <b>Notulensi</b> → <b>Buat notulensi</b>. Rapat 1 jam biasanya 1–3 menit. Biayanya kira-kira 2–3 kali bikin ringkasan karena tulisannya jauh lebih panjang.</li>
+        <li>Tekan <b>Info rapat</b> buat isi/cek waktu, tempat, pimpinan, peserta, notulis, dan yang mengetahui. Yang bisa ditebak dari rekaman sudah diisi Aa.</li>
+        <li><b>Unduh Word</b> → dokumen .docx dengan format notulen resmi (kop, tabel identitas, A. Pembahasan Materi, B. Diskusi dan Tanggapan, C. Penutup, kolom tanda tangan). Kalau perlu, edit lagi di Word.</li>
+        <li>Kop dokumen (nama unit & instansi) diisi sekali di Info rapat, berlaku untuk semua rapat.</li>
+        <li>Kalau bagian rekaman dipilih di tab Transkrip, notulensi juga cuma dari bagian itu.</li>
       </ul>
     </details>
 
@@ -820,6 +863,30 @@ body.ada-player .aksi{bottom:4.5rem}
   </div>
 </div>
 
+<div id="info" class="lembar hidden" onclick="if(event.target===this)tutupInfo()">
+  <div>
+    <div class="pegangan"></div>
+    <h3>Info rapat</h3>
+    <div class="muted" style="font-size:.8125rem">Dipakai di dokumen Word. Yang bisa ditebak dari rekaman sudah Aa isi, sisanya lengkapi sendiri.</div>
+    <div class="ak-form" style="background:none;border:0;padding:0">
+      <label>Agenda / judul</label><input id="if-agenda">
+      <div class="row"><div style="flex:1"><label>Hari / tanggal</label><input id="if-tanggal"></div><div style="flex:1"><label>Waktu</label><input id="if-waktu" placeholder="09.30 WIB s.d selesai"></div></div>
+      <label>Tempat</label><textarea id="if-tempat" class="edit-teks" style="min-height:4.5rem" placeholder="Nama tempat&#10;Alamat (boleh dikosongkan)"></textarea>
+      <label>Pimpinan rapat</label><input id="if-pimpinan" placeholder="Nama, Jabatan">
+      <label>Peserta <span class="muted" style="font-weight:500">(satu orang per baris)</span></label><textarea id="if-peserta" class="edit-teks" style="min-height:8rem"></textarea>
+      <label>Notulis</label><input id="if-notulis">
+      <div class="row"><div style="flex:1"><label>Mengetahui (jabatan)</label><input id="if-tahu-jab" placeholder="mis. Ketua Tim"></div><div style="flex:1"><label>Mengetahui (nama)</label><input id="if-tahu-nama"></div></div>
+      <label>Kota penandatanganan</label><input id="if-kota" placeholder="Jakarta">
+      <div class="kop-box">
+        <label style="margin-top:0">Kop dokumen <span class="muted" style="font-weight:500">(berlaku untuk semua rapat)</span></label>
+        <input id="if-kop1" placeholder="Baris 1, mis. nama unit/direktorat">
+        <input id="if-kop2" placeholder="Baris 2, mis. nama instansi" style="margin-top:.4rem">
+      </div>
+    </div>
+    <div class="row" style="margin-top:1rem"><button onclick="tutupInfo()">Batal</button><button class="primary" id="if-simpan" onclick="simpanInfo()">Simpan</button></div>
+  </div>
+</div>
+
 <div id="toast" class="toast hidden"></div>
 
 
@@ -838,7 +905,7 @@ const jam = (d) => [Math.floor(d / 3600), Math.floor(d / 60) % 60, Math.floor(d 
 const MAKS_BYTE = 50 * 1024 * 1024;
 
 // ===== Harga (USD). Ubah di sini kalau harga berubah. =====
-const VERSI = 'v40';   // samakan dengan CACHE di sw.js
+const VERSI = 'v42';   // samakan dengan CACHE di sw.js
 const KURS = 16500;                        // kurs cadangan (dipakai rapat lama & kalau kurs harian gagal diambil)
 // Kurs harian USD→IDR: diambil sekali sehari, lalu DIKUNCI di tiap rapat saat dibuat (kolom rapat.kurs),
 // jadi biaya rapat yang sudah lewat tidak ikut berubah.
@@ -1577,18 +1644,22 @@ async function bukaDetail(id, diam) {
   if (!sebelumnya || !sebelumnya.transkrip !== !r.transkrip || JSON.stringify(sebelumnya.nama_speaker) !== JSON.stringify(r.nama_speaker)) {
     renderTranskrip(); if (!diam || !document.activeElement || !document.activeElement.closest('#d-speaker')) renderSpeaker();
   }
+  if (!sebelumnya || sebelumnya.notulensi_status !== r.notulensi_status || JSON.stringify(sebelumnya.notulensi) !== JSON.stringify(r.notulensi)) {
+    if (!$('t-notulensi').classList.contains('hidden')) renderNotulensi();
+  }
   if (!sebelumnya || sebelumnya.deck_status !== r.deck_status || JSON.stringify(sebelumnya.deck) !== JSON.stringify(r.deck) || sebelumnya.resume !== r.resume) {
     if (!sebelumnya) state.srcDeck = (r.deck_sumber && r.deck && r.deck[r.deck_sumber]) ? r.deck_sumber : 'resume';
     if (!$('t-paparan').classList.contains('hidden')) renderPaparan();
   }
   clearInterval(state.poll); state.poll = null;
-  if (SEDANG.includes(r.status) || r.status === 'mengunggah' || ['minta', 'proses'].includes(r.deck_status)) {
+  if (SEDANG.includes(r.status) || r.status === 'mengunggah' || ['minta', 'proses'].includes(r.deck_status) || ['minta', 'proses'].includes(r.notulensi_status)) {
     // cek ringan dulu (status saja); muat ulang penuh hanya kalau ada yang berubah
     state.poll = setInterval(async () => {
       if ($('v-detail').classList.contains('hidden')) return;
-      const { data: c } = await sb.from('rapat').select('status,deck_status,error,deck_error').eq('id', id).maybeSingle();
-      const r0 = state.rapat;
-      if (!c || !r0 || c.status !== r0.status || c.deck_status !== r0.deck_status || c.error !== r0.error || c.deck_error !== r0.deck_error) bukaDetail(id, true);
+      const r0 = state.rapat, adaNt = r0 && 'notulensi_status' in r0;
+      const { data: c } = await sb.from('rapat').select('status,deck_status,error,deck_error' + (adaNt ? ',notulensi_status,notulensi_error' : '')).eq('id', id).maybeSingle();
+      if (!c || !r0 || c.status !== r0.status || c.deck_status !== r0.deck_status || c.error !== r0.error || c.deck_error !== r0.deck_error ||
+          (adaNt && (c.notulensi_status !== r0.notulensi_status || c.notulensi_error !== r0.notulensi_error))) bukaDetail(id, true);
     }, 8000);
   }
 }
@@ -1847,8 +1918,9 @@ async function hapusRapat() {
 
 function pilihTab(t) {
   document.querySelectorAll('#d-tabs button').forEach(b => b.classList.toggle('on', b.dataset.t === t));
-  for (const x of ['resume', 'transkrip', 'speaker', 'paparan']) $('t-' + x).classList.toggle('hidden', x !== t);
+  for (const x of ['resume', 'notulensi', 'transkrip', 'speaker', 'paparan']) $('t-' + x).classList.toggle('hidden', x !== t);
   if (t === 'paparan') { renderPaparan(); }
+  if (t === 'notulensi') { renderNotulensi(); }
 }
 $('d-tabs').addEventListener('click', e => { const b = e.target.closest('button'); if (b) pilihTab(b.dataset.t); });
 $('pp-src').addEventListener('click', e => { const b = e.target.closest('button'); if (b) { state.srcDeck = b.dataset.s; renderPaparan(); } });
@@ -1867,6 +1939,222 @@ async function bagikan() {
   salin(t); toast('Tersalin. Tinggal tempel di aplikasi tujuan.', 4000);
 }
 
+
+
+// ================= Notulensi lengkap + dokumen Word =================
+const BULAN = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+const HARI = ['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
+function tglPanjang(d) { d = new Date(d); return `${HARI[d.getDay()]}, ${String(d.getDate()).padStart(2, '0')} ${BULAN[d.getMonth()]} ${d.getFullYear()}`; }
+function tglKota(d) { d = new Date(d); return `${String(d.getDate()).padStart(2, '0')} ${BULAN[d.getMonth()]} ${d.getFullYear()}`; }
+const pisahNamaJabatan = (t) => { const i = String(t || '').indexOf(','); return i < 0 ? [String(t || '').trim(), ''] : [t.slice(0, i).trim(), t.slice(i + 1).trim()]; };
+
+async function muatKop() {
+  if (state.kop) return state.kop;
+  const { data } = await sb.from('pengaturan_app').select('kop1,kop2,kota').eq('id', 1).maybeSingle();
+  state.kop = data || { kop1: '', kop2: '', kota: 'Jakarta' };
+  return state.kop;
+}
+function infoRapat(r, kop) {
+  const nt = r.notulensi || {}, simpan = r.info_rapat || {};
+  const mulai = new Date(new Date(r.created_at).getTime() - (r.durasi_detik || 0) * 1000);
+  const [pNama, pJab] = pisahNamaJabatan(simpan.pimpinan ?? nt.pimpinan);
+  return {
+    agenda: simpan.agenda ?? (nt.judul || r.judul || ''),
+    tanggal: simpan.tanggal ?? tglPanjang(mulai),
+    waktu: simpan.waktu ?? `${String(mulai.getHours()).padStart(2, '0')}.${String(mulai.getMinutes()).padStart(2, '0')} WIB s.d selesai`,
+    tempat: simpan.tempat ?? '',
+    pimpinan: simpan.pimpinan ?? (nt.pimpinan || ''),
+    peserta: simpan.peserta ?? (nt.peserta || []),
+    notulis: simpan.notulis ?? ((state.saya && state.saya.nama) || ''),
+    tahu_jabatan: simpan.tahu_jabatan ?? pJab,
+    tahu_nama: simpan.tahu_nama ?? pNama,
+    kota: simpan.kota ?? ((kop && kop.kota) || 'Jakarta'),
+    tanggal_ttd: simpan.tanggal_ttd ?? tglKota(mulai),
+  };
+}
+
+function renderNotulensi() {
+  const r = state.rapat; if (!r) return;
+  const aktif = 'notulensi_status' in r;
+  const sibuk = ['minta', 'proses'].includes(r.notulensi_status);
+  const nt = r.notulensi;
+  const adaTranskrip = !!(r.transkrip && r.transkrip.length);
+  let st = '';
+  if (!aktif) st = '<div class="warn">Fitur notulensi belum aktif. Jalankan <b>setup/13-notulensi.sql</b> di Supabase dan impor workflow Notulensi di n8n.</div>';
+  else if (sibuk) st = '<div class="warn">Aa lagi nyusun notulensi lengkap… rapat 1 jam biasanya 1–3 menit.</div>';
+  else if (r.notulensi_status === 'gagal') st = kotakGagal(r.notulensi_error);
+  else if (!adaTranskrip) st = '<div class="muted">Transkrip belum ada.</div>';
+  $('nt-status').innerHTML = st;
+  $('nt-kosong').classList.toggle('hidden', !!nt);
+  const b = $('nt-buat');
+  b.classList.toggle('hidden', !!nt && !sibuk && r.notulensi_status !== 'gagal');
+  b.disabled = !aktif || sibuk || !adaTranskrip;
+  b.textContent = nt ? 'Buat ulang notulensi' : 'Buat notulensi';
+  $('nt-hasil').classList.toggle('hidden', !nt || sibuk);
+  if (!nt || sibuk) return;
+  const rg = r.rentang;
+  const cek = [];
+  if (nt.terpotong) cek.push('Balasan AI sempat kepotong, bagian akhir mungkin belum lengkap.');
+  if (rg) cek.push(`Dibuat dari bagian rekaman ${rg.mulai != null ? jam(rg.mulai) : 'awal'} – ${rg.akhir != null ? jam(rg.akhir) : 'akhir'}.`);
+  if (!r.info_rapat) cek.push('Info rapat (tempat, pimpinan, notulis) belum dicek. Tekan <b>Info rapat</b> sebelum unduh.');
+  $('nt-cek').innerHTML = cek.join('<br>'); $('nt-cek').classList.toggle('hidden', !cek.length);
+  const ul = (a) => `<ul>${(a || []).map(x => `<li>${esc(x)}</li>`).join('')}</ul>`;
+  const blok = (b) => `<div class="nt-blok"><div>${esc(b.pembicara || '-')}</div><div>${ul(b.poin)}${(b.tanggapan || []).map(t => `<div class="tg">Tanggapan, ${esc(t.pembicara || '-')}</div>${ul(t.poin)}`).join('')}</div></div>`;
+  $('nt-doc').innerHTML =
+    `<div class="nt-h">A&nbsp;&nbsp;PEMBAHASAN MATERI</div><div class="nt-sub">1. Pengantar</div>${(nt.pengantar || []).map(blok).join('') || '<div class="nt-penutup muted">-</div>'}` +
+    `<div class="nt-h">B&nbsp;&nbsp;DISKUSI DAN TANGGAPAN</div>${(nt.diskusi || []).map(blok).join('') || '<div class="nt-penutup muted">-</div>'}` +
+    `<div class="nt-h">C&nbsp;&nbsp;PENUTUP</div><div class="nt-penutup">${ul(nt.penutup)}</div>`;
+}
+
+async function buatNotulensi(ulang) {
+  const r = state.rapat;
+  if (ulang && !confirm('Buat ulang notulensi? Hasil sekarang akan diganti (info rapat yang udah lo isi tetap).')) return;
+  if (['minta', 'proses'].includes(r.notulensi_status)) await sb.from('rapat').update({ notulensi_status: 'gagal' }).eq('id', r.id);
+  const { error } = await sb.from('rapat').update({ notulensi_status: 'minta', notulensi_error: null }).eq('id', r.id);
+  if (error) return toast(pesanAa(error.message), 5000);
+  toast('Notulensi lagi disusun…'); bukaDetail(r.id);
+}
+
+async function bukaInfo(lalu) {
+  const kop = await muatKop();
+  const f = infoRapat(state.rapat, kop);
+  $('if-agenda').value = f.agenda; $('if-tanggal').value = f.tanggal; $('if-waktu').value = f.waktu;
+  $('if-tempat').value = f.tempat; $('if-pimpinan').value = f.pimpinan;
+  $('if-peserta').value = (f.peserta || []).join('\n'); $('if-notulis').value = f.notulis;
+  $('if-tahu-jab').value = f.tahu_jabatan; $('if-tahu-nama').value = f.tahu_nama; $('if-kota').value = f.kota;
+  $('if-kop1').value = kop.kop1 || ''; $('if-kop2').value = kop.kop2 || '';
+  state.unduhSetelahInfo = !!lalu;
+  $('if-simpan').textContent = lalu ? 'Simpan & unduh' : 'Simpan';
+  $('info').classList.remove('hidden');
+}
+function tutupInfo() { $('info').classList.add('hidden'); state.unduhSetelahInfo = false; }
+async function simpanInfo() {
+  const r = state.rapat, lama = infoRapat(r, state.kop);
+  const info = {
+    agenda: $('if-agenda').value.trim(), tanggal: $('if-tanggal').value.trim(), waktu: $('if-waktu').value.trim(),
+    tempat: $('if-tempat').value.trim(), pimpinan: $('if-pimpinan').value.trim(),
+    peserta: $('if-peserta').value.split('\n').map(x => x.replace(/^[-•*\d.)\s]+/, '').trim()).filter(Boolean),
+    notulis: $('if-notulis').value.trim(), tahu_jabatan: $('if-tahu-jab').value.trim(), tahu_nama: $('if-tahu-nama').value.trim(),
+    kota: $('if-kota').value.trim() || 'Jakarta', tanggal_ttd: lama.tanggal_ttd,
+  };
+  const b = $('if-simpan'); b.disabled = true;
+  const { error } = await sb.from('rapat').update({ info_rapat: info }).eq('id', r.id);
+  const kop1 = $('if-kop1').value.trim(), kop2 = $('if-kop2').value.trim();
+  if (!error && state.kop && (kop1 !== (state.kop.kop1 || '') || kop2 !== (state.kop.kop2 || ''))) {
+    const k = await sb.from('pengaturan_app').update({ kop1, kop2 }).eq('id', 1);
+    if (!k.error) Object.assign(state.kop, { kop1, kop2 });
+  }
+  b.disabled = false;
+  if (error) return toast(pesanAa(error.message), 5000);
+  r.info_rapat = info;
+  const lanjut = state.unduhSetelahInfo;
+  tutupInfo(); renderNotulensi(); toast('Info rapat disimpan.');
+  if (lanjut) unduhDocx();
+}
+
+async function unduhDocx() {
+  const r = state.rapat, nt = r.notulensi; if (!nt) return;
+  if (!r.info_rapat) return bukaInfo(true);              // cek info dulu sekali
+  const kop = await muatKop();
+  const f = infoRapat(r, kop);
+  toast('Aa lagi nyusun dokumen Word…', 4000);
+  try {
+    await muatScript('https://cdn.jsdelivr.net/npm/docx@9.10.0/dist/index.iife.min.js', () => window.docx)
+      .catch(() => muatScript('https://cdn.jsdelivr.net/npm/docx@9.10.0/dist/index.iife.js', () => window.docx));
+    const blob = await docx.Packer.toBlob(susunDocx(nt, f, kop));
+    const nama = ('Notulensi ' + (f.agenda || r.judul || 'Rapat')).replace(/[\\/:*?"<>|]+/g, ' ').replace(/\s+/g, '_').slice(0, 90) + '.docx';
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = nama;
+    document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 4000);
+    toast('Dokumen Word diunduh.');
+  } catch (e) { toast('Gagal bikin dokumen: ' + (e && e.message || e), 6000); }
+}
+
+// Tata letak mengikuti contoh notulensi: kop, tabel identitas, A/B/C, kolom tanda tangan
+function susunDocx(nt, f, kop) {
+  const D = window.docx;
+  const { Document, Paragraph, TextRun, Table, TableRow, TableCell, WidthType, AlignmentType, ShadingType, BorderStyle, VerticalAlign, LevelFormat, TableLayoutType } = D;
+  const FONT = 'Arial', UK = 21;                 // 10,5 pt
+  const BIRU = 'C6D9F0', NAVY = '1F3864', ABU = 'D9D9D9';
+  const W = [700, 1800, 300, 6560];             // total 9360 = lebar halaman Letter - margin 1"
+  const sum = (a, b) => W.slice(a, b).reduce((x, y) => x + y, 0);
+  const garis = { style: BorderStyle.SINGLE, size: 4, color: '000000' };
+  const tepi = { top: garis, bottom: garis, left: garis, right: garis };
+  const run = (t, o = {}) => new TextRun({ text: String(t ?? ''), font: FONT, size: UK, ...o });
+  const par = (t, o = {}, ro = {}) => new Paragraph({ spacing: { before: 40, after: 40 }, ...o, children: [run(t, ro)] });
+  const poin = (t, jenis = 'strip') => new Paragraph({ numbering: { reference: jenis, level: 0 }, alignment: AlignmentType.JUSTIFIED, spacing: { before: 20, after: 40 }, children: [run(t)] });
+  const sel = (isi, dari, sampai, o = {}) => new TableCell({
+    children: Array.isArray(isi) ? (isi.length ? isi : [par('')]) : [isi],
+    columnSpan: sampai - dari, width: { size: sum(dari, sampai), type: WidthType.DXA },
+    borders: tepi, verticalAlign: o.v || VerticalAlign.TOP,
+    margins: { top: 60, bottom: 60, left: 100, right: 100 },
+    shading: o.warna ? { type: ShadingType.CLEAR, color: 'auto', fill: o.warna } : undefined,
+  });
+  const baris = (sel2, tinggi) => new TableRow({ children: sel2, cantSplit: false, height: tinggi ? { value: tinggi, rule: 'atLeast' } : undefined });
+  const isiBlok = (b) => {
+    const out = (b.poin || []).map(x => poin(x));
+    for (const t of b.tanggapan || []) {
+      out.push(new Paragraph({ spacing: { before: 200, after: 60 }, children: [run('Tanggapan, ' + (t.pembicara || '-'), { bold: true })] }));
+      for (const x of t.poin || []) out.push(poin(x));
+    }
+    return out;
+  };
+  const rows = [];
+  rows.push(baris([sel(par('NOTULEN RAPAT', { alignment: AlignmentType.CENTER }, { bold: true, size: 28 }), 0, 4, { warna: BIRU })]));
+  rows.push(baris([sel(par(f.agenda, { alignment: AlignmentType.CENTER }, { bold: true }), 0, 4, { warna: BIRU })]));
+  const ident = (label, isi) => baris([sel(par(label), 0, 2), sel(par(':'), 2, 3), sel(isi, 3, 4)]);
+  const tempat = String(f.tempat || '').split('\n').map(x => x.trim()).filter(Boolean);
+  rows.push(ident('Waktu', par(f.waktu)));
+  rows.push(ident('Hari / Tanggal', par(f.tanggal)));
+  rows.push(ident('Tempat', tempat.length ? tempat.map(x => par(x, { alignment: AlignmentType.JUSTIFIED })) : par('')));
+  rows.push(ident('Pimpinan', par(f.pimpinan)));
+  rows.push(ident('Agenda', par(f.agenda)));
+  rows.push(ident('Peserta', (f.peserta || []).length ? f.peserta.map(x => poin(x, 'titik')) : par('')));
+  rows.push(baris([sel(par(''), 0, 4, { warna: NAVY })], 500));
+  const kepala = (huruf, judul) => baris([sel(par(huruf, { alignment: AlignmentType.CENTER }, { bold: true }), 0, 1, { warna: BIRU }), sel(par(judul, {}, { bold: true }), 1, 4, { warna: BIRU })]);
+  rows.push(kepala('A', 'PEMBAHASAN MATERI'));
+  rows.push(baris([sel(par('1.', { alignment: AlignmentType.CENTER }, { bold: true }), 0, 1, { warna: ABU }), sel(par('Pengantar', {}, { bold: true }), 1, 4, { warna: ABU })]));
+  const blokBaris = (b) => baris([sel(par(b.pembicara || '-', {}, { bold: true }), 0, 2), sel(isiBlok(b), 2, 4)]);
+  (nt.pengantar || []).forEach(b => rows.push(blokBaris(b)));
+  rows.push(kepala('B', 'DISKUSI DAN TANGGAPAN'));
+  (nt.diskusi || []).forEach(b => rows.push(blokBaris(b)));
+  rows.push(kepala('C', 'PENUTUP'));
+  rows.push(baris([sel((nt.penutup || []).map(x => poin(x)), 0, 4)]));
+
+  const utama = new Table({ rows, width: { size: 9360, type: WidthType.DXA }, columnWidths: W, layout: TableLayoutType.FIXED });
+
+  const TW = [2600, 2600];
+  const selTtd = (isi, i, o = {}) => new TableCell({ children: isi, width: { size: TW[i], type: WidthType.DXA }, borders: tepi, verticalAlign: VerticalAlign.CENTER,
+    margins: { top: 60, bottom: 60, left: 80, right: 80 }, shading: o.warna ? { type: ShadingType.CLEAR, color: 'auto', fill: o.warna } : undefined });
+  const tengah = (t, ro = {}) => new Paragraph({ alignment: AlignmentType.CENTER, spacing: { before: 20, after: 20 }, children: [run(t, { bold: true, ...ro })] });
+  const ttd = new Table({
+    width: { size: 5200, type: WidthType.DXA }, columnWidths: TW, alignment: AlignmentType.RIGHT, layout: TableLayoutType.FIXED,
+    rows: [
+      new TableRow({ children: [selTtd([tengah('Notulis')], 0, { warna: ABU }), selTtd([tengah('Mengetahui,'), ...(f.tahu_jabatan ? [tengah(f.tahu_jabatan)] : [])], 1, { warna: ABU })] }),
+      new TableRow({ height: { value: 1300, rule: 'atLeast' }, children: [selTtd([tengah('')], 0), selTtd([tengah('')], 1)] }),
+      new TableRow({ children: [selTtd([tengah(f.notulis || ' ')], 0), selTtd([tengah(f.tahu_nama || ' ')], 1)] }),
+    ],
+  });
+
+  const kopPar = [kop.kop1, kop.kop2].filter(x => String(x || '').trim()).map(t => new Paragraph({ alignment: AlignmentType.CENTER, spacing: { after: 0 }, children: [run(String(t).toUpperCase(), { bold: true, size: 24 })] }));
+  return new Document({
+    creator: 'Notulen AI', title: 'Notulen Rapat - ' + (f.agenda || ''),
+    styles: { default: { document: { run: { font: FONT, size: UK } } } },
+    numbering: { config: [
+      { reference: 'strip', levels: [{ level: 0, format: LevelFormat.BULLET, text: '-', alignment: AlignmentType.LEFT, style: { paragraph: { indent: { left: 360, hanging: 300 } } } }] },
+      { reference: 'titik', levels: [{ level: 0, format: LevelFormat.BULLET, text: '•', alignment: AlignmentType.LEFT, style: { paragraph: { indent: { left: 360, hanging: 300 } } } }] },
+    ] },
+    sections: [{
+      properties: { page: { size: { width: 12240, height: 15840 }, margin: { top: 1440, bottom: 1000, left: 1440, right: 1440 } } },
+      children: [
+        ...kopPar,
+        new Paragraph({ spacing: { after: 120 }, children: [] }),
+        utama,
+        new Paragraph({ spacing: { before: 360, after: 120 }, alignment: AlignmentType.RIGHT, children: [run(`${f.kota || 'Jakarta'}, ${f.tanggal_ttd || ''}`, { bold: true })] }),
+        ttd,
+      ],
+    }],
+  });
+}
 
 // ================= Paparan (deck .pptx + infografis) =================
 const WARNA = { navy: '0B2545', teal: '0F766E', tealMuda: 'E6F4F2', amber: 'B45309', abu: '5B6472', garis: 'D9DEE5', putih: 'FFFFFF', teks: '15191E' };
@@ -1897,7 +2185,7 @@ function renderPaparan() {
   document.querySelectorAll('#pp-src button').forEach(b => {
     const dd = deck[b.dataset.s];
     b.classList.toggle('on', b.dataset.s === src);
-    b.innerHTML = (b.dataset.s === 'resume' ? 'Dari notulen' : 'Dari transkrip') +
+    b.innerHTML = (b.dataset.s === 'resume' ? 'Dari ringkasan' : 'Dari transkrip') +
       (dd ? `<br><span class="muted" style="font-size:12px">±${rupiah(biayaDeck(dd))} · ${ribu(dd.token_in + dd.token_out)} token</span>` : '');
   });
 
