@@ -35,12 +35,19 @@ const awalBagian = dipakai[0].m;
 const akhirBagian = akhir !== null ? akhir : totalDetik;
 const durasi = jam(dipotong ? Math.max(0, akhirBagian - awalBagian) : totalDetik);
 
+// Catatan koreksi: tetap dipakai di setiap proses (ringkasan, notulensi, paparan)
+const koreksi = String(r.koreksi || '').trim();
+const blokKoreksi = koreksi ? `CATATAN KOREKSI DARI PENGGUNA (wajib diterapkan di seluruh hasil; lebih diutamakan daripada transkrip, terutama ejaan nama, jabatan, dan istilah):
+${koreksi}
+
+` : '';
+
 let prompt = `Judul: ${r.judul || 'Rapat'}
 Tanggal: ${tanggal}
 Durasi: ${durasi}
 Peserta bicara: ${peserta}
 ${dipotong ? `Catatan: yang dicatat hanya bagian rekaman ${jam(awalBagian)}–${jam(akhirBagian)}; bagian lain sengaja dibuang.\n` : ''}
-TRANSKRIP:
+${blokKoreksi}TRANSKRIP:
 ${baris.map(b => `[${jam(b.m)}] ${label(b.s)}: ${b.t}`).join('\n')}`;
 
 const revisi = String(r.revisi || '').trim();

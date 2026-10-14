@@ -268,6 +268,8 @@ body.admin span.khusus-admin,body.admin li.khusus-admin{display:list-item!import
 .alat{display:flex;gap:.4rem;flex-wrap:wrap;margin:0 0 1rem}
 .alat button{min-height:2.25rem;padding:.3rem .8rem;font-size:.8125rem;font-weight:600;border-radius:99px;background:var(--surface);border:1px solid var(--line)}
 .alat button svg.i{width:1rem;height:1rem}
+.cek-baris{display:flex;gap:.6rem;align-items:flex-start;font-size:.8125rem;color:var(--ink-2);margin-top:.75rem;cursor:pointer;line-height:1.4}
+.cek-baris input{width:1.1rem;height:1.1rem;margin:.1rem 0 0;flex:none;accent-color:var(--accent)}
 .rentang-info{font-size:.8125rem;color:var(--ink-2);background:var(--aa-soft);border-radius:var(--r-sm);padding:.55rem .8rem;margin-bottom:1rem}
 .rentang-info b{color:var(--aa)}
 .edit-teks{width:100%;min-height:60vh;font:inherit;font-size:.9375rem;line-height:1.6;padding:.85rem .95rem;border:1px solid var(--line);border-radius:var(--r-sm);background:var(--surface);color:var(--ink);resize:vertical;box-sizing:border-box}
@@ -385,6 +387,7 @@ body.ada-player .aksi{bottom:4.5rem}
   <symbol id="i-orang" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0M16 4.5a3.5 3.5 0 0 1 0 7M18 14.5a6.5 6.5 0 0 1 3.5 5.5"/></symbol>
   <symbol id="i-kunci" viewBox="0 0 24 24"><rect x="4.5" y="10.5" width="15" height="10" rx="2.5"/><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3M12 14.5v2.5"/></symbol>
   <symbol id="i-kilau" viewBox="0 0 24 24"><path d="M12 3.5l1.8 4.7 4.7 1.8-4.7 1.8L12 16.5l-1.8-4.7L5.5 10l4.7-1.8z"/><path d="M18.5 15.5l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8z"/></symbol>
+  <symbol id="i-koreksi" viewBox="0 0 24 24"><path d="M4 6h11M4 11h8M4 16h5"/><path d="M12.5 17l2.7 2.7L21 13.5"/></symbol>
   <symbol id="i-gunting" viewBox="0 0 24 24"><circle cx="6" cy="6" r="2.5"/><circle cx="6" cy="18" r="2.5"/><path d="M8 7.5l12 9M8 16.5l12-9"/></symbol>
   <symbol id="i-cari" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.2-4.2"/></symbol>
   <symbol id="i-ulang" viewBox="0 0 24 24"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/></symbol>
@@ -525,10 +528,12 @@ body.ada-player .aksi{bottom:4.5rem}
     <div id="t-resume" class="panel">
       <div class="alat hidden" id="d-alat">
         <button onclick="mulaiEdit()"><svg class="i"><use href="#i-pen"/></svg>Edit</button>
-        <button onclick="bukaRevisi()"><svg class="i"><use href="#i-kilau"/></svg>Minta revisi</button>
+        <button onclick="bukaRevisi('ringkasan')"><svg class="i"><use href="#i-kilau"/></svg>Minta revisi</button>
+        <button onclick="bukaKoreksi()"><svg class="i"><use href="#i-koreksi"/></svg>Koreksi istilah</button>
         <button onclick="buatUlangNotulen()"><svg class="i"><use href="#i-ulang"/></svg>Buat ulang</button>
       </div>
       <div id="d-rentang-info" class="rentang-info hidden"></div>
+      <div id="d-koreksi-info" class="rentang-info hidden"></div>
       <div id="d-resume" class="resume muted">Notulen belum ada.</div>
       <div id="d-edit" class="hidden">
         <textarea id="d-edit-teks" class="edit-teks" spellcheck="false"></textarea>
@@ -569,6 +574,8 @@ body.ada-player .aksi{bottom:4.5rem}
         <div class="alat" style="margin-top:1rem">
           <button class="accent-chip" onclick="unduhDocx()"><svg class="i"><use href="#i-dl"/></svg>Unduh Word</button>
           <button onclick="bukaInfo()"><svg class="i"><use href="#i-pen"/></svg>Info rapat</button>
+          <button onclick="bukaRevisi('notulensi')"><svg class="i"><use href="#i-kilau"/></svg>Minta revisi</button>
+          <button onclick="bukaKoreksi()"><svg class="i"><use href="#i-koreksi"/></svg>Koreksi istilah</button>
           <button onclick="buatNotulensi(true)"><svg class="i"><use href="#i-ulang"/></svg>Buat ulang</button>
         </div>
         <div id="nt-cek" class="rentang-info hidden"></div>
@@ -752,7 +759,8 @@ body.ada-player .aksi{bottom:4.5rem}
       <ul>
         <li><b>Notulen</b>: tekan <b>Salin</b> atau <b>Bagikan</b> (WA, email, dll). Formatnya sudah rapi untuk WhatsApp.</li>
         <li><b>Edit</b>: benerin langsung kata/frasa yang salah, lalu Simpan. Gratis.</li>
-        <li><b>Minta revisi</b>: tulis instruksi (mis. "Bakom maksudnya BAKTI", "bagian anggaran kurang lengkap"), Aa nulis ulang notulennya. Biaya ±sama dengan bikin notulen sekali lagi.</li>
+        <li><b>Minta revisi</b>: tulis instruksi (mis. "bagian anggaran kurang lengkap"), Aa nulis ulang ringkasannya. Kalau notulensi sudah ada, centang <b>Revisi notulensi juga</b> biar ikut dibenerin (jalan otomatis setelah ringkasan selesai). Biaya ±sama dengan bikin sekali lagi per hasil.</li>
+        <li><b>Koreksi istilah</b>: daftar salah dengar & nama yang benar (mis. "Bakom → BAKTI", "Speaker C itu Bu Nuning"). Beda dengan revisi, catatan ini <b>tersimpan terus</b> dan selalu dipakai di ringkasan, notulensi, dan paparan, termasuk kalau dibuat ulang. Saat menyimpan, bisa langsung diterapkan ke ringkasan dan notulensi yang sudah ada.</li>
         <li><b>Buat ulang</b>: tulis ulang dari nol, misalnya setelah ganti model AI. Hasil edit/revisi sebelumnya ketimpa.</li>
         <li><b>Buang bagian yang ga perlu</b> (mis. obrolan sebelum rapat mulai): tab Transkrip → <b>Pilih bagian</b> → ketuk baris pertama lalu baris terakhir yang dipakai → Simpan. Notulen & paparan cuma dibuat dari bagian itu, tanpa transkrip ulang.</li>
         <li><b>Transkrip</b>: ketuk satu baris untuk dengar audionya dari titik itu.</li>
@@ -767,6 +775,7 @@ body.ada-player .aksi{bottom:4.5rem}
         <li><b>Ringkasan</b> = poin-poin singkat buat WhatsApp. <b>Notulensi</b> = catatan jalannya rapat: siapa menyampaikan apa, pertanyaan, dan tanggapan, berurutan dan lengkap.</li>
         <li>Buka tab <b>Notulensi</b> → <b>Buat notulensi</b>. Rapat 1 jam biasanya 1–3 menit. Biayanya kira-kira 2–3 kali bikin ringkasan karena tulisannya jauh lebih panjang.</li>
         <li>Tekan <b>Info rapat</b> buat isi/cek waktu, tempat, pimpinan, peserta, notulis, dan yang mengetahui. Yang bisa ditebak dari rekaman sudah diisi Aa.</li>
+        <li><b>Minta revisi</b> di tab Notulensi: tulis yang perlu dibenerin (mis. "tanggapan Pak Budi kurang lengkap"), Aa revisi notulensinya tanpa mengubah bagian lain. Bisa sekalian ke ringkasan. Koreksi nama/istilah lebih baik lewat <b>Koreksi istilah</b> biar berlaku ke semua hasil.</li>
         <li><b>Unduh Word</b> → dokumen .docx dengan format notulen resmi (kop, tabel identitas, A. Pembahasan Materi, B. Diskusi dan Tanggapan, C. Penutup, kolom tanda tangan). Kalau perlu, edit lagi di Word.</li>
         <li>Kop dokumen (nama unit & instansi) diisi sekali di Info rapat, berlaku untuk semua rapat.</li>
         <li>Kalau bagian rekaman dipilih di tab Transkrip, notulensi juga cuma dari bagian itu.</li>
@@ -850,8 +859,8 @@ body.ada-player .aksi{bottom:4.5rem}
 <div id="revisi" class="lembar hidden" onclick="if(event.target===this)tutupRevisi()">
   <div>
     <div class="pegangan"></div>
-    <h3>Minta Aa revisi</h3>
-    <div class="muted" style="font-size:.8125rem">Tulis apa yang perlu dibenerin. Aa nulis ulang notulennya pakai instruksi ini, notulen sekarang, dan transkrip. Biayanya kira-kira sama dengan bikin notulen sekali lagi.</div>
+    <h3 id="rv-judul">Minta Aa revisi</h3>
+    <div class="muted" style="font-size:.8125rem" id="rv-ket">Tulis apa yang perlu dibenerin. Aa nulis ulang pakai instruksi ini, hasil sekarang, dan transkrip. Biayanya kira-kira sama dengan bikin sekali lagi.</div>
     <textarea id="rv-teks" class="edit-teks" style="min-height:8rem;margin-top:1rem" placeholder="mis. Bakom maksudnya BAKTI. Tindak lanjut nomor 2 PIC-nya Pak Budi. Tambahin angka anggaran yang disebut di menit 40-an."></textarea>
     <div class="rv-contoh">
       <button type="button">Perbaiki nama/istilah: … maksudnya …</button>
@@ -859,7 +868,23 @@ body.ada-player .aksi{bottom:4.5rem}
       <button type="button">Buang bagian basa-basi pembukaan</button>
       <button type="button">Buat lebih ringkas</button>
     </div>
+    <label class="cek-baris" id="rv-ikut-baris"><input type="checkbox" id="rv-ikut" checked><span id="rv-ikut-teks">Revisi notulensi juga pakai instruksi ini</span></label>
+    <label class="cek-baris"><input type="checkbox" id="rv-simpan"><span>Simpan juga ke <b>catatan koreksi</b> rapat ini, biar selalu dipakai (termasuk paparan dan kalau dibuat ulang). Cocok buat koreksi nama/istilah.</span></label>
     <div class="row" style="margin-top:1rem"><button onclick="tutupRevisi()">Batal</button><button class="primary" id="rv-kirim" onclick="kirimRevisi()">Kirim ke Aa</button></div>
+  </div>
+</div>
+
+<div id="koreksi" class="lembar hidden" onclick="if(event.target===this)tutupKoreksi()">
+  <div>
+    <div class="pegangan"></div>
+    <h3>Catatan koreksi</h3>
+    <div class="muted" style="font-size:.8125rem">Daftar salah dengar & koreksi nama/istilah untuk rapat ini. Tersimpan terus dan selalu dipakai Aa di ringkasan, notulensi, dan paparan, termasuk kalau dibuat ulang.</div>
+    <textarea id="kr-teks" class="edit-teks" style="min-height:9rem;margin-top:1rem" placeholder="Satu koreksi per baris, mis.&#10;Bakom → BAKTI&#10;Pak Budi = Kepala Biro Humas&#10;Speaker C itu Bu Nuning"></textarea>
+    <div class="lbl" id="kr-terapkan-lbl">Terapkan sekarang ke</div>
+    <label class="cek-baris" id="kr-r-baris"><input type="checkbox" id="kr-r" checked><span>Ringkasan</span></label>
+    <label class="cek-baris" id="kr-n-baris"><input type="checkbox" id="kr-n" checked><span>Notulensi</span></label>
+    <div class="muted" style="font-size:.75rem;margin-top:.6rem" id="kr-ket">Isi yang sudah ada dipertahankan, cuma dikoreksi. Biayanya kira-kira sama dengan bikin sekali lagi per hasil. Paparan yang dibuat berikutnya otomatis ikut.</div>
+    <div class="row" style="margin-top:1rem"><button onclick="tutupKoreksi()">Batal</button><button class="primary" id="kr-simpan" onclick="simpanKoreksi()">Simpan</button></div>
   </div>
 </div>
 
@@ -905,7 +930,7 @@ const jam = (d) => [Math.floor(d / 3600), Math.floor(d / 60) % 60, Math.floor(d 
 const MAKS_BYTE = 50 * 1024 * 1024;
 
 // ===== Harga (USD). Ubah di sini kalau harga berubah. =====
-const VERSI = 'v43';   // samakan dengan CACHE di sw.js
+const VERSI = 'v44';   // samakan dengan CACHE di sw.js
 const KURS = 16500;                        // kurs cadangan (dipakai rapat lama & kalau kurs harian gagal diambil)
 // Kurs harian USD→IDR: diambil sekali sehari, lalu DIKUNCI di tiap rapat saat dibuat (kolom rapat.kurs),
 // jadi biaya rapat yang sudah lewat tidak ikut berubah.
@@ -1674,10 +1699,14 @@ async function bukaDetail(id, diam) {
     $('d-resume').classList.toggle('muted', !r.resume);
     $('d-resume-btn').classList.toggle('hidden', !r.resume || !!state.mengedit);
   }
+  const nk = String(r.koreksi || '').split('\n').filter(x => x.trim()).length;
+  $('d-koreksi-info').classList.toggle('hidden', !nk || !!state.mengedit || !r.resume);
+  if (nk) $('d-koreksi-info').innerHTML = `Ada <b>${nk} catatan koreksi</b> yang selalu dipakai Aa. <button class="ghost" style="min-height:0;padding:0;text-decoration:underline;color:inherit;font-size:inherit" onclick="bukaKoreksi()">Lihat</button>`;
   if (!sebelumnya || !sebelumnya.transkrip !== !r.transkrip || JSON.stringify(sebelumnya.nama_speaker) !== JSON.stringify(r.nama_speaker)) {
     renderTranskrip(); if (!diam || !document.activeElement || !document.activeElement.closest('#d-speaker')) renderSpeaker();
   }
-  if (!sebelumnya || sebelumnya.notulensi_status !== r.notulensi_status || JSON.stringify(sebelumnya.notulensi) !== JSON.stringify(r.notulensi)) {
+  if (!sebelumnya || sebelumnya.notulensi_status !== r.notulensi_status || sebelumnya.status !== r.status || sebelumnya.koreksi !== r.koreksi ||
+      sebelumnya.notulensi_revisi !== r.notulensi_revisi || JSON.stringify(sebelumnya.notulensi) !== JSON.stringify(r.notulensi)) {
     if (!$('t-notulensi').classList.contains('hidden')) renderNotulensi();
   }
   if (!sebelumnya || sebelumnya.deck_status !== r.deck_status || JSON.stringify(sebelumnya.deck) !== JSON.stringify(r.deck) || sebelumnya.resume !== r.resume) {
@@ -1785,7 +1814,7 @@ async function simpanRentang() {
 function mulaiEdit() {
   state.mengedit = true;
   $('d-edit-teks').value = tanpaLabel(state.rapat.resume || '');
-  ['d-resume', 'd-resume-btn', 'd-alat'].forEach(id => $(id).classList.add('hidden'));
+  ['d-resume', 'd-resume-btn', 'd-alat', 'd-koreksi-info'].forEach(id => $(id).classList.add('hidden'));
   $('d-edit').classList.remove('hidden');
   $('d-edit-teks').focus();
 }
@@ -1805,9 +1834,35 @@ async function simpanEdit() {
   batalEdit(); toast('Notulen disimpan.');
 }
 
-// ---- Minta revisi ke AI ----
-function bukaRevisi() {
-  if (!('revisi' in state.rapat)) return toast('Fitur revisi belum aktif — jalankan setup/12-edit-rentang.sql di Supabase.', 5000);
+// ---- Minta revisi ke AI (ringkasan / notulensi) + catatan koreksi ----
+const TERAPKAN_KOREKSI = 'Terapkan CATATAN KOREKSI di atas ke seluruh isi (ejaan nama, jabatan, istilah). Selain itu jangan ubah isi.';
+const ntSibuk = (r) => ['minta', 'proses'].includes(r.notulensi_status);
+// Kirim instruksi ke ringkasan dan/atau notulensi. Kalau dua-duanya, notulensi jalan
+// otomatis setelah ringkasan selesai (diatur n8n), biar hitungan token ga balapan.
+async function kirimPerbaikan(ins, keR, keN) {
+  const r = state.rapat;
+  if (keR) {
+    await sb.from('rapat').update({ status: 'gagal' }).eq('id', r.id).neq('status', 'selesai');   // pastikan status berubah
+    const ubah = { revisi: ins, status: 'minta_resume', error: null };
+    if (keN) ubah.notulensi_revisi = ins;
+    return (await sb.from('rapat').update(ubah).eq('id', r.id)).error;
+  }
+  if (keN) {
+    if (ntSibuk(r)) await sb.from('rapat').update({ notulensi_status: 'gagal' }).eq('id', r.id);
+    return (await sb.from('rapat').update({ notulensi_revisi: ins, notulensi_status: 'minta', notulensi_error: null }).eq('id', r.id)).error;
+  }
+  return null;
+}
+function bukaRevisi(jenis) {
+  const r = state.rapat, nt = jenis === 'notulensi';
+  if (!('revisi' in r)) return toast('Fitur revisi belum aktif — jalankan setup/12-edit-rentang.sql di Supabase.', 5000);
+  if (nt && !('notulensi_revisi' in r)) return toast('Revisi notulensi belum aktif — jalankan setup/15-koreksi.sql di Supabase.', 5000);
+  state.revisiUntuk = nt ? 'notulensi' : 'ringkasan';
+  $('rv-judul').textContent = nt ? 'Minta Aa revisi notulensi' : 'Minta Aa revisi ringkasan';
+  const lain = nt ? !!r.resume && !SEDANG.includes(r.status) : !!r.notulensi && 'notulensi_revisi' in r && !ntSibuk(r);
+  $('rv-ikut-baris').classList.toggle('hidden', !lain); $('rv-ikut').checked = true;
+  $('rv-ikut-teks').textContent = nt ? 'Revisi ringkasan juga pakai instruksi ini' : 'Revisi notulensi juga pakai instruksi ini';
+  $('rv-simpan').checked = false; $('rv-simpan').closest('label').classList.toggle('hidden', !('koreksi' in r));
   $('rv-teks').value = ''; $('revisi').classList.remove('hidden'); setTimeout(() => $('rv-teks').focus(), 50);
 }
 function tutupRevisi() { $('revisi').classList.add('hidden'); }
@@ -1816,14 +1871,49 @@ document.querySelector('#revisi .rv-contoh').addEventListener('click', e => {
   const t = $('rv-teks'); t.value = (t.value.trim() ? t.value.trim() + '\n' : '') + b.textContent; t.focus();
 });
 async function kirimRevisi() {
-  const ins = $('rv-teks').value.trim();
+  const ins = $('rv-teks').value.trim(), r = state.rapat;
   if (ins.length < 5) return toast('Tulis dulu apa yang perlu direvisi ya.');
+  const nt = state.revisiUntuk === 'notulensi';
+  const ikut = !$('rv-ikut-baris').classList.contains('hidden') && $('rv-ikut').checked;
+  const keR = !nt || ikut, keN = nt || ikut;
   const b = $('rv-kirim'); b.disabled = true;
-  await sb.from('rapat').update({ status: 'gagal' }).eq('id', state.rapat.id).neq('status', 'selesai');   // pastikan status berubah
-  const { error } = await sb.from('rapat').update({ revisi: ins, status: 'minta_resume', error: null }).eq('id', state.rapat.id);
+  if ($('rv-simpan').checked && 'koreksi' in r) {
+    const k = [String(r.koreksi || '').trim(), ins].filter(Boolean).join('\n');
+    const { error } = await sb.from('rapat').update({ koreksi: k }).eq('id', r.id);
+    if (error) { b.disabled = false; return toast(pesanAa(error.message), 5000); }
+  }
+  const error = await kirimPerbaikan(ins, keR, keN);
   b.disabled = false;
   if (error) return toast(pesanAa(error.message), 5000);
-  tutupRevisi(); toast('Siap, Aa revisi dulu notulennya…'); bukaDetail(state.rapat.id);
+  tutupRevisi();
+  toast(keR && keN ? 'Siap, Aa revisi ringkasan dulu, lalu notulensinya…' : keN ? 'Siap, Aa revisi dulu notulensinya…' : 'Siap, Aa revisi dulu ringkasannya…', 4000);
+  bukaDetail(r.id);
+}
+
+function bukaKoreksi() {
+  const r = state.rapat;
+  if (!('koreksi' in r)) return toast('Catatan koreksi belum aktif — jalankan setup/15-koreksi.sql di Supabase.', 5000);
+  $('kr-teks').value = r.koreksi || '';
+  const bisaR = !!r.resume && !SEDANG.includes(r.status), bisaN = !!r.notulensi && !ntSibuk(r);
+  $('kr-r-baris').classList.toggle('hidden', !bisaR); $('kr-r').checked = true;
+  $('kr-n-baris').classList.toggle('hidden', !bisaN); $('kr-n').checked = true;
+  ['kr-terapkan-lbl', 'kr-ket'].forEach(id => $(id).classList.toggle('hidden', !bisaR && !bisaN));
+  $('koreksi').classList.remove('hidden'); setTimeout(() => $('kr-teks').focus(), 50);
+}
+function tutupKoreksi() { $('koreksi').classList.add('hidden'); }
+async function simpanKoreksi() {
+  const r = state.rapat, k = $('kr-teks').value.trim();
+  const sama = k === String(r.koreksi || '').trim();
+  const keR = !$('kr-r-baris').classList.contains('hidden') && $('kr-r').checked;
+  const keN = !$('kr-n-baris').classList.contains('hidden') && $('kr-n').checked;
+  const b = $('kr-simpan'); b.disabled = true;
+  let { error } = sama ? {} : await sb.from('rapat').update({ koreksi: k || null }).eq('id', r.id);
+  if (!error && k && (keR || keN)) error = await kirimPerbaikan(TERAPKAN_KOREKSI, keR, keN);
+  b.disabled = false;
+  if (error) return toast(pesanAa(error.message), 5000);
+  tutupKoreksi();
+  toast(k && (keR || keN) ? 'Catatan koreksi disimpan. Aa lagi nerapin…' : 'Catatan koreksi disimpan. Dipakai setiap kali Aa bikin/buat ulang.', 4000);
+  bukaDetail(r.id);
 }
 function teksTranskrip() { return gabung().map(u => `[${jam(u.m)}] ${labelSpk(u.s)}: ${u.t}`).join('\n'); }
 
@@ -2009,12 +2099,14 @@ function infoRapat(r, kop) {
 function renderNotulensi() {
   const r = state.rapat; if (!r) return;
   const aktif = 'notulensi_status' in r;
-  const sibuk = ['minta', 'proses'].includes(r.notulensi_status);
+  const nunggu = !!r.notulensi_revisi && !!r.notulensi && SEDANG.includes(r.status) && !['minta', 'proses'].includes(r.notulensi_status);
+  const sibuk = ['minta', 'proses'].includes(r.notulensi_status) || nunggu;
   const nt = r.notulensi;
   const adaTranskrip = !!(r.transkrip && r.transkrip.length);
   let st = '';
   if (!aktif) st = '<div class="warn">Fitur notulensi belum aktif. Jalankan <b>setup/13-notulensi.sql</b> di Supabase dan impor workflow Notulensi di n8n.</div>';
-  else if (sibuk) st = '<div class="warn">Aa lagi nyusun notulensi lengkap… rapat 1 jam biasanya 1–3 menit.</div>';
+  else if (nunggu) st = '<div class="warn">Notulensi direvisi otomatis setelah ringkasan selesai…</div>';
+  else if (sibuk) st = `<div class="warn">${r.notulensi && r.notulensi_revisi ? 'Aa lagi merevisi notulensi…' : 'Aa lagi nyusun notulensi lengkap… rapat 1 jam biasanya 1–3 menit.'}</div>`;
   else if (r.notulensi_status === 'gagal') st = kotakGagal(r.notulensi_error);
   else if (!adaTranskrip) st = '<div class="muted">Transkrip belum ada.</div>';
   $('nt-status').innerHTML = st;
@@ -2029,6 +2121,8 @@ function renderNotulensi() {
   const cek = [];
   if (nt.terpotong) cek.push('Balasan AI sempat kepotong, bagian akhir mungkin belum lengkap.');
   if (rg) cek.push(`Dibuat dari bagian rekaman ${rg.mulai != null ? jam(rg.mulai) : 'awal'} – ${rg.akhir != null ? jam(rg.akhir) : 'akhir'}.`);
+  const nk = String(r.koreksi || '').split('\n').filter(x => x.trim()).length;
+  if (nk) cek.push(`Ada <b>${nk} catatan koreksi</b> yang selalu dipakai Aa. <button class="ghost" style="min-height:0;padding:0;text-decoration:underline;color:inherit;font-size:inherit" onclick="bukaKoreksi()">Lihat</button>`);
   if (!r.info_rapat) cek.push('Info rapat (tempat, pimpinan, notulis) belum dicek. Tekan <b>Info rapat</b> sebelum unduh.');
   $('nt-cek').innerHTML = cek.join('<br>'); $('nt-cek').classList.toggle('hidden', !cek.length);
   const ul = (a) => `<ul>${(a || []).map(x => `<li>${esc(x)}</li>`).join('')}</ul>`;
@@ -2043,7 +2137,7 @@ async function buatNotulensi(ulang) {
   const r = state.rapat;
   if (ulang && !confirm('Buat ulang notulensi? Hasil sekarang akan diganti (info rapat yang udah lo isi tetap).')) return;
   if (['minta', 'proses'].includes(r.notulensi_status)) await sb.from('rapat').update({ notulensi_status: 'gagal' }).eq('id', r.id);
-  const { error } = await sb.from('rapat').update({ notulensi_status: 'minta', notulensi_error: null }).eq('id', r.id);
+  const { error } = await sb.from('rapat').update({ notulensi_status: 'minta', notulensi_error: null, ...('notulensi_revisi' in r ? { notulensi_revisi: null } : {}) }).eq('id', r.id);
   if (error) return toast(pesanAa(error.message), 5000);
   toast('Notulensi lagi disusun…'); bukaDetail(r.id);
 }

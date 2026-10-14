@@ -25,9 +25,33 @@ const tanggal = new Date(r.created_at).toLocaleDateString('id-ID', {
 });
 const peserta = [...new Set(dipakai.map(u => u.s))].sort().map(label).join(', ');
 
-return [{ json: { gagal: false, prompt: `Judul rapat (dari pengguna, boleh diperbaiki): ${r.judul || 'Rapat'}
+const koreksi = String(r.koreksi || '').trim();
+let prompt = `Judul rapat (dari pengguna, boleh diperbaiki): ${r.judul || 'Rapat'}
 Tanggal: ${tanggal}
 Pembicara yang terekam: ${peserta}
-
+${koreksi ? `
+CATATAN KOREKSI DARI PENGGUNA (wajib diterapkan di seluruh notulensi; lebih diutamakan daripada transkrip, terutama ejaan nama, jabatan, dan istilah):
+${koreksi}
+` : ''}
 TRANSKRIP:
-${baris.map(b => `[${jam(b.m)}] ${label(b.s)}: ${b.t}`).join('\n')}` } }];
+${baris.map(b => `[${jam(b.m)}] ${label(b.s)}: ${b.t}`).join('\n')}`;
+
+// Mode revisi: notulensi sebelumnya + instruksi pengguna (dipakai sekali, lalu dikosongkan)
+const revisi = String(r.notulensi_revisi || '').trim();
+const nt = r.notulensi;
+if (revisi && nt && typeof nt === 'object') {
+  const lama = { judul: nt.judul, pimpinan: nt.pimpinan, peserta: nt.peserta, pengantar: nt.pengantar, diskusi: nt.diskusi, penutup: nt.penutup };
+  prompt = `MODE REVISI. Di bawah ada INSTRUKSI REVISI dari pengguna, NOTULENSI SEBELUMNYA (JSON), lalu transkrip sebagai rujukan.
+Keluarkan ulang notulensi LENGKAP dengan struktur JSON yang sama. Terapkan instruksi revisi dengan teliti. Bagian yang tidak disinggung instruksi tetap dipertahankan isinya. Instruksi pengguna lebih diutamakan daripada transkrip kalau keduanya berbeda.
+
+INSTRUKSI REVISI:
+${revisi}
+
+NOTULENSI SEBELUMNYA:
+${JSON.stringify(lama)}
+
+=====
+${prompt}`;
+}
+
+return [{ json: { gagal: false, prompt } }];

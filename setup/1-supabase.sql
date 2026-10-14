@@ -33,7 +33,9 @@ create table if not exists public.rapat (
   notulensi     jsonb,                      -- notulensi lengkap (per pembicara + tanggapan)
   notulensi_status text,                    -- minta | proses | selesai | gagal
   notulensi_error  text,
-  info_rapat    jsonb                       -- waktu, tempat, pimpinan, peserta, notulis, mengetahui
+  info_rapat    jsonb,                      -- waktu, tempat, pimpinan, peserta, notulis, mengetahui
+  koreksi       text,                       -- catatan koreksi nama/istilah, dipakai di semua proses AI
+  notulensi_revisi text                     -- instruksi revisi notulensi (sekali pakai)
 );
 
 -- Hanya user yang login (akun lo sendiri) yang bisa akses.

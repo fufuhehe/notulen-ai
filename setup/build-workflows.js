@@ -148,7 +148,7 @@ const SISTEM = fs.readFileSync(path.join(__dirname, 'prompt-resume.txt'), 'utf8'
 const w2 = wf('Notulen - 2 Resume', [
   webhook('notulen-resume'),
   supa('Tandai meresume', [220, 0], {
-    url: rapatUrl + '&select=judul,created_at,durasi_detik,transkrip,nama_speaker,ai_token_in,ai_token_out,resume,revisi,rentang',
+    url: rapatUrl + '&select=*',
     body: `={{ JSON.stringify({ status: 'meresume', error: null }) }}`,
     representation: true,
   }),
@@ -157,7 +157,7 @@ const w2 = wf('Notulen - 2 Resume', [
   nodeAI('model_notulen', 8000, [880, 0]),
   ifNode('Ada jawaban?', [1100, 0], [{ leftValue: '={{ Array.isArray($json.choices) && $json.choices.length > 0 }}', rightValue: '', operator: { type: 'boolean', operation: 'true', singleValue: true } }]),
   supa('Simpan resume', [1320, -80], {
-    body: `={{ (() => { const c = $json.choices[0], u = $json.usage || {}, lama = $('Tandai meresume').first().json; return JSON.stringify({ status: 'selesai', revisi: null, resume: String(c.message.content || '').trim(), error: c.finish_reason === 'length' ? 'Resume terpotong karena terlalu panjang' : null, ai_model: $json.model, ai_token_in: (lama.ai_token_in || 0) + (u.prompt_tokens || 0), ai_token_out: (lama.ai_token_out || 0) + (u.completion_tokens || 0) }); })() }}`,
+    body: `={{ (() => { const c = $json.choices[0], u = $json.usage || {}, lama = $('Tandai meresume').first().json; return JSON.stringify({ status: 'selesai', revisi: null, resume: String(c.message.content || '').trim(), error: c.finish_reason === 'length' ? 'Resume terpotong karena terlalu panjang' : null, ai_model: $json.model, ai_token_in: (lama.ai_token_in || 0) + (u.prompt_tokens || 0), ai_token_out: (lama.ai_token_out || 0) + (u.completion_tokens || 0), ...(lama.notulensi_revisi && lama.notulensi && !['minta', 'proses'].includes(lama.notulensi_status) ? { notulensi_status: 'minta' } : {}) }); })() }}`,   // revisi notulensi yang dititip: jalan setelah ringkasan selesai
   }),
   supa('Tandai gagal', [1320, 120], { body: `={{ JSON.stringify({ status: 'gagal', error: 'AI: ' + String(($json.error && ($json.error.message || (typeof $json.error === 'string' ? $json.error : JSON.stringify($json.error)))) || $json.message || $json.detail || JSON.stringify($json)).slice(0, 500) }) }}` }),
 ], {
@@ -174,7 +174,7 @@ const PROMPT_DECK = fs.readFileSync(path.join(__dirname, 'prompt-deck.txt'), 'ut
 const w4 = wf('Notulen - 4 Paparan', [
   webhook('notulen-deck'),
   supa('Tandai deck diproses', [220, 0], {
-    url: rapatUrl + '&select=judul,created_at,durasi_detik,resume,transkrip,nama_speaker,deck,deck_sumber,ai_token_in,ai_token_out,rentang',
+    url: rapatUrl + '&select=*',
     body: `={{ JSON.stringify({ deck_status: 'proses', deck_error: null }) }}`,
     representation: true,
   }),
@@ -197,7 +197,7 @@ const PROMPT_NOTULENSI = fs.readFileSync(path.join(__dirname, 'prompt-notulensi.
 const w5 = wf('Notulen - 5 Notulensi', [
   webhook('notulen-notulensi'),
   supa('Tandai notulensi diproses', [220, 0], {
-    url: rapatUrl + '&select=judul,created_at,durasi_detik,transkrip,nama_speaker,rentang,ai_token_in,ai_token_out',
+    url: rapatUrl + '&select=*',
     body: `={{ JSON.stringify({ notulensi_status: 'proses', notulensi_error: null }) }}`,
     representation: true,
   }),

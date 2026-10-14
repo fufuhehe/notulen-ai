@@ -7,6 +7,8 @@ const token = {
   ai_token_in: (lama.ai_token_in || 0) + (u.prompt_tokens || 0),
   ai_token_out: (lama.ai_token_out || 0) + (u.completion_tokens || 0),
 };
+// instruksi revisi notulensi cuma dipakai sekali (kolomnya ada setelah setup/15-koreksi.sql)
+if ('notulensi_revisi' in lama) token.notulensi_revisi = null;
 const gagal = (pesan) => [{ json: { notulensi_status: 'gagal', notulensi_error: String(pesan).slice(0, 500), ...token } }];
 
 if (bahan.gagal) return gagal(bahan.error);

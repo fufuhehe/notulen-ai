@@ -29,6 +29,8 @@ if (!bahan) {
   return [{ json: { gagal: true, sumber, error: `Bahan kosong: ${sumber} belum ada untuk rapat ini` } }];
 }
 
+const koreksi = String(r.koreksi || '').trim();
+
 return [{ json: {
   gagal: false,
   sumber,
@@ -36,7 +38,10 @@ return [{ json: {
 Tanggal: ${tanggal}
 Durasi: ${jam(r.durasi_detik || 0)}
 Sumber bahan: ${sumber === 'resume' ? 'NOTULEN (sudah diringkas)' : 'TRANSKRIP MENTAH'}
-
+${koreksi ? `
+CATATAN KOREKSI DARI PENGGUNA (wajib diterapkan; lebih diutamakan daripada bahan, terutama ejaan nama, jabatan, dan istilah):
+${koreksi}
+` : ''}
 BAHAN:
 ${bahan}`,
 } }];
