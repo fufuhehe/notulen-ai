@@ -154,7 +154,17 @@ const w2 = wf('Notulen - 2 Resume', [
   }),
   code('Susun prompt', 'susun-prompt.js', [440, 0]),
   promptSistem(SISTEM, [660, 0]),
-  nodeAI('model_notulen', 8000, [880, 0]),
+  {   // prompt per jenis kegiatan (kuliah, bimbingan, ngobrol, ...); gagal/kosong = pakai Prompt sistem
+    parameters: {
+      url: `={{ ${WH}.supa_url }}/rest/v1/jenis_kegiatan?select=prompt_ringkasan&kode=eq.{{ encodeURIComponent($('Tandai meresume').first().json.jenis || 'rapat') }}`,
+      authentication: 'predefinedCredentialType', nodeCredentialType: 'supabaseApi',
+      options: { response: { response: { neverError: true } } },
+    },
+    id: uid(), name: 'Ambil prompt jenis', type: 'n8n-nodes-base.httpRequest', typeVersion: 4.2, position: [770, 160],
+    credentials: CRED.supa, alwaysOutputData: true, onError: 'continueRegularOutput',
+  },
+  code('Pilih prompt', 'pilih-prompt.js', [880, 160]),
+  nodeAI('model_notulen', 8000, [1000, 0]),
   ifNode('Ada jawaban?', [1100, 0], [{ leftValue: '={{ Array.isArray($json.choices) && $json.choices.length > 0 }}', rightValue: '', operator: { type: 'boolean', operation: 'true', singleValue: true } }]),
   supa('Simpan resume', [1320, -80], {
     body: `={{ (() => { const c = $json.choices[0], u = $json.usage || {}, lama = $('Tandai meresume').first().json; return JSON.stringify({ status: 'selesai', revisi: null, resume: String(c.message.content || '').trim(), error: c.finish_reason === 'length' ? 'Resume terpotong karena terlalu panjang' : null, ai_model: $json.model, ai_token_in: (lama.ai_token_in || 0) + (u.prompt_tokens || 0), ai_token_out: (lama.ai_token_out || 0) + (u.completion_tokens || 0), ...(lama.notulensi_revisi && lama.notulensi && !['minta', 'proses'].includes(lama.notulensi_status) ? { notulensi_status: 'minta' } : {}) }); })() }}`,   // revisi notulensi yang dititip: jalan setelah ringkasan selesai
@@ -164,7 +174,9 @@ const w2 = wf('Notulen - 2 Resume', [
   Webhook: { main: [[L('Tandai meresume')]] },
   'Tandai meresume': { main: [[L('Susun prompt')]] },
   'Susun prompt': { main: [[L('Prompt sistem')]] },
-  'Prompt sistem': { main: [[L('Minta AI')]] },
+  'Prompt sistem': { main: [[L('Ambil prompt jenis')]] },
+  'Ambil prompt jenis': { main: [[L('Pilih prompt')]] },
+  'Pilih prompt': { main: [[L('Minta AI')]] },
   'Minta AI': { main: [[L('Ada jawaban?')]] },
   'Ada jawaban?': { main: [[L('Simpan resume')], [L('Tandai gagal')]] },
 });

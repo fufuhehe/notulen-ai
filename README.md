@@ -85,6 +85,17 @@ Pasang sekali: jalankan [`setup/12-edit-rentang.sql`](setup/12-edit-rentang.sql)
 
 Pasang sekali: jalankan [`setup/15-koreksi.sql`](setup/15-koreksi.sql), lalu impor ulang workflow Resume, Paparan, dan Notulensi (node Tandai sekarang `select=*`).
 
+## Jenis kegiatan: rapat, kuliah, bimbingan, ngobrol
+Pilih **Jenis** di beranda sebelum rekam/upload (pilihan terakhir diingat). Bentuk ringkasan mengikuti jenisnya:
+- **Rapat**: ringkasan rapat + notulensi resmi (Word) + paparan.
+- **Kuliah**: ringkasan pembuka + pointer materi per topik, istilah, yang ditekankan dosen, rujukan, tugas & tenggat.
+- **Bimbingan**: masukan dosen per bab, checklist revisi, yang sudah disetujui, PR sebelum bimbingan berikutnya.
+- **Ngobrol**: topik, info penting, janji & rencana, ide.
+
+Jenis bisa diganti dari halaman catatan (lalu buat ulang ringkasan). Tab Notulensi & Paparan hanya muncul di Rapat. Daftar bisa disaring per jenis. Prompt tiap jenis disimpan di tabel `jenis_kegiatan` dan bisa diedit admin dari **Pengaturan → Jenis kegiatan & prompt**; prompt Rapat kosong = pakai prompt bawaan di workflow n8n.
+
+Pasang sekali: jalankan [`setup/16-jenis-kegiatan.sql`](setup/16-jenis-kegiatan.sql) (butuh `10-multi-akun.sql`), lalu impor ulang workflow Resume (ada node baru *Ambil prompt jenis* + *Pilih prompt*).
+
 ## Rekam suara Zoom / tab lain (di laptop)
 Di laptop/PC (Chrome atau Edge), di bawah tombol *Rekam rapat* ada pilihan **Sumber suara**:
 - **Mic**: suara ruangan lewat mikrofon.

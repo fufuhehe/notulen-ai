@@ -99,6 +99,9 @@ header.top h1{font-size:1.0625rem;font-weight:700;margin:0;flex:1;white-space:no
 .sumber>span{font-size:.8125rem;font-weight:600;color:var(--muted);white-space:nowrap}
 .sumber .seg{flex:1}
 .sumber .seg button{min-height:2.25rem;font-size:.8125rem}
+#jenis-box{margin:0 0 .9rem}
+#jenis-box>span{display:none}
+#jenis-box .seg button{min-width:0;padding:0 .25rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block}
 .sekunder{display:flex;gap:.625rem}
 .sekunder button{flex:1;justify-content:flex-start;background:var(--surface);border-color:var(--line);font-weight:600}
 .catatan{font-size:.8125rem;color:var(--muted);margin:.75rem .25rem 0}
@@ -245,6 +248,12 @@ details#d-biaya summary::-webkit-details-marker{display:none}
 .khusus-admin{display:none!important}
 body.admin .khusus-admin{display:flex!important}
 body.admin span.khusus-admin,body.admin li.khusus-admin{display:list-item!important}
+.item .jn{display:inline-block;font-size:.6875rem;font-weight:700;letter-spacing:.02em;color:var(--aa);background:var(--aa-soft);border-radius:99px;padding:.05rem .45rem;margin-right:.35rem;vertical-align:1px}
+.jenis-chip{min-height:0;padding:.25rem .6rem;font-size:.75rem;font-weight:700;border-radius:999px;background:var(--aa-soft);color:var(--aa);border:0;gap:.2rem}
+.pj-daftar{display:flex;flex-direction:column;gap:.5rem;margin-top:1rem}
+.pj-daftar button{justify-content:flex-start;text-align:left;flex-direction:column;align-items:flex-start;gap:.1rem;padding:.7rem .9rem;min-height:3.25rem}
+.pj-daftar button small{font-weight:500;color:var(--muted);font-size:.75rem}
+.pj-daftar button.on{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent) inset}
 .saring{display:flex;gap:.4rem;overflow-x:auto;margin:-.25rem 0 .75rem;padding-bottom:.15rem;scrollbar-width:none}
 .saring:empty{display:none}
 .saring button{flex:none;min-height:2rem;padding:.25rem .8rem;border-radius:99px;font-size:.8125rem;font-weight:600;background:var(--surface);border:1px solid var(--line);color:var(--muted)}
@@ -448,10 +457,14 @@ body.ada-player .aksi{bottom:4.5rem}
   </header>
   <div class="wrap">
     <div class="sapa" id="sapa">Halo.</div>
+    <div class="sumber hidden" id="jenis-box">
+      <span>Jenis</span>
+      <div class="seg" id="jenis-seg"></div>
+    </div>
 
     <button class="cta" onclick="bukaRekam()">
       <span class="rec"><svg class="i"><use href="#i-mic"/></svg></span>
-      <span><b>Rekam rapat</b><small>Rapat itu berat. Biar Aa aja yang nyatet.</small></span>
+      <span><b id="cta-judul">Rekam rapat</b><small id="cta-sub">Rapat itu berat. Biar Aa aja yang nyatet.</small></span>
       <span class="wave" aria-hidden="true"><i style="height:30%"></i><i style="height:60%"></i><i style="height:45%"></i><i style="height:85%"></i><i style="height:55%"></i><i style="height:100%"></i><i style="height:65%"></i><i style="height:40%"></i><i style="height:75%"></i><i style="height:35%"></i><i style="height:55%"></i><i style="height:25%"></i></span>
     </button>
     <div class="sumber hidden" id="sumber-box">
@@ -470,8 +483,9 @@ body.ada-player .aksi{bottom:4.5rem}
 
     <div id="pending"></div>
 
-    <div class="bagian"><h2>Rapat</h2><div class="muted" id="total-biaya"></div></div>
+    <div class="bagian"><h2 id="judul-daftar">Rapat</h2><div class="muted" id="total-biaya"></div></div>
     <div id="cari-box" class="cari hidden"><svg class="i"><use href="#i-cari"/></svg><input id="cari" type="search" placeholder="Cari judul atau isi notulen" oninput="ketikCari(this.value)" autocomplete="off"></div>
+    <div id="saring-jenis" class="saring"></div>
     <div id="saring" class="saring"></div>
     <div id="daftar" class="list"><div class="item kosong">Memuat…</div></div>
   </div>
@@ -481,7 +495,7 @@ body.ada-player .aksi{bottom:4.5rem}
 <section id="v-rec" class="hidden">
   <header class="top"><button class="ghost icon" id="r-batal" onclick="batalRekam()" title="Batalkan rekaman" aria-label="Batalkan rekaman"><svg class="i"><use href="#i-tutup"/></svg></button><h1>Notulen AI · Merekam</h1><button class="ghost icon" id="r-tidur" onclick="masukTidur()" title="Mode tidur" aria-label="Mode tidur"><svg class="i"><use href="#i-bulan"/></svg></button></header>
   <div class="wrap rec-screen" id="rec-box">
-    <input id="r-judul" placeholder="Judul rapat (boleh diisi nanti)">
+    <input id="r-judul" placeholder="Judul (boleh diisi nanti)">
     <div class="timer" id="r-time">00:00:00</div>
     <div class="status-rec"><span class="dot"></span><span id="r-state">Menyiapkan mikrofon…</span></div>
     <div class="wavebox" id="r-wave"></div>
@@ -513,7 +527,7 @@ body.ada-player .aksi{bottom:4.5rem}
   </header>
   <div class="wrap" style="padding-top:.25rem">
     <h2 class="d-judul" id="d-judul">Rapat</h2>
-    <div class="d-meta"><span id="d-meta"></span><span id="d-status" class="chip"></span></div>
+    <div class="d-meta"><span id="d-meta"></span><span id="d-status" class="chip"></span><button id="d-jenis" class="jenis-chip hidden" onclick="bukaJenis()"></button></div>
     <details id="d-biaya" class="hidden"><summary></summary><div style="margin-top:.5rem;line-height:1.6"></div></details>
     <div id="d-info"></div>
 
@@ -683,6 +697,7 @@ body.ada-player .aksi{bottom:4.5rem}
       <div class="row" style="margin-top:1rem"><button onclick="formSandi(false)">Batal</button><button class="primary" id="gs-simpan" onclick="gantiSandi()">Simpan</button></div>
     </div>
     <button class="ke-panduan khusus-admin" onclick="salinUndangan()"><svg class="i"><use href="#i-bagi"/></svg>Salin link undangan</button>
+    <button class="ke-panduan khusus-admin" onclick="tutupAtur();bukaAturJenis()" id="aj-btn"><svg class="i"><use href="#i-koreksi"/></svg>Jenis kegiatan &amp; prompt</button>
     <button class="ke-panduan khusus-admin" onclick="tutupAtur();bukaAkun()"><svg class="i"><use href="#i-orang"/></svg>Kelola akun</button>
     <button class="ke-panduan" onclick="tutupAtur();bukaPanduan()"><svg class="i"><use href="#i-bantu"/></svg>Panduan pakai Notulen AI</button>
     <div class="row" style="margin-top:1rem">
@@ -751,6 +766,21 @@ body.ada-player .aksi{bottom:4.5rem}
           <span class="lg"><i class="ikon bad"><svg class="i"><use href="#i-x"/></svg></i>gagal, buka lalu Coba lagi</span>
         </li>
         <li>Kalau <b>Gagal</b>, baca pesannya lalu tekan <b>Coba lagi</b>. Ketuk “Detail teknis” kalau perlu laporan ke yang bikin app.</li>
+      </ul>
+    </details>
+
+    <details>
+      <summary>Jenis kegiatan: rapat, kuliah, bimbingan, ngobrol</summary>
+      <ul>
+        <li>Pilih <b>Jenis</b> di beranda sebelum rekam atau upload. Pilihan terakhir diingat.</li>
+        <li><b>Rapat</b>: ringkasan rapat, notulensi resmi + Word, dan paparan.</li>
+        <li><b>Kuliah</b>: ringkasan pembuka + pointer materi per topik, istilah penting, yang ditekankan dosen, rujukan, tugas & tenggat.</li>
+        <li><b>Bimbingan</b>: masukan dosen per bab, checklist revisi, yang sudah disetujui, dan PR sebelum bimbingan berikutnya.</li>
+        <li><b>Ngobrol</b>: topik yang dibahas, info penting (nama, angka, kontak), janji & rencana.</li>
+        <li>Salah pilih? Di halaman catatan, ketuk label jenis di bawah judul, pilih yang benar, lalu buat ulang ringkasannya.</li>
+        <li>Tab Notulensi dan Paparan cuma muncul di Rapat. Koreksi istilah, Pilih bagian, dan Minta revisi jalan di semua jenis.</li>
+        <li>Di daftar, saring per jenis lewat chip di atas daftar (muncul setelah ada catatan selain rapat).</li>
+        <li class="khusus-admin">Admin bisa mengubah prompt tiap jenis di Pengaturan → <b>Jenis kegiatan &amp; prompt</b>.</li>
       </ul>
     </details>
 
@@ -874,6 +904,30 @@ body.ada-player .aksi{bottom:4.5rem}
   </div>
 </div>
 
+<div id="pilih-jenis" class="lembar hidden" onclick="if(event.target===this)tutupJenis()">
+  <div>
+    <div class="pegangan"></div>
+    <h3>Jenis kegiatan</h3>
+    <div class="muted" style="font-size:.8125rem">Menentukan bentuk ringkasan. Notulensi resmi dan paparan cuma ada di Rapat.</div>
+    <div class="pj-daftar" id="pj-daftar"></div>
+    <div class="row" style="margin-top:1rem"><button onclick="tutupJenis()">Batal</button></div>
+  </div>
+</div>
+
+<div id="jenis-atur" class="lembar hidden" onclick="if(event.target===this)tutupAturJenis()">
+  <div>
+    <div class="pegangan"></div>
+    <h3 id="ja-judul">Jenis kegiatan &amp; prompt</h3>
+    <div class="muted" style="font-size:.8125rem" id="ja-ket">Prompt AI untuk ringkasan tiap jenis. Berlaku untuk semua akun, mulai proses berikutnya.</div>
+    <div class="pj-daftar" id="ja-daftar"><div class="muted">Memuat…</div></div>
+    <div id="ja-form" class="hidden">
+      <textarea id="ja-teks" class="edit-teks" style="min-height:16rem;margin-top:1rem;font-size:.8125rem" spellcheck="false"></textarea>
+      <div class="muted" style="font-size:.75rem;margin-top:.4rem" id="ja-info"></div>
+    </div>
+    <div class="row" style="margin-top:1rem"><button onclick="tutupAturJenis()" id="ja-tutup">Tutup</button><button class="primary hidden" id="ja-simpan" onclick="simpanPromptJenis()">Simpan</button></div>
+  </div>
+</div>
+
 <div id="koreksi" class="lembar hidden" onclick="if(event.target===this)tutupKoreksi()">
   <div>
     <div class="pegangan"></div>
@@ -930,7 +984,7 @@ const jam = (d) => [Math.floor(d / 3600), Math.floor(d / 60) % 60, Math.floor(d 
 const MAKS_BYTE = 50 * 1024 * 1024;
 
 // ===== Harga (USD). Ubah di sini kalau harga berubah. =====
-const VERSI = 'v44';   // samakan dengan CACHE di sw.js
+const VERSI = 'v45';   // samakan dengan CACHE di sw.js
 const KURS = 16500;                        // kurs cadangan (dipakai rapat lama & kalau kurs harian gagal diambil)
 // Kurs harian USD→IDR: diambil sekali sehari, lalu DIKUNCI di tiap rapat saat dibuat (kolom rapat.kurs),
 // jadi biaya rapat yang sudah lewat tidak ikut berubah.
@@ -1141,12 +1195,14 @@ async function login() {
   b.disabled = false; b.textContent = 'Masuk';
   if (error) return toast(pesanAa(error.message), 5000);
   if (!(await muatSaya())) return;
+  muatJenis().then(() => { if (!$('v-home').classList.contains('hidden')) muatDaftar(); });
   ke('home');
 }
 async function logout() {
   await sb.auth.signOut();
   try { localStorage.removeItem('profil_cache'); localStorage.removeItem('daftar_cache'); } catch (_) {}
   state.uid = null; state.saya = null; state.admin = false; state.filterPemilik = ''; state.cari = ''; state.halaman = 1; state.adaRapat = false;
+  state.filterJenis = ''; state.adaJenisLain = false; try { localStorage.removeItem('ada_jenis_lain'); } catch (_) {}
   try { $('cari').value = ''; } catch (_) {}
   document.body.classList.remove('admin'); ke('login');
 }
@@ -1200,24 +1256,144 @@ async function mulai() {
   if (sayaCepat(state.uid)) muatSaya();            // langsung lanjut, verifikasi di belakang
   else if (!(await muatSaya())) return;
   const m = location.hash.match(/^#r\/([0-9a-f-]{36})$/);
+  muatJenis().then(() => { if (!$('v-home').classList.contains('hidden')) muatDaftar(); });
   ke(m ? 'detail' : 'home', m && m[1]);
+}
+
+// ================= Jenis kegiatan =================
+// Daftar jenis dari tabel jenis_kegiatan (setup/16). Tabel belum ada = fitur disembunyikan, semua dianggap Rapat.
+const JENIS_INFO = {
+  rapat: ['Ringkasan, notulensi resmi + Word, paparan', 'Rapat itu berat. Biar Aa aja yang nyatet.'],
+  kuliah: ['Ringkasan + pointer materi, istilah, tugas & tenggat', 'Fokus dengerin dosen, Aa yang nyatet.'],
+  bimbingan: ['Masukan dosen per bab, checklist revisi, PR berikutnya', 'Fokus diskusi, revisinya Aa yang catet.'],
+  ngobrol: ['Topik, info penting, janji & rencana', 'Ngobrol aja, Aa yang inget-inget.'],
+};
+state.jenisList = [{ kode: 'rapat', nama: 'Rapat' }];
+state.jenisAktif = false;
+state.jenis = bacaLS('jenis_terakhir') || 'rapat';
+state.adaJenisLain = bacaLS('ada_jenis_lain') === '1';
+const namaJenis = (k) => ((state.jenisList.find(j => j.kode === (k || 'rapat')) || {}).nama) || (k ? k[0].toUpperCase() + k.slice(1) : 'Rapat');
+const jenisRapat = (r) => !r || !r.jenis || r.jenis === 'rapat';
+function terapkanJenis(list) {
+  state.jenisAktif = !!(list && list.length);
+  if (state.jenisAktif) state.jenisList = list;
+  if (!state.jenisList.some(j => j.kode === state.jenis)) state.jenis = 'rapat';
+  $('jenis-box').classList.toggle('hidden', !state.jenisAktif);
+  $('jenis-seg').innerHTML = state.jenisList.map(j => `<button data-v="${esc(j.kode)}" class="${j.kode === state.jenis ? 'on' : ''}">${esc(j.nama)}</button>`).join('');
+  const nama = namaJenis(state.jenis);
+  $('cta-judul').textContent = 'Rekam ' + nama.toLowerCase();
+  $('cta-sub').textContent = (JENIS_INFO[state.jenis] || [, 'Biar Aa aja yang nyatet.'])[1];
+  if (state.uid) isiSapaan();
+  isiSaringJenis();
+}
+async function muatJenis() {
+  try { const c = JSON.parse(bacaLS('jenis_cache') || 'null'); if (c && c.length) terapkanJenis(c); } catch (_) {}
+  const { data, error } = await sb.from('jenis_kegiatan').select('kode,nama,urutan').order('urutan');
+  if (error) { if (/jenis_kegiatan|schema cache|does not exist|PGRST20/i.test(error.message)) { simpanLS('jenis_cache', ''); terapkanJenis(null); } return; }
+  simpanLS('jenis_cache', JSON.stringify(data)); terapkanJenis(data);
+}
+$('jenis-seg').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  state.jenis = b.dataset.v; simpanLS('jenis_terakhir', state.jenis);
+  terapkanJenis(state.jenisList);
+});
+function isiSaringJenis() {
+  const tampil = state.jenisAktif && (state.adaJenisLain || state.filterJenis);
+  $('judul-daftar').textContent = tampil ? 'Catatan' : 'Rapat';
+  $('saring-jenis').innerHTML = !tampil ? '' : [['', 'Semua'], ...state.jenisList.map(j => [j.kode, j.nama])]
+    .map(([v, t]) => `<button data-v="${esc(v)}" class="${v === (state.filterJenis || '') ? 'on' : ''}">${esc(t)}</button>`).join('');
+}
+$('saring-jenis').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  state.filterJenis = b.dataset.v; state.halaman = 1; isiSaringJenis(); muatDaftar();
+});
+
+// Ganti jenis rapat yang sudah ada (halaman detail)
+function bukaJenis() {
+  const r = state.rapat, kini = r.jenis || 'rapat';
+  $('pj-daftar').innerHTML = state.jenisList.map(j => `<button data-v="${esc(j.kode)}" class="${j.kode === kini ? 'on' : ''}"><b>${esc(j.nama)}</b><small>${esc((JENIS_INFO[j.kode] || [''])[0])}</small></button>`).join('');
+  $('pilih-jenis').classList.remove('hidden');
+}
+function tutupJenis() { $('pilih-jenis').classList.add('hidden'); }
+$('pj-daftar').addEventListener('click', async e => {
+  const b = e.target.closest('button'); if (!b) return;
+  const r = state.rapat, baru = b.dataset.v;
+  if (baru === (r.jenis || 'rapat')) return tutupJenis();
+  const nama = namaJenis(baru);
+  const ubah = { jenis: baru };
+  const bisaUlang = !!r.resume && Array.isArray(r.transkrip) && r.transkrip.length && !SEDANG.includes(r.status);
+  if (bisaUlang && confirm(`Ganti jadi ${nama}. Buat ulang ringkasan pakai format ${nama} sekarang?`)) Object.assign(ubah, { status: 'minta_resume', error: null, revisi: null });
+  const { error } = await sb.from('rapat').update(ubah).eq('id', r.id);
+  if (error) return toast(pesanAa(error.message), 5000);
+  tutupJenis();
+  if (baru !== 'rapat' && !state.adaJenisLain) { state.adaJenisLain = true; simpanLS('ada_jenis_lain', '1'); }
+  toast(ubah.status ? `Siap, Aa tulis ulang sebagai ${nama.toLowerCase()}…` : `Jenis diganti jadi ${nama}.`, 4000);
+  bukaDetail(r.id);
+});
+function aturTabJenis(r) {
+  const rapat = jenisRapat(r);
+  document.querySelectorAll('#d-tabs button[data-t=notulensi], #d-tabs button[data-t=paparan]').forEach(b => b.classList.toggle('hidden', !rapat));
+  const aktif = document.querySelector('#d-tabs button.on');
+  if (!rapat && aktif && ['notulensi', 'paparan'].includes(aktif.dataset.t)) pilihTab('resume');
+  const c = $('d-jenis');
+  c.classList.toggle('hidden', !state.jenisAktif);
+  c.textContent = namaJenis(r.jenis) + ' ▾';
+}
+
+// Admin: edit prompt ringkasan per jenis
+async function bukaAturJenis() {
+  $('jenis-atur').classList.remove('hidden');
+  $('ja-form').classList.add('hidden'); $('ja-daftar').classList.remove('hidden'); $('ja-simpan').classList.add('hidden');
+  $('ja-judul').innerHTML = 'Jenis kegiatan &amp; prompt'; $('ja-tutup').textContent = 'Tutup';
+  $('ja-ket').classList.remove('hidden');
+  $('ja-daftar').innerHTML = '<div class="muted">Memuat…</div>';
+  const { data, error } = await sb.from('jenis_kegiatan').select('kode,nama,prompt_ringkasan,diubah').order('urutan');
+  if (error) { $('ja-daftar').innerHTML = `<div class="warn">${/jenis_kegiatan|schema cache|PGRST20/i.test(error.message) ? 'Fitur jenis kegiatan belum aktif. Jalankan <b>setup/16-jenis-kegiatan.sql</b> di Supabase.' : esc(pesanAa(error.message))}</div>`; return; }
+  state.jenisPrompt = data;
+  $('ja-daftar').innerHTML = data.map(j => `<button data-v="${esc(j.kode)}"><b>${esc(j.nama)}</b><small>${j.prompt_ringkasan.trim() ? `Prompt khusus · ${ribu(j.prompt_ringkasan.length)} huruf` : 'Pakai prompt bawaan di n8n'}</small></button>`).join('');
+}
+function tutupAturJenis() {
+  if (!$('ja-form').classList.contains('hidden')) return bukaAturJenis();   // dari form edit: kembali ke daftar
+  $('jenis-atur').classList.add('hidden');
+}
+$('ja-daftar').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  const j = (state.jenisPrompt || []).find(x => x.kode === b.dataset.v); if (!j) return;
+  state.jenisEdit = j.kode;
+  $('ja-judul').textContent = 'Prompt ' + j.nama; $('ja-ket').classList.add('hidden');
+  $('ja-daftar').classList.add('hidden'); $('ja-form').classList.remove('hidden');
+  $('ja-teks').value = j.prompt_ringkasan || '';
+  $('ja-teks').placeholder = j.kode === 'rapat' ? 'Kosong = pakai prompt bawaan di workflow n8n (yang dipakai sekarang).' : 'Tulis prompt sistem untuk jenis ini.';
+  $('ja-info').textContent = 'Format WhatsApp: *tebal*, daftar pakai "- ". Catatan koreksi, rentang, dan revisi tetap ditambahkan otomatis.' +
+    (j.kode === 'rapat' ? ' Kosongkan untuk kembali ke prompt bawaan.' : '');
+  $('ja-simpan').classList.remove('hidden'); $('ja-tutup').textContent = 'Kembali';
+});
+async function simpanPromptJenis() {
+  const b = $('ja-simpan'); b.disabled = true;
+  const { data, error } = await sb.from('jenis_kegiatan').update({ prompt_ringkasan: $('ja-teks').value.trim(), diubah: new Date().toISOString() })
+    .eq('kode', state.jenisEdit).select('kode');
+  b.disabled = false;
+  if (error) return toast(pesanAa(error.message), 5000);
+  if (!data || !data.length) return toast('Ga tersimpan: cuma admin yang bisa ngubah prompt.', 5000);
+  toast('Prompt disimpan. Berlaku untuk proses berikutnya.'); bukaAturJenis();
 }
 
 // ================= Beranda =================
 function cacheDaftarKey() { return 'daftar_cache'; }
 async function muatDaftar() {
   // tampilkan daftar terakhir dulu (kalau ada) supaya ga nunggu jaringan
-  if (/Memuat/.test($('daftar').textContent) && !state.cari && !state.filterPemilik) {
+  if (/Memuat/.test($('daftar').textContent) && !state.cari && !state.filterPemilik && !state.filterJenis) {
     try { const c = JSON.parse(bacaLS(cacheDaftarKey()) || 'null'); if (c && c.uid === state.uid && c.html) { $('daftar').innerHTML = c.html; $('total-biaya').textContent = c.total || ''; } } catch (_) {}
   }
   // deck cuma dicek ada/tidaknya (isinya bisa besar), jadi ambil judulnya saja
   const kolom = 'id,created_at,judul,status,durasi_detik,stt_model,stt_detik,ai_model,ai_token_in,ai_token_out,pp_r:deck->resume->>judul,pp_t:deck->transkrip->>judul,' +
     'dr_m:deck->resume->>model,dr_in:deck->resume->>token_in,dr_out:deck->resume->>token_out,dt_m:deck->transkrip->>model,dt_in:deck->transkrip->>token_in,dt_out:deck->transkrip->>token_out' +
-    (state.multi ? ',pemilik' : '') + (state.admin ? ',profil(nama,email)' : '');
+    (state.multi ? ',pemilik' : '') + (state.admin ? ',profil(nama,email)' : '') + (state.jenisAktif ? ',jenis' : '');
   const PER = 30, batas = PER * (state.halaman || 1);
   const q = (state.cari || '').trim().replace(/[%,()*\\]/g, ' ').replace(/\s+/g, ' ').trim();
   const saring = (x) => {
     if (state.admin && state.filterPemilik) x = x.eq('pemilik', state.filterPemilik);
+    if (state.jenisAktif && state.filterJenis) x = x.eq('jenis', state.filterJenis);
     if (q) x = x.or(`judul.ilike.*${q}*,resume.ilike.*${q}*`);
     return x;
   };
@@ -1231,12 +1407,14 @@ async function muatDaftar() {
     $('daftar').innerHTML = `<div class="item kosong">${esc(pesanAa(error.message))}</div>`; return;
   }
   const adaLagi = data.length > batas; data = data.slice(0, batas);
+  if (!state.adaJenisLain && data.some(r => !jenisRapat(r))) { state.adaJenisLain = true; simpanLS('ada_jenis_lain', '1'); isiSaringJenis(); }
   if (state.admin) isiSaringan(); else $('saring').innerHTML = '';
   // total biaya bulan ini dihitung terpisah (tidak terpengaruh jumlah yang ditampilkan / pencarian)
   totalBulanIni();
   $('cari-box').classList.toggle('hidden', !data.length && !q && !state.adaRapat);
   if (data.length) state.adaRapat = true;
   if (!data.length && q) { $('daftar').innerHTML = `<div class="item kosong">Ga ketemu rapat dengan kata “${esc(q)}”.</div>`; return; }
+  if (!data.length && state.filterJenis) { $('daftar').innerHTML = `<div class="item kosong">Belum ada catatan ${esc(namaJenis(state.filterJenis).toLowerCase())}.</div>`; return; }
   if (!data.length && state.filterPemilik) { $('daftar').innerHTML = '<div class="item kosong">Orang ini belum punya rapat.</div>'; return; }
   if (!data.length) { $('daftar').innerHTML = '<div class="item kosong">Belum ada rapat.<br>Aa nganggur nih — tekan “Rekam rapat”.</div>'; return; }
   let grupLalu = '';
@@ -1253,13 +1431,13 @@ async function muatDaftar() {
       <div class="ikon ${jenis}" title="${pp ? 'Notulen + paparan' : ''}"><svg class="i"><use href="#${ikon}"/></svg></div>
       <div class="grow">
         <div class="t">${esc(r.judul)}</div>
-        <div class="m">${jamSaja(r.created_at)}${r.durasi_detik ? ' · ' + menit(r.durasi_detik) : ''}${biaya ? ' · ±' + rupiah(biaya) : ''}</div>
+        <div class="m">${jenisRapat(r) ? '' : `<span class="jn">${esc(namaJenis(r.jenis))}</span>`}${jamSaja(r.created_at)}${r.durasi_detik ? ' · ' + menit(r.durasi_detik) : ''}${biaya ? ' · ±' + rupiah(biaya) : ''}</div>
         ${state.admin && r.pemilik !== state.uid ? `<div class="milik">${esc(namaPemilik(r))}</div>` : ''}
       </div>
       ${r.status === 'selesai' ? '' : chip(r.status)}
     </div>`;
   }).join('') + (adaLagi ? `<button class="lagi" onclick="state.halaman=(state.halaman||1)+1;muatDaftar()">Tampilkan rapat lebih lama</button>` : '');
-  if (!q && !state.filterPemilik && (state.halaman || 1) === 1) {
+  if (!q && !state.filterPemilik && !state.filterJenis && (state.halaman || 1) === 1) {
     setTimeout(() => simpanLS(cacheDaftarKey(), JSON.stringify({ uid: state.uid, html: $('daftar').innerHTML, total: $('total-biaya').textContent })), 1500);
   }
   if (data.some(r => SEDANG.includes(r.status)) && !state.poll) {
@@ -1378,6 +1556,7 @@ function hentikanSumber() {
 async function bukaRekam() {
   if (!window.MediaRecorder || !navigator.mediaDevices) return toast('Browser ini ga bisa dipakai Aa buat merekam. Pakai Chrome atau Safari terbaru ya.', 5000);
   ke('rec');
+  rekam.jenis = state.jenisAktif ? state.jenis : 'rapat';
   $('r-judul').value = ''; $('r-time').textContent = '00:00:00'; $('r-saved').textContent = 'Tersimpan aman di HP: 0 menit';
   $('r-state').textContent = 'Menyiapkan mikrofon…'; $('rec-box').classList.remove('paused');
   if (!rekam.tipsAsli) rekam.tipsAsli = $('r-tips').innerHTML;
@@ -1426,7 +1605,7 @@ async function bukaRekam() {
   rekam.id = crypto.randomUUID();
   rekam.potongan = 0; rekam.akumulasi = 0; rekam.jeda = false; rekam.t0 = 0;
   rekam.mulai = new Date().toISOString(); rekam.antrian = Promise.resolve();
-  await recPut({ id: rekam.id, judul: '', mime: mime.split(';')[0] || 'audio/webm', mulai: new Date().toISOString(), detik: 0 });
+  await recPut({ id: rekam.id, judul: '', jenis: rekam.jenis, mime: mime.split(';')[0] || 'audio/webm', mulai: new Date().toISOString(), detik: 0 });
 
   rekam.mr = new MediaRecorder(rekam.stream, mime ? { mimeType: mime, audioBitsPerSecond: 32000 } : { audioBitsPerSecond: 32000 });
   rekam.mr.ondataavailable = (e) => {
@@ -1438,7 +1617,7 @@ async function bukaRekam() {
     try {
       await chunkAdd(idRec, data);
       rekam.potongan++;
-      if (rekam.mr) await recPut({ id: idRec, judul: $('r-judul').value.trim(), mime: rekam.mr.mimeType.split(';')[0] || 'audio/webm', mulai: rekam.mulai, detik: Math.round(detikSekarang()) });
+      if (rekam.mr) await recPut({ id: idRec, judul: $('r-judul').value.trim(), jenis: rekam.jenis, mime: rekam.mr.mimeType.split(';')[0] || 'audio/webm', mulai: rekam.mulai, detik: Math.round(detikSekarang()) });
       $('r-saved').textContent = `Tersimpan aman di HP: ${Math.floor(detikSekarang() / 60)} menit`;
     } catch (err) { toast('Aa gagal nyimpen potongan rekaman — memori HP mungkin penuh.', 6000); }
   }
@@ -1499,8 +1678,8 @@ async function selesaiRekam() {
   rekam.stream.getTracks().forEach(t => t.stop()); hentikanSumber();
   window.onbeforeunload = null;
   const id = rekam.id;
-  const judul = $('r-judul').value.trim() || ('Rapat ' + new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long' }));
-  await recPut({ id, judul, mime: mr.mimeType.split(';')[0] || 'audio/webm', mulai: rekam.mulai, detik });
+  const judul = $('r-judul').value.trim() || (namaJenis(rekam.jenis) + ' ' + new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long' }));
+  await recPut({ id, judul, jenis: rekam.jenis, mime: mr.mimeType.split(';')[0] || 'audio/webm', mulai: rekam.mulai, detik });
   rekam.id = null; rekam.mr = null;
   ke('home');
   unggahRec(id);
@@ -1592,7 +1771,7 @@ async function unggahRec(recId) {
   if (!blob.size) { toast('Rekamannya kosong, Aa ga dapet apa-apa.'); await recDel(recId); return muatPending(); }
   if (state.uploading[recId]) return;
   state.uploading[recId] = { pct: 0 }; await muatPending();
-  const ok = await unggah(blob, r.mime, r.judul, recId, ekstensi(r.mime), r.detik);
+  const ok = await unggah(blob, r.mime, r.judul, recId, ekstensi(r.mime), r.detik, r.jenis);
   delete state.uploading[recId];
   if (ok) { await chunkDel(recId); await recDel(recId); }
   muatPending(); muatDaftar();
@@ -1601,15 +1780,16 @@ async function unggahRec(recId) {
 async function pilihFile(inp) {
   const f = inp.files[0]; inp.value = '';
   if (!f) return;
-  const judul = prompt('Judul rapat:', f.name.replace(/\.[^.]+$/, '')) ;
+  const jenis = state.jenisAktif ? state.jenis : 'rapat';
+  const judul = prompt(`Judul (${namaJenis(jenis).toLowerCase()}):`, f.name.replace(/\.[^.]+$/, '')) ;
   if (judul === null) return;
   const mime = f.type || 'audio/mpeg';
-  await unggah(f, mime, judul.trim() || f.name, crypto.randomUUID(), ekstensi(mime, f.name), null);
+  await unggah(f, mime, judul.trim() || f.name, crypto.randomUUID(), ekstensi(mime, f.name), null, jenis);
   muatDaftar();
 }
 
 // Unggah ke Supabase Storage (bisa lanjut kalau sinyal putus), lalu masuk antrian proses
-async function unggah(blob, mime, judul, id, ext, detik) {
+async function unggah(blob, mime, judul, id, ext, detik, jenis) {
   if (blob.size > MAKS_BYTE) {
     toast(`Filenya ${(blob.size / 1048576).toFixed(0)} MB, kegedean buat Aa (maks 50 MB). Rekaman tetap aman di HP.`, 8000);
     return false;
@@ -1620,9 +1800,14 @@ async function unggah(blob, mime, judul, id, ext, detik) {
 
   // 1) catat rapat (status "mengunggah")
   const baris = { id, judul: judul || 'Rapat', audio_path: path, status: 'mengunggah', durasi_detik: detik || null };
+  if (jenis && jenis !== 'rapat') {   // default di database = rapat
+    baris.jenis = jenis;
+    if (!state.adaJenisLain) { state.adaJenisLain = true; simpanLS('ada_jenis_lain', '1'); isiSaringJenis(); }
+  }
   const kurs = await kursHariIni();
   let ins = await sb.from('rapat').upsert(kurs ? { ...baris, kurs } : baris);
   if (ins.error && /kurs/i.test(ins.error.message)) ins = await sb.from('rapat').upsert(baris);   // kolom kurs belum dibuat
+  if (ins.error && /jenis/i.test(ins.error.message)) { delete baris.jenis; ins = await sb.from('rapat').upsert(kurs ? { ...baris, kurs } : baris); }   // kolom jenis belum dibuat
   if (ins.error) { toast(pesanAa(ins.error.message), 6000); return false; }
 
   // 2) unggah file bertahap (6 MB per potong)
@@ -1665,6 +1850,7 @@ async function bukaDetail(id, diam) {
   const sebelumnya = state.rapat && state.rapat.id === id ? state.rapat : null;
   if (!sebelumnya) { if (state.mengedit) batalEdit(); if (state.pilih) modePilih(false); }
   state.rapat = r;
+  aturTabJenis(r);
   $('d-judul').textContent = r.judul;
   $('d-meta').textContent = new Date(r.created_at).toLocaleString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' }) + (r.durasi_detik ? ' · ' + menit(r.durasi_detik) : '') +
     (state.admin && r.pemilik !== state.uid ? ' · milik ' + namaPemilik(r) : '');
@@ -2696,7 +2882,8 @@ function isiSapaan() {
   const h = new Date().getHours();
   const salam = h < 11 ? 'Pagi' : h < 15 ? 'Siang' : h < 18 ? 'Sore' : 'Malam';
   const nama = !state.admin && state.saya && state.saya.nama ? state.saya.nama.trim().split(/\s+/)[0] : 'Aa';
-  $('sapa').innerHTML = `${salam}, ${esc(nama)}.<br><span>Rapat apa hari ini?</span>`;
+  const tanya = { kuliah: 'Kuliah apa hari ini?', bimbingan: 'Bimbingan bab berapa?', ngobrol: 'Ngobrol sama siapa?' }[state.jenisAktif && state.jenis] || 'Rapat apa hari ini?';
+  $('sapa').innerHTML = `${salam}, ${esc(nama)}.<br><span>${tanya}</span>`;
 }
 
 // ================= Link undangan =================
