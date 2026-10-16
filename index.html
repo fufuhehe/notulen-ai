@@ -690,6 +690,8 @@ body.ada-player .aksi{bottom:4.5rem}
       </select>
       <div class="muted" id="atur-model-info" style="margin-top:.4rem;font-size:.75rem">Perkiraan biaya per 1 jam rapat. Berlaku untuk proses berikutnya.</div>
     </div>
+    <div class="lbl">Penyimpanan rekaman di perangkat ini</div>
+    <div class="muted" id="atur-simpan" style="font-size:.8125rem;line-height:1.5">Menghitung…</div>
     <button class="ke-panduan" onclick="formSandi()" id="gs-btn"><svg class="i"><use href="#i-kunci"/></svg>Ganti password</button>
     <div id="gs-form" class="ak-form hidden">
       <label>Password baru</label><input id="gs-1" type="password" autocomplete="new-password" placeholder="min. 8 karakter">
@@ -847,6 +849,7 @@ body.ada-player .aksi{bottom:4.5rem}
     <details>
       <summary>Hal yang perlu diingat</summary>
       <ul>
+        <li>Rekaman disimpan dulu di penyimpanan browser sampai selesai terunggah (±15 MB per jam), lalu otomatis dihapus. Sisa jatahnya bisa dilihat di Pengaturan. Kalau disk laptop/HP hampir penuh, jatahnya ikut menyusut dan Aa akan ngingetin sebelum mulai rekam.</li>
         <li>Notulen buatan AI adalah <b>draf</b>. Cek lagi nama, angka, dan keputusan sebelum dikirim ke pimpinan.</li>
         <li>Istilah atau nama yang jarang bisa salah dengar. Isi nama pembicara supaya hasilnya lebih rapi.</li>
         <li>Audio diproses layanan AI di luar negeri. <b>Jangan dipakai untuk rapat yang sifatnya rahasia.</b></li>
@@ -984,7 +987,7 @@ const jam = (d) => [Math.floor(d / 3600), Math.floor(d / 60) % 60, Math.floor(d 
 const MAKS_BYTE = 50 * 1024 * 1024;
 
 // ===== Harga (USD). Ubah di sini kalau harga berubah. =====
-const VERSI = 'v45';   // samakan dengan CACHE di sw.js
+const VERSI = 'v46';   // samakan dengan CACHE di sw.js
 const KURS = 16500;                        // kurs cadangan (dipakai rapat lama & kalau kurs harian gagal diambil)
 // Kurs harian USD→IDR: diambil sekali sehari, lalu DIKUNCI di tiap rapat saat dibuat (kolom rapat.kurs),
 // jadi biaya rapat yang sudah lewat tidak ikut berubah.
@@ -1553,8 +1556,34 @@ function hentikanSumber() {
   rekam.ctxCampur = null;
 }
 
+// ---- Penyimpanan browser (rekaman disimpan sementara di IndexedDB sampai terunggah) ----
+const MB_PER_JAM = 15;   // audio 32 kbps ≈ 14,4 MB/jam
+const mbTeks = (b) => b >= 1e9 ? (b / 1e9).toFixed(1).replace('.', ',') + ' GB' : Math.max(0, Math.round(b / 1e6)) + ' MB';
+const durasiTeks = (mnt) => mnt >= 120 ? `±${Math.floor(mnt / 60)} jam` : mnt >= 60 ? `±1 jam ${Math.round(mnt - 60)} menit` : `±${Math.max(0, Math.floor(mnt))} menit`;
+async function cekSimpan() {
+  if (!navigator.storage || !navigator.storage.estimate) return null;
+  try {
+    const { usage = 0, quota = 0 } = await navigator.storage.estimate();
+    if (!quota) return null;
+    const sisa = Math.max(0, quota - usage);
+    return { usage, quota, sisa, menit: sisa / (MB_PER_JAM * 1e6) * 60 };
+  } catch (_) { return null; }
+}
+async function isiInfoSimpan() {
+  const el = $('atur-simpan'), info = await cekSimpan();
+  let recs = []; try { recs = (await recAll()).filter(r => !r.uid || !state.uid || r.uid === state.uid); } catch (_) {}
+  const belum = recs.length ? `${recs.length} rekaman belum terunggah (±${mbTeks(recs.reduce((a, r) => a + (r.detik || 0), 0) / 3600 * MB_PER_JAM * 1e6)}). ` : 'Semua rekaman sudah terunggah. ';
+  if (!info) { el.textContent = belum + 'Browser ini ga ngasih info sisa penyimpanan.'; return; }
+  const tipis = info.menit < 120;
+  el.innerHTML = esc(belum) + `Dipakai app ${mbTeks(info.usage)}, sisa jatah browser <b style="color:${tipis ? 'var(--bad)' : 'inherit'}">${mbTeks(info.sisa)}</b> (cukup ${durasiTeks(info.menit)} rekaman).` +
+    (tipis ? '<br>Jatahnya tipis karena disk perangkat hampir penuh. Kosongkan disk (rekaman Zoom, Downloads, Recycle Bin) biar rekaman ga kepotong.' : '');
+}
+
 async function bukaRekam() {
   if (!window.MediaRecorder || !navigator.mediaDevices) return toast('Browser ini ga bisa dipakai Aa buat merekam. Pakai Chrome atau Safari terbaru ya.', 5000);
+  try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist(); } catch (_) {}   // minta jangan dihapus otomatis oleh browser
+  const info = await cekSimpan();
+  if (info && info.menit < 120 && !confirm(`Penyimpanan di perangkat ini tinggal ${mbTeks(info.sisa)}, cukup buat ${durasiTeks(info.menit)} rekaman.\n\nKalau rapatnya lebih lama, rekaman bisa berhenti di tengah. Sebaiknya kosongkan disk dulu (rekaman Zoom, Downloads, Recycle Bin).\n\nTetap mulai rekam?`)) return;
   ke('rec');
   rekam.jenis = state.jenisAktif ? state.jenis : 'rapat';
   $('r-judul').value = ''; $('r-time').textContent = '00:00:00'; $('r-saved').textContent = 'Tersimpan aman di HP: 0 menit';
@@ -1603,7 +1632,7 @@ async function bukaRekam() {
   };
   const mime = pilihMime();
   rekam.id = crypto.randomUUID();
-  rekam.potongan = 0; rekam.akumulasi = 0; rekam.jeda = false; rekam.t0 = 0;
+  rekam.potongan = 0; rekam.peringatanSimpan = false; rekam.akumulasi = 0; rekam.jeda = false; rekam.t0 = 0;
   rekam.mulai = new Date().toISOString(); rekam.antrian = Promise.resolve();
   await recPut({ id: rekam.id, judul: '', jenis: rekam.jenis, mime: mime.split(';')[0] || 'audio/webm', mulai: new Date().toISOString(), detik: 0 });
 
@@ -1619,6 +1648,9 @@ async function bukaRekam() {
       rekam.potongan++;
       if (rekam.mr) await recPut({ id: idRec, judul: $('r-judul').value.trim(), jenis: rekam.jenis, mime: rekam.mr.mimeType.split(';')[0] || 'audio/webm', mulai: rekam.mulai, detik: Math.round(detikSekarang()) });
       $('r-saved').textContent = `Tersimpan aman di HP: ${Math.floor(detikSekarang() / 60)} menit`;
+      if (rekam.potongan % 6 === 0) cekSimpan().then(i => {
+        if (i && i.menit < 10 && !rekam.peringatanSimpan) { rekam.peringatanSimpan = true; toast(`Penyimpanan perangkat hampir habis (sisa ${durasiTeks(i.menit)} rekaman). Selesaikan rekaman atau kosongkan disk sekarang.`, 9000); }
+      });
     } catch (err) { toast('Aa gagal nyimpen potongan rekaman — memori HP mungkin penuh.', 6000); }
   }
   if (mic) mic.getAudioTracks()[0].onended = () => {
@@ -2666,6 +2698,7 @@ function terapkanTema(t) {
 }
 function bukaAtur() {
   $('versi').textContent = 'Notulen AI ' + VERSI;
+  isiInfoSimpan();
   const t = bacaLS('tema') || 'auto';
   document.querySelectorAll('#atur-tema button').forEach(b => b.classList.toggle('on', b.dataset.v === t));
   const f = parseFloat(bacaLS('skala_teks')) || 1;
