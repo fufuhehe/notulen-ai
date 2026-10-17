@@ -103,6 +103,7 @@ h1,h2,h3{text-wrap:balance}
 .sumber>span{font-size:.8125rem;font-weight:600;color:var(--muted);white-space:nowrap}
 .sumber .seg{flex:1}
 .sumber .seg button{min-height:2.25rem;font-size:.8125rem}
+#mic-box select{flex:1;min-width:0;padding:.55rem .8rem;font-size:.875rem}
 #jenis-box{margin:0 0 .9rem}
 #jenis-box>span{display:none}
 #jenis-box .seg button{min-width:0;padding:0 .25rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block}
@@ -508,6 +509,10 @@ body.ada-player .aksi{bottom:4.5rem}
         <button data-v="laptop">Laptop</button>
       </div>
     </div>
+    <div class="sumber hidden" id="mic-box">
+      <span>Mic</span>
+      <select id="mic-pilih" aria-label="Pilih mikrofon"></select>
+    </div>
     <div class="sekunder">
       <button onclick="document.getElementById('file').click()"><svg class="i"><use href="#i-upload"/></svg>Upload rekaman</button>
     </div>
@@ -530,7 +535,9 @@ body.ada-player .aksi{bottom:4.5rem}
     <div class="timer" id="r-time">00:00:00</div>
     <div class="status-rec"><span class="dot"></span><span id="r-state">Menyiapkan mikrofon…</span></div>
     <div class="wavebox" id="r-wave"></div>
+    <div id="r-diam" class="warn hidden" style="text-align:left;margin:0 0 1rem"></div>
     <div id="r-saved">Tersimpan aman di HP: 0 menit</div>
+    <div id="r-mic" class="muted" style="font-size:.75rem;margin-top:.3rem;color:#8ea3b8"></div>
     <div class="rec-btns">
       <div class="rb"><button id="r-pause" onclick="jedaRekam()" disabled aria-label="Jeda"><svg class="i" style="width:1.5rem;height:1.5rem"><use href="#i-pause"/></svg></button><span id="r-pause-lbl">Jeda</span></div>
       <div class="rb"><button id="r-stop" class="stop" onclick="selesaiRekam()" disabled aria-label="Selesai"></button><span>Selesai</span></div>
@@ -761,6 +768,8 @@ body.ada-player .aksi{bottom:4.5rem}
         <li>Rekaman disimpan ke HP tiap 10 detik. Kalau app ketutup atau sinyal hilang, rekamannya aman dan bisa diunggah lagi dari beranda.</li>
         <li>Taruh HP di tengah meja, dekat orang yang paling banyak ngomong.</li>
         <li>Rapat penting? Rekam juga pakai perekam bawaan HP sebagai cadangan, lalu upload kalau perlu.</li>
+        <li><b>HP tersambung ke smartwatch atau earphone Bluetooth?</b> Aa otomatis pakai mic HP. Kalau ada lebih dari satu mic, pilih di <b>Mic</b> di beranda. Kalau 12 detik pertama ga ada suara masuk, Aa kasih peringatan di layar rekam.</li>
+        <li><b>Telepon atau Zoom di HP</b> ga bisa direkam app ini: Android/iPhone tidak mengizinkan app lain ikut mengambil suara panggilan. Pakai Zoom di laptop dengan sumber <b>Mic + laptop</b>, atau rekam pakai fitur rekam Zoom / perekam panggilan bawaan HP lalu <b>Upload rekaman</b>.</li>
       </ul>
     </details>
 
@@ -1024,7 +1033,7 @@ const jam = (d) => [Math.floor(d / 3600), Math.floor(d / 60) % 60, Math.floor(d 
 const MAKS_BYTE = 50 * 1024 * 1024;
 
 // ===== Harga (USD). Ubah di sini kalau harga berubah. =====
-const VERSI = 'v51';   // samakan dengan CACHE di sw.js
+const VERSI = 'v52';   // samakan dengan CACHE di sw.js
 const KURS = 16500;                        // kurs cadangan (dipakai rapat lama & kalau kurs harian gagal diambil)
 // Kurs harian USD→IDR: diambil sekali sehari, lalu DIKUNCI di tiap rapat saat dibuat (kolom rapat.kurs),
 // jadi biaya rapat yang sudah lewat tidak ikut berubah.
@@ -1254,7 +1263,7 @@ function ke(v, arg) {
   $('v-' + v).classList.remove('hidden');
   clearInterval(state.poll); state.poll = null;
   window.scrollTo(0, 0);
-  if (v === 'home') { isiSapaan(); muatDaftar(); muatPending(); }
+  if (v === 'home') { isiSapaan(); muatDaftar(); muatPending(); isiMic(); }
   if (v === 'detail') bukaDetail(arg);
   if (v !== 'detail') { tutupPlayer(); if (state.mengedit) batalEdit(); if (state.pilih) modePilih(false); }
   const hash = v === 'detail' ? '#r/' + arg : v === 'home' ? '' : '#' + v;
@@ -1566,6 +1575,47 @@ function pilihMime() {
   return opsi.find(m => window.MediaRecorder && MediaRecorder.isTypeSupported(m)) || '';
 }
 
+// ---- pilihan mic: hindari mic Bluetooth (smartwatch/TWS) yang sering kepilih otomatis tanpa suara ----
+const MIC_BT = /bluetooth|headset|hands-?free|hfp|watch|airpods|buds|tws|\bbt\b/i;
+const micVirtual = (d) => /^(default|communications)$/i.test(d.deviceId);
+async function daftarMic() {
+  try { return (await navigator.mediaDevices.enumerateDevices()).filter(d => d.kind === 'audioinput'); } catch (_) { return []; }
+}
+const namaMic = (d) => micVirtual(d) ? 'Otomatis (ikut HP)' : (d.label || 'Mic') + (MIC_BT.test(d.label) ? ' · Bluetooth' : '');
+async function isiMic() {
+  if (!navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices) return;
+  const d = (await daftarMic()).filter(x => x.label);   // label baru ada setelah izin mic pernah diberikan
+  const nyata = d.filter(x => !micVirtual(x));
+  $('mic-box').classList.toggle('hidden', nyata.length < 2);
+  if (nyata.length < 2) return;
+  const simpan = bacaLS('mic_id');
+  const awal = d.find(x => x.deviceId === simpan) || nyata.find(x => !MIC_BT.test(x.label)) || d[0];
+  $('mic-pilih').innerHTML = d.map(x => `<option value="${esc(x.deviceId)}"${x === awal ? ' selected' : ''}>${esc(namaMic(x))}</option>`).join('');
+}
+$('mic-pilih').addEventListener('change', e => simpanLS('mic_id', e.target.value));
+if (navigator.mediaDevices && navigator.mediaDevices.addEventListener) navigator.mediaDevices.addEventListener('devicechange', () => isiMic());
+// Mic yang dipakai: pilihan user; kalau belum pernah memilih, otomatis mic HP (bukan Bluetooth)
+async function ambilMic() {
+  const dasar = { channelCount: 1, echoCancellation: true, noiseSuppression: true, autoGainControl: true };
+  const pilihan = !$('mic-box').classList.contains('hidden') ? $('mic-pilih').value : bacaLS('mic_id');
+  let s = null;
+  if (pilihan) { try { s = await navigator.mediaDevices.getUserMedia({ audio: { ...dasar, deviceId: { exact: pilihan } } }); } catch (_) { s = null; } }
+  if (!s) s = await navigator.mediaDevices.getUserMedia({ audio: dasar });
+  const label = (s.getAudioTracks()[0] || {}).label || '';
+  if (!pilihan && MIC_BT.test(label)) {   // kepilih mic Bluetooth otomatis: pindah ke mic HP kalau ada
+    const lain = (await daftarMic()).find(d => d.label && !micVirtual(d) && !MIC_BT.test(d.label));
+    if (lain) {
+      try {
+        const s2 = await navigator.mediaDevices.getUserMedia({ audio: { ...dasar, deviceId: { exact: lain.deviceId } } });
+        s.getTracks().forEach(t => t.stop()); s = s2;
+        toast(`Aa pakai mic HP (${lain.label}), bukan ${label}.`, 4500);
+      } catch (_) {}
+    }
+  }
+  isiMic();
+  return s;
+}
+
 // ---- sumber suara (khusus laptop/PC): mic, suara laptop, atau campuran ----
 const BISA_LAPTOP = !!(navigator.mediaDevices && navigator.mediaDevices.getDisplayMedia) && !/Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
 let sumberSuara = BISA_LAPTOP ? (bacaLS('sumber_suara') || 'mic') : 'mic';
@@ -1657,9 +1707,7 @@ async function bukaRekam() {
   }
   if (pakaiMic) {
     try {
-      mic = await navigator.mediaDevices.getUserMedia({
-        audio: { channelCount: 1, echoCancellation: true, noiseSuppression: true, autoGainControl: true },
-      });
+      mic = await ambilMic();
       rekam.mentah.push(mic);
     } catch (e) {
       hentikanSumber();
@@ -1710,6 +1758,8 @@ async function bukaRekam() {
   $('r-state').textContent = 'Merekam';
   $('r-pause').disabled = false; $('r-stop').disabled = false; setJeda(false);
   rekam.timer = setInterval(() => { $('r-time').textContent = jam(detikSekarang()); if (rekam.tidur) isiTidur(); }, 500);
+  $('r-mic').textContent = mic ? 'Mic: ' + ((mic.getAudioTracks()[0] || {}).label || 'bawaan') : '';
+  $('r-diam').classList.add('hidden'); rekam.puncak = 0; rekam.tDiam = performance.now();
   meterMulai();
   kunciLayar();
   window.onbeforeunload = () => 'Rekaman sedang berjalan';
@@ -1810,6 +1860,14 @@ function meterMulai() {
       an.getByteTimeDomainData(buf);
       let peak = 0; for (const v of buf) peak = Math.max(peak, Math.abs(v - 128));
       const now = performance.now();
+      // 12 detik pertama tanpa suara sama sekali: kemungkinan mic yang kepakai salah (mis. smartwatch)
+      if (!rekam.jeda) {
+        rekam.puncak = Math.max(rekam.puncak || 0, peak);
+        if (rekam.puncak <= 2 && now - rekam.tDiam > 12000 && $('r-diam').classList.contains('hidden')) {
+          $('r-diam').innerHTML = `<b>Ga ada suara yang masuk.</b> ${esc($('r-mic').textContent)}. Kalau HP tersambung ke smartwatch/earphone Bluetooth, tekan ✕ untuk batal, pilih mic HP di beranda (atau matikan Bluetooth), lalu rekam lagi.`;
+          $('r-diam').classList.remove('hidden');
+        } else if (rekam.puncak > 2) $('r-diam').classList.add('hidden');
+      }
       if (!rekam.tWave || now - rekam.tWave > 90) {
         rekam.tWave = now;
         rekam.riwayat.push(rekam.jeda ? 0 : Math.min(1, peak / 128 * 2.2));
