@@ -1024,7 +1024,7 @@ const jam = (d) => [Math.floor(d / 3600), Math.floor(d / 60) % 60, Math.floor(d 
 const MAKS_BYTE = 50 * 1024 * 1024;
 
 // ===== Harga (USD). Ubah di sini kalau harga berubah. =====
-const VERSI = 'v49';   // samakan dengan CACHE di sw.js
+const VERSI = 'v50';   // samakan dengan CACHE di sw.js
 const KURS = 16500;                        // kurs cadangan (dipakai rapat lama & kalau kurs harian gagal diambil)
 // Kurs harian USD→IDR: diambil sekali sehari, lalu DIKUNCI di tiap rapat saat dibuat (kolom rapat.kurs),
 // jadi biaya rapat yang sudah lewat tidak ikut berubah.
@@ -1903,13 +1903,15 @@ async function unggah(blob, mime, judul, id, ext, detik, jenis) {
     const selesai = (v) => { clearInterval(jaga.iv); delete UNGGAH[id]; resolve(v); };
     const up = new tus.Upload(blob, {
       endpoint: bacaLS('supa_url') + '/storage/v1/upload/resumable',
-      retryDelays: [0, 3000, 5000, 10000, 20000, 30000, 60000],
+      retryDelays: [0, 3000, 5000, 10000, 20000, 30000, 60000, 60000, 60000],
       headers: { authorization: 'Bearer ' + s.session.access_token, apikey: bacaLS('supa_key'), 'x-upsert': 'true' },
       // token login berlaku ±1 jam: ambil yang terbaru tiap potongan (unggahan panjang / sempat ke-pause)
       onBeforeRequest: async (req) => {
         try { const { data } = await sb.auth.getSession(); if (data.session) req.setHeader('authorization', 'Bearer ' + data.session.access_token); } catch (_) {}
       },
-      uploadDataDuringCreation: true,
+      // buat dulu alamat unggahannya, baru kirim isinya: kalau putus di tengah, lanjut dari posisi terakhir
+      // (bukan bikin unggahan baru ke file yang sama, yang bisa ditolak server karena masih "terkunci")
+      uploadDataDuringCreation: false,
       removeFingerprintOnSuccess: true,
       chunkSize: 6 * 1024 * 1024,
       metadata: { bucketName: 'audio', objectName: path, contentType: mime.split(';')[0], cacheControl: '3600' },
@@ -1923,7 +1925,11 @@ async function unggah(blob, mime, judul, id, ext, detik, jenis) {
       onSuccess: () => selesai(null),
     });
     // Penjaga: kalau 90 detik ga ada kemajuan (mis. app sempat di-pause iOS, sinyal nyangkut), sambung ulang dari posisi terakhir
-    const sambung = () => { jaga.t = Date.now(); up.abort().then(() => up.start()).catch(() => up.start()); };
+    const sambung = () => {
+      jaga.t = Date.now();
+      if (!up.url) return;   // alamat unggahan belum jadi: biarkan tus mencoba sendiri
+      up.abort().then(() => up.start()).catch(() => up.start());
+    };
     UNGGAH[id] = { sambung, jaga };
     jaga.iv = setInterval(() => { if (Date.now() - jaga.t > 90000) sambung(); }, 15000);
     up.findPreviousUploads().then(p => { if (p.length) up.resumeFromPreviousUpload(p[0]); up.start(); });
