@@ -76,7 +76,7 @@ header.top{display:flex;align-items:center;gap:.5rem;padding:.625rem .75rem .625
 header.top h1{font-size:1.0625rem;font-weight:700;margin:0;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;letter-spacing:-.01em}
 .brand{display:flex;align-items:center;gap:.625rem;flex:1;min-width:0}
 .brand img{width:2rem;height:2rem;border-radius:.6rem}
-.brand b{font-size:1.0625rem;letter-spacing:-.02em}.brand small{color:var(--aa);font-weight:700;font-size:.8125rem;margin-left:.3rem;white-space:nowrap}
+.brand b{font-size:1.0625rem;letter-spacing:-.02em}.brand small{color:var(--muted);font-weight:600;font-size:.8125rem;margin-left:.3rem;white-space:nowrap}
 
 /* ---------- beranda ---------- */
 .sapa{font-size:1.75rem;line-height:1.15;font-weight:800;letter-spacing:-.03em;margin:.75rem 0 .25rem}
@@ -149,13 +149,13 @@ a.item{color:inherit;text-decoration:none}
 .hero{text-align:center;margin:2.5rem 0 1.25rem}
 .hero img{width:5rem;height:5rem;border-radius:1.4rem;box-shadow:var(--shadow)}
 .hero h1{margin:1.1rem 0 0;font-size:2rem;font-weight:800;letter-spacing:-.035em}
-.hero .aa{color:var(--aa);font-weight:700;font-size:.9375rem}
+.hero .aa{color:var(--muted);font-weight:600;font-size:.9375rem}
 .tagline{font-style:italic;color:var(--muted);margin:.9rem auto 0;max-width:18rem;font-size:1rem}
 
 /* ---------- rekam ---------- */
 #v-rec{min-height:100vh;background:var(--navy);color:#fff}
 #v-rec header.top{background:transparent;backdrop-filter:none}
-#v-rec header.top h1{color:#c9d6e3;font-size:.875rem;letter-spacing:.14em;text-transform:uppercase}
+#v-rec header.top h1{color:#c9d6e3;font-size:.9375rem;font-weight:600}
 .rec-screen{text-align:center;padding-top:.5rem}
 #r-judul:focus{border-color:rgba(61,214,192,.6);box-shadow:0 0 0 4px rgba(61,214,192,.15)}
 #r-judul{text-align:center;background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.12);color:#fff;font-weight:600}
@@ -169,12 +169,13 @@ a.item{color:inherit;text-decoration:none}
 .paused .wavebox i{background:#51677d}
 #r-saved{color:#8ea3b8;font-size:.8125rem}
 .rec-btns{display:flex;justify-content:center;align-items:flex-start;gap:2.5rem;margin-top:2.25rem}
-.rb{display:flex;flex-direction:column;align-items:center;gap:.6rem;font-size:.75rem;color:#8ea3b8;font-weight:600}
-.rb:first-child{padding-top:.625rem}
+.rb{display:grid;grid-template-rows:6rem auto;justify-items:center;align-items:center;gap:.35rem;font-size:.75rem;color:#8ea3b8;font-weight:600}
 .rec-btns button{border-radius:50%;padding:0;border:0}
 #r-pause{width:4rem;height:4rem;background:rgba(255,255,255,.1);color:#fff}
 .stop{width:5.25rem;height:5.25rem;background:var(--rec);color:#fff;box-shadow:0 0 0 .5rem rgba(255,99,105,.18)}
 .stop::after{content:"";width:1.6rem;height:1.6rem;border-radius:.35rem;background:#fff}
+.tips summary{cursor:pointer;font-weight:600;color:#c9d6e3}
+.tips[open] summary{margin-bottom:.45rem}
 .tips{margin-top:2.25rem;text-align:left;font-size:.8125rem;color:#aebdcc;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:var(--r);padding:.8rem 1rem}
 .tips b{color:#fff}
 #v-rec header.top .icon{color:#c9d6e3}
@@ -204,7 +205,7 @@ a.item{color:inherit;text-decoration:none}
 /* ---------- detail ---------- */
 .d-judul{font-size:1.5rem;line-height:1.2;font-weight:800;letter-spacing:-.03em;margin:.25rem 0 .5rem}
 .d-meta{display:flex;flex-wrap:wrap;align-items:center;gap:.5rem .75rem;font-size:.8125rem;color:var(--muted)}
-details#d-biaya{font-size:.8125rem;color:var(--muted);margin-top:.5rem}
+details#d-biaya{font-size:.8125rem;color:var(--muted);margin-top:2.5rem;padding-top:1rem;border-top:1px solid var(--line-2)}
 details#d-biaya summary{cursor:pointer;font-weight:600;list-style:none}
 details#d-biaya summary::-webkit-details-marker{display:none}
 .tabs{display:flex;gap:.5rem;justify-content:space-between;border-bottom:1px solid var(--line);margin:1.25rem 0 0;overflow-x:auto;scrollbar-width:none}
@@ -216,6 +217,15 @@ details#d-biaya summary::-webkit-details-marker{display:none}
 .seg button.on{background:var(--surface);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.08)}
 .panel{padding:1.25rem 0 0}
 .resume{white-space:pre-wrap;word-wrap:break-word;font-size:1rem;line-height:1.7;color:var(--ink-2)}
+.resume.rapi{white-space:normal}
+.resume.rapi p{margin:.4rem 0}
+.resume .r-h{font-size:1.0625rem;font-weight:750;color:var(--ink);margin:1.4rem 0 .4rem;letter-spacing:-.01em}
+.resume .r-h:first-child{margin-top:.25rem}
+.r-daftar{margin:.3rem 0 .6rem;padding-left:1.2rem}
+.r-daftar li{margin:.35rem 0;padding-left:.2rem}
+.r-daftar li::marker{color:var(--muted)}
+.r-daftar li.sub{margin-left:1.2rem;list-style-type:circle}
+.r-daftar li.cek{list-style:none;margin-left:-1.2rem;padding-left:0}
 .resume b{color:var(--ink);font-weight:750}
 .aksi{position:sticky;bottom:0;display:flex;gap:.625rem;padding:.75rem 0 calc(.75rem + env(safe-area-inset-bottom));margin-top:1rem;background:linear-gradient(to top,var(--bg) 70%,transparent)}
 .aksi button{flex:1}
@@ -232,6 +242,13 @@ details#d-biaya summary::-webkit-details-marker{display:none}
 .sl{position:relative;overflow:hidden;border:1px solid var(--line);border-radius:.6rem;margin-bottom:.625rem;background:#fff}
 .sub-h{font-size:.8125rem;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin:1.5rem 0 .625rem;font-weight:700}
 .hapus{margin-top:2.5rem;text-align:center}
+.aksi-daftar{display:flex;flex-direction:column;gap:.25rem;margin-top:.75rem}
+.aksi-daftar button{justify-content:flex-start;gap:.8rem;border:0;background:none;min-height:3rem;padding:.5rem .4rem;font-weight:600;color:var(--ink);border-radius:var(--r-sm)}
+.aksi-daftar button:hover{background:var(--raised)}
+.aksi-daftar button.danger{color:var(--bad)}
+.aksi-daftar hr{border:0;border-top:1px solid var(--line-2);margin:.35rem 0}
+.biaya-bawah{margin-top:2rem;font-size:.8125rem;color:var(--muted)}
+.biaya-bawah summary{cursor:pointer;font-weight:600}
 
 /* ---------- lembar pengaturan ---------- */
 .lembar{position:fixed;inset:0;z-index:40;display:flex;align-items:flex-end;justify-content:center;background:rgba(8,10,14,.45);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);animation:muncul .15s}
@@ -255,12 +272,16 @@ details#d-biaya summary::-webkit-details-marker{display:none}
 .khusus-admin{display:none!important}
 body.admin .khusus-admin{display:flex!important}
 body.admin span.khusus-admin,body.admin li.khusus-admin{display:list-item!important}
-.item .jn{display:inline-block;font-size:.6875rem;font-weight:700;letter-spacing:.02em;color:var(--aa);background:var(--aa-soft);border-radius:99px;padding:.05rem .45rem;margin-right:.35rem;vertical-align:1px}
-.jenis-chip{min-height:0;padding:.25rem .6rem;font-size:.75rem;font-weight:700;border-radius:999px;background:var(--aa-soft);color:var(--aa);border:0;gap:.2rem}
+.item .jn{display:inline-block;font-size:.6875rem;font-weight:700;color:var(--ink-2);border:1px solid var(--line);border-radius:99px;padding:0 .4rem;margin-right:.35rem;vertical-align:1px}
+.item .st{font-weight:700}.item .st.run{color:var(--aa)}.item .st.bad{color:var(--bad)}.item .st.wait{color:var(--muted)}
+.jenis-chip{min-height:0;padding:.2rem .6rem;font-size:.75rem;font-weight:700;border-radius:999px;background:var(--surface);color:var(--ink-2);border:1px solid var(--line);gap:.2rem}
 .pj-daftar{display:flex;flex-direction:column;gap:.5rem;margin-top:1rem}
 .pj-daftar button{justify-content:flex-start;text-align:left;flex-direction:column;align-items:flex-start;gap:.1rem;padding:.7rem .9rem;min-height:3.25rem}
 .pj-daftar button small{font-weight:500;color:var(--muted);font-size:.75rem}
 .pj-daftar button.on{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent) inset}
+.saring-baris{display:flex;gap:.4rem;overflow-x:auto;margin:-.25rem 0 .75rem;padding-bottom:.15rem;scrollbar-width:none}
+.saring-baris .saring{margin:0;overflow:visible;flex:none}
+.saring select{width:auto;flex:none;min-height:2rem;padding:.25rem 1.9rem .25rem .8rem;border-radius:99px;font-size:.8125rem;font-weight:600;background:var(--surface) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2'%3E%3Cpath d='M7 10l5 5 5-5'/%3E%3C/svg%3E") no-repeat right .55rem center/.9rem;border:1px solid var(--line);color:var(--ink-2);appearance:none;-webkit-appearance:none}
 .saring{display:flex;gap:.4rem;overflow-x:auto;margin:-.25rem 0 .75rem;padding-bottom:.15rem;scrollbar-width:none}
 .saring:empty{display:none}
 .saring button{flex:none;min-height:2rem;padding:.25rem .8rem;border-radius:99px;font-size:.8125rem;font-weight:600;background:var(--surface);border:1px solid var(--line);color:var(--muted)}
@@ -286,8 +307,8 @@ body.admin span.khusus-admin,body.admin li.khusus-admin{display:list-item!import
 .alat button svg.i{width:1rem;height:1rem}
 .cek-baris{display:flex;gap:.6rem;align-items:flex-start;font-size:.8125rem;color:var(--ink-2);margin-top:.75rem;cursor:pointer;line-height:1.4}
 .cek-baris input{width:1.1rem;height:1.1rem;margin:.1rem 0 0;flex:none;accent-color:var(--accent)}
-.rentang-info{font-size:.8125rem;color:var(--ink-2);background:var(--aa-soft);border-radius:var(--r-sm);padding:.55rem .8rem;margin-bottom:1rem}
-.rentang-info b{color:var(--aa)}
+.rentang-info{font-size:.8125rem;color:var(--ink-2);background:var(--raised);border:1px solid var(--line-2);border-radius:var(--r-sm);padding:.55rem .8rem;margin-bottom:1rem}
+.rentang-info b{color:var(--ink)}
 .edit-teks{width:100%;min-height:60vh;font:inherit;font-size:.9375rem;line-height:1.6;padding:.85rem .95rem;border:1px solid var(--line);border-radius:var(--r-sm);background:var(--surface);color:var(--ink);resize:vertical;box-sizing:border-box}
 .edit-teks:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
 .rv-contoh{display:flex;flex-wrap:wrap;gap:.4rem;margin-top:.6rem}
@@ -403,6 +424,8 @@ body.ada-player .aksi{bottom:4.5rem}
   <symbol id="i-orang" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0M16 4.5a3.5 3.5 0 0 1 0 7M18 14.5a6.5 6.5 0 0 1 3.5 5.5"/></symbol>
   <symbol id="i-kunci" viewBox="0 0 24 24"><rect x="4.5" y="10.5" width="15" height="10" rx="2.5"/><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3M12 14.5v2.5"/></symbol>
   <symbol id="i-kilau" viewBox="0 0 24 24"><path d="M12 3.5l1.8 4.7 4.7 1.8-4.7 1.8L12 16.5l-1.8-4.7L5.5 10l4.7-1.8z"/><path d="M18.5 15.5l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8z"/></symbol>
+  <symbol id="i-lain" viewBox="0 0 24 24"><circle cx="5.5" cy="12" r="1.3"/><circle cx="12" cy="12" r="1.3"/><circle cx="18.5" cy="12" r="1.3"/></symbol>
+  <symbol id="i-hapus" viewBox="0 0 24 24"><path d="M4.5 7h15M9.5 7V5h5v2M6.5 7l1 12.5h9l1-12.5"/></symbol>
   <symbol id="i-koreksi" viewBox="0 0 24 24"><path d="M4 6h11M4 11h8M4 16h5"/><path d="M12.5 17l2.7 2.7L21 13.5"/></symbol>
   <symbol id="i-gunting" viewBox="0 0 24 24"><circle cx="6" cy="6" r="2.5"/><circle cx="6" cy="18" r="2.5"/><path d="M8 7.5l12 9M8 16.5l12-9"/></symbol>
   <symbol id="i-cari" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.2-4.2"/></symbol>
@@ -489,21 +512,19 @@ body.ada-player .aksi{bottom:4.5rem}
       <button onclick="document.getElementById('file').click()"><svg class="i"><use href="#i-upload"/></svg>Upload rekaman</button>
     </div>
     <input id="file" type="file" accept="audio/*,video/mp4,video/webm,.m4a,.mp3,.wav,.aac,.ogg,.webm" class="hidden" onchange="pilihFile(this)">
-    <p class="catatan">Rapat penting? Rekam juga pakai perekam bawaan HP sebagai cadangan. Rekaman Zoom (.m4a) juga bisa di-upload.</p>
 
     <div id="pending"></div>
 
     <div class="bagian"><h2 id="judul-daftar">Catatan</h2><div class="muted" id="total-biaya"></div></div>
     <div id="cari-box" class="cari hidden"><svg class="i"><use href="#i-cari"/></svg><input id="cari" type="search" placeholder="Cari judul atau isi ringkasan" oninput="ketikCari(this.value)" autocomplete="off"></div>
-    <div id="saring-jenis" class="saring"></div>
-    <div id="saring" class="saring"></div>
+    <div class="saring-baris"><div id="saring" class="saring"></div><div id="saring-jenis" class="saring"></div></div>
     <div id="daftar" class="list"><div class="item kosong">Memuat…</div></div>
   </div>
 </section>
 
 <!-- ===== REKAM ===== -->
 <section id="v-rec" class="hidden" role="main">
-  <header class="top"><button class="ghost icon" id="r-batal" onclick="batalRekam()" title="Batalkan rekaman" aria-label="Batalkan rekaman"><svg class="i"><use href="#i-tutup"/></svg></button><h1>Notulen AI · Merekam</h1><button class="ghost icon" id="r-tidur" onclick="masukTidur()" title="Mode tidur" aria-label="Mode tidur"><svg class="i"><use href="#i-bulan"/></svg></button></header>
+  <header class="top"><button class="ghost icon" id="r-batal" onclick="batalRekam()" title="Batalkan rekaman" aria-label="Batalkan rekaman"><svg class="i"><use href="#i-tutup"/></svg></button><h1 id="r-judul-layar">Rekam rapat</h1><button class="ghost icon" id="r-tidur" onclick="masukTidur()" title="Mode tidur" aria-label="Mode tidur"><svg class="i"><use href="#i-bulan"/></svg></button></header>
   <div class="wrap rec-screen" id="rec-box">
     <input id="r-judul" placeholder="Judul (boleh diisi nanti)">
     <div class="timer" id="r-time">00:00:00</div>
@@ -514,7 +535,7 @@ body.ada-player .aksi{bottom:4.5rem}
       <div class="rb"><button id="r-pause" onclick="jedaRekam()" disabled aria-label="Jeda"><svg class="i" style="width:1.5rem;height:1.5rem"><use href="#i-pause"/></svg></button><span id="r-pause-lbl">Jeda</span></div>
       <div class="rb"><button id="r-stop" class="stop" onclick="selesaiRekam()" disabled aria-label="Selesai"></button><span>Selesai</span></div>
     </div>
-    <div class="tips" id="r-tips">Biar rekaman ga putus: <b>layar tetap nyala</b>, colok charger, dan jangan pindah ke aplikasi lain. Mau layarnya ga silau? Tekan ikon bulan di pojok kanan atas buat <b>mode tidur</b>.</div>
+    <details class="tips" id="r-tips-box"><summary>Tips biar rekaman ga putus</summary><div id="r-tips">Biar rekaman ga putus: <b>layar tetap nyala</b>, colok charger, dan jangan pindah ke aplikasi lain. Mau layarnya ga silau? Tekan ikon bulan di pojok kanan atas buat <b>mode tidur</b>.</div></details>
   </div>
 </section>
 
@@ -533,12 +554,11 @@ body.ada-player .aksi{bottom:4.5rem}
   <header class="top">
     <button class="ghost icon" onclick="ke('home')" aria-label="Kembali"><svg class="i"><use href="#i-back"/></svg></button>
     <div class="spasi" aria-hidden="true"></div>
-    <button class="ghost icon" onclick="gantiJudul()" title="Ganti judul" aria-label="Ganti judul"><svg class="i"><use href="#i-pen"/></svg></button>
+    <button class="ghost icon" onclick="bukaAksi()" title="Lainnya" aria-label="Lainnya" aria-haspopup="dialog"><svg class="i"><use href="#i-lain"/></svg></button>
   </header>
   <div class="wrap" style="padding-top:.25rem">
     <h1 class="d-judul" id="d-judul">Rapat</h1>
     <div class="d-meta"><span id="d-meta"></span><span id="d-status" class="chip"></span><button id="d-jenis" class="jenis-chip hidden" onclick="bukaJenis()"></button></div>
-    <details id="d-biaya" class="hidden"><summary></summary><div style="margin-top:.5rem;line-height:1.6"></div></details>
     <div id="d-info"></div>
 
     <div class="tabs" id="d-tabs">
@@ -553,8 +573,7 @@ body.ada-player .aksi{bottom:4.5rem}
       <div class="alat hidden" id="d-alat">
         <button onclick="mulaiEdit()"><svg class="i"><use href="#i-pen"/></svg>Edit</button>
         <button onclick="bukaRevisi('ringkasan')"><svg class="i"><use href="#i-kilau"/></svg>Minta revisi</button>
-        <button onclick="bukaKoreksi()"><svg class="i"><use href="#i-koreksi"/></svg>Koreksi istilah</button>
-        <button onclick="buatUlangNotulen()"><svg class="i"><use href="#i-ulang"/></svg>Buat ulang</button>
+        <button onclick="bukaAksi()" aria-label="Aksi lainnya"><svg class="i"><use href="#i-lain"/></svg>Lainnya</button>
       </div>
       <div id="d-rentang-info" class="rentang-info hidden"></div>
       <div id="d-koreksi-info" class="rentang-info hidden"></div>
@@ -598,9 +617,7 @@ body.ada-player .aksi{bottom:4.5rem}
         <div class="alat" style="margin-top:1rem">
           <button class="accent-chip" onclick="unduhDocx()"><svg class="i"><use href="#i-dl"/></svg>Unduh Word</button>
           <button onclick="bukaInfo()"><svg class="i"><use href="#i-pen"/></svg>Info rapat</button>
-          <button onclick="bukaRevisi('notulensi')"><svg class="i"><use href="#i-kilau"/></svg>Minta revisi</button>
-          <button onclick="bukaKoreksi()"><svg class="i"><use href="#i-koreksi"/></svg>Koreksi istilah</button>
-          <button onclick="buatNotulensi(true)"><svg class="i"><use href="#i-ulang"/></svg>Buat ulang</button>
+          <button onclick="bukaAksi()" aria-label="Aksi lainnya"><svg class="i"><use href="#i-lain"/></svg>Lainnya</button>
         </div>
         <div id="nt-cek" class="rentang-info hidden"></div>
         <div id="nt-doc" class="nt-doc"></div>
@@ -637,7 +654,7 @@ body.ada-player .aksi{bottom:4.5rem}
       <button id="pl-speed" class="pl-kecil" onclick="gantiKecepatan()">1×</button>
       <button class="pl-kecil" onclick="tutupPlayer()" aria-label="Tutup pemutar"><svg class="i"><use href="#i-tutup"/></svg></button>
     </div>
-    <div class="hapus"><button class="ghost danger" onclick="hapusRapat()">Hapus catatan ini</button></div>
+    <details id="d-biaya" class="biaya-bawah hidden"><summary></summary><div style="margin-top:.5rem;line-height:1.6"></div></details>
   </div>
 </section>
 
@@ -743,6 +760,7 @@ body.ada-player .aksi{bottom:4.5rem}
         <li><b>Jeda</b> buat istirahat, <b>Selesai</b> buat kirim. Salah rekam? Tekan <b>✕</b> di kiri atas buat batalin.</li>
         <li>Rekaman disimpan ke HP tiap 10 detik. Kalau app ketutup atau sinyal hilang, rekamannya aman dan bisa diunggah lagi dari beranda.</li>
         <li>Taruh HP di tengah meja, dekat orang yang paling banyak ngomong.</li>
+        <li>Rapat penting? Rekam juga pakai perekam bawaan HP sebagai cadangan, lalu upload kalau perlu.</li>
       </ul>
     </details>
 
@@ -803,12 +821,12 @@ body.ada-player .aksi{bottom:4.5rem}
         <li><b>Ringkasan</b>: tekan <b>Salin</b> atau <b>Bagikan</b> (WA, email, dll). Formatnya sudah rapi untuk WhatsApp.</li>
         <li><b>Edit</b>: benerin langsung kata/frasa yang salah, lalu Simpan. Gratis.</li>
         <li><b>Minta revisi</b>: tulis instruksi (mis. "bagian anggaran kurang lengkap"), Aa nulis ulang ringkasannya. Kalau notulensi sudah ada, centang <b>Revisi notulensi juga</b> biar ikut dibenerin (jalan otomatis setelah ringkasan selesai). Biaya ±sama dengan bikin sekali lagi per hasil.</li>
-        <li><b>Koreksi istilah</b>: daftar salah dengar & nama yang benar (mis. "Bakom → BAKTI", "Speaker C itu Bu Nuning"). Beda dengan revisi, catatan ini <b>tersimpan terus</b> dan selalu dipakai di ringkasan, notulensi, dan paparan, termasuk kalau dibuat ulang. Saat menyimpan, bisa langsung diterapkan ke ringkasan dan notulensi yang sudah ada.</li>
-        <li><b>Buat ulang</b>: tulis ulang dari nol, misalnya setelah ganti model AI. Hasil edit/revisi sebelumnya ketimpa.</li>
+        <li><b>Koreksi istilah</b> (menu <b>⋯ Lainnya</b>): daftar salah dengar & nama yang benar (mis. "Bakom → BAKTI", "Speaker C itu Bu Nuning"). Beda dengan revisi, catatan ini <b>tersimpan terus</b> dan selalu dipakai di ringkasan, notulensi, dan paparan, termasuk kalau dibuat ulang. Saat menyimpan, bisa langsung diterapkan ke ringkasan dan notulensi yang sudah ada.</li>
+        <li><b>Buat ulang</b> (menu <b>⋯ Lainnya</b>): tulis ulang dari nol, misalnya setelah ganti model AI. Hasil edit/revisi sebelumnya ketimpa.</li>
         <li><b>Buang bagian yang ga perlu</b> (mis. obrolan sebelum rapat mulai): tab Transkrip → <b>Pilih bagian</b> → ketuk baris pertama lalu baris terakhir yang dipakai → Simpan. Ringkasan, notulensi & paparan cuma dibuat dari bagian itu, tanpa transkrip ulang.</li>
         <li><b>Transkrip</b>: ketuk satu baris untuk dengar audionya dari titik itu.</li>
         <li><b>Pembicara</b>: dengar cuplikan ▶ tiap suara, isi namanya, lalu <b>Simpan nama</b>. Ringkasan ditulis ulang pakai nama asli.</li>
-        <li>Judul rapat bisa diganti lewat ikon pensil di kanan atas.</li>
+        <li>Ganti judul, ganti jenis, dan hapus catatan ada di menu <b>⋯</b> kanan atas halaman catatan. Biaya per catatan ada di paling bawah halaman.</li>
       </ul>
     </details>
 
@@ -818,7 +836,7 @@ body.ada-player .aksi{bottom:4.5rem}
         <li><b>Ringkasan</b> = poin-poin singkat buat WhatsApp. <b>Notulensi</b> = catatan jalannya rapat: siapa menyampaikan apa, pertanyaan, dan tanggapan, berurutan dan lengkap.</li>
         <li>Buka tab <b>Notulensi</b> → <b>Buat notulensi</b>. Rapat 1 jam biasanya 1–3 menit. Biayanya kira-kira 2–3 kali bikin ringkasan karena tulisannya jauh lebih panjang.</li>
         <li>Tekan <b>Info rapat</b> buat isi/cek waktu, tempat, pimpinan, peserta, notulis, dan yang mengetahui. Yang bisa ditebak dari rekaman sudah diisi Aa.</li>
-        <li><b>Minta revisi</b> di tab Notulensi: tulis yang perlu dibenerin (mis. "tanggapan Pak Budi kurang lengkap"), Aa revisi notulensinya tanpa mengubah bagian lain. Bisa sekalian ke ringkasan. Koreksi nama/istilah lebih baik lewat <b>Koreksi istilah</b> biar berlaku ke semua hasil.</li>
+        <li><b>Minta revisi</b> di tab Notulensi (menu <b>⋯ Lainnya</b>): tulis yang perlu dibenerin (mis. "tanggapan Pak Budi kurang lengkap"), Aa revisi notulensinya tanpa mengubah bagian lain. Bisa sekalian ke ringkasan. Koreksi nama/istilah lebih baik lewat <b>Koreksi istilah</b> biar berlaku ke semua hasil.</li>
         <li><b>Unduh Word</b> → dokumen .docx dengan format notulen resmi (kop, tabel identitas, A. Pembahasan Materi, B. Diskusi dan Tanggapan, C. Penutup, kolom tanda tangan). Kalau perlu, edit lagi di Word.</li>
         <li>Kop dokumen (nama unit & instansi) diisi sekali di Info rapat, berlaku untuk semua rapat.</li>
         <li>Kalau bagian rekaman dipilih di tab Transkrip, notulensi juga cuma dari bagian itu.</li>
@@ -918,6 +936,14 @@ body.ada-player .aksi{bottom:4.5rem}
   </div>
 </div>
 
+<div id="aksi" class="lembar hidden" onclick="if(event.target===this)tutupAksi()">
+  <div>
+    <div class="pegangan"></div>
+    <h3 id="aksi-judul">Lainnya</h3>
+    <div class="aksi-daftar" id="aksi-daftar"></div>
+  </div>
+</div>
+
 <div id="pilih-jenis" class="lembar hidden" onclick="if(event.target===this)tutupJenis()">
   <div>
     <div class="pegangan"></div>
@@ -998,7 +1024,7 @@ const jam = (d) => [Math.floor(d / 3600), Math.floor(d / 60) % 60, Math.floor(d 
 const MAKS_BYTE = 50 * 1024 * 1024;
 
 // ===== Harga (USD). Ubah di sini kalau harga berubah. =====
-const VERSI = 'v48';   // samakan dengan CACHE di sw.js
+const VERSI = 'v49';   // samakan dengan CACHE di sw.js
 const KURS = 16500;                        // kurs cadangan (dipakai rapat lama & kalau kurs harian gagal diambil)
 // Kurs harian USD→IDR: diambil sekali sehari, lalu DIKUNCI di tiap rapat saat dibuat (kolom rapat.kurs),
 // jadi biaya rapat yang sudah lewat tidak ikut berubah.
@@ -1319,7 +1345,7 @@ $('jenis-seg').addEventListener('click', e => {
 });
 function isiSaringJenis() {
   const tampil = state.jenisAktif && (state.adaJenisLain || state.filterJenis);
-  $('saring-jenis').innerHTML = !tampil ? '' : [['', 'Semua'], ...state.jenisList.map(j => [j.kode, j.nama])]
+  $('saring-jenis').innerHTML = !tampil ? '' : [['', 'Semua jenis'], ...state.jenisList.map(j => [j.kode, j.nama])]
     .map(([v, t]) => `<button data-v="${esc(v)}" class="${v === (state.filterJenis || '') ? 'on' : ''}">${esc(t)}</button>`).join('');
 }
 $('saring-jenis').addEventListener('click', e => {
@@ -1444,16 +1470,16 @@ async function muatDaftar() {
     const pp = r.status === 'selesai' && punyaPaparan(r);
     const jenis = pp ? 'pp' : STATUS[r.status] ? STATUS[r.status][1] : '';
     const ikon = pp ? 'i-slide' : r.status === 'selesai' ? 'i-doc' : r.status === 'gagal' ? 'i-x' : 'i-jam';
-    const biaya = hitungBiaya(r).total;
+    const biaya = (!state.multi || state.admin) ? hitungBiaya(r).total : 0;   // biaya per catatan cuma untuk admin
+    const st = r.status === 'selesai' ? '' : `<span class="st ${(STATUS[r.status] || [])[1] || 'wait'}">${esc((STATUS[r.status] || [r.status])[0])}</span> · `;
     return kepala + `
     <a class="item" href="#r/${r.id}" onclick="if(!event.ctrlKey&&!event.metaKey){event.preventDefault();ke('detail','${r.id}')}">
       <div class="ikon ${jenis}" title="${pp ? 'Ringkasan + paparan' : ''}"><svg class="i"><use href="#${ikon}"/></svg></div>
       <div class="grow">
         <div class="t">${esc(r.judul)}</div>
-        <div class="m">${jenisRapat(r) ? '' : `<span class="jn">${esc(namaJenis(r.jenis))}</span>`}${jamSaja(r.created_at)}${r.durasi_detik ? ' · ' + menit(r.durasi_detik) : ''}${biaya ? ' · ±' + rupiah(biaya) : ''}</div>
+        <div class="m">${jenisRapat(r) ? '' : `<span class="jn">${esc(namaJenis(r.jenis))}</span>`}${st}${jamSaja(r.created_at)}${r.durasi_detik ? ' · ' + menit(r.durasi_detik) : ''}${biaya ? ' · ±' + rupiah(biaya) : ''}</div>
         ${state.admin && r.pemilik !== state.uid ? `<div class="milik">${esc(namaPemilik(r))}</div>` : ''}
       </div>
-      ${r.status === 'selesai' ? '' : chip(r.status)}
     </a>`;
   }).join('') + (adaLagi ? `<button class="lagi" onclick="state.halaman=(state.halaman||1)+1;muatDaftar()">Tampilkan yang lebih lama</button>` : '');
   if (!q && !state.filterPemilik && !state.filterJenis && (state.halaman || 1) === 1) {
@@ -1490,11 +1516,11 @@ async function isiSaringan() {
     state.daftarAkun = data || [];
   }
   const pil = [['', 'Semua'], [state.uid, 'Saya'], ...state.daftarAkun.filter(a => a.id !== state.uid).map(a => [a.id, a.nama || tampilEmail(a.email)])];
-  $('saring').innerHTML = pil.map(([v, t]) => `<button data-v="${esc(v)}" class="${v === (state.filterPemilik || '') ? 'on' : ''}">${esc(t)}</button>`).join('');
+  $('saring').innerHTML = `<select id="saring-orang" aria-label="Saring per orang">${pil.map(([v, t]) => `<option value="${esc(v)}"${v === (state.filterPemilik || '') ? ' selected' : ''}>${v ? esc(t) : 'Semua orang'}</option>`).join('')}</select>`;
 }
-$('saring').addEventListener('click', e => {
-  const b = e.target.closest('button'); if (!b) return;
-  state.filterPemilik = b.dataset.v; state.halaman = 1; muatDaftar();
+$('saring').addEventListener('change', e => {
+  if (e.target.id !== 'saring-orang') return;
+  state.filterPemilik = e.target.value; state.halaman = 1; muatDaftar();
 });
 const punyaPaparan = (r) => !!(r.pp_r || r.pp_t || (r.deck && (r.deck.resume || r.deck.transkrip)));
 const jamSaja = (s) => new Date(s).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
@@ -1606,9 +1632,11 @@ async function bukaRekam() {
   if (info && info.menit < 120 && !confirm(`Penyimpanan di perangkat ini tinggal ${mbTeks(info.sisa)}, cukup buat ${durasiTeks(info.menit)} rekaman.\n\nKalau rapatnya lebih lama, rekaman bisa berhenti di tengah. Sebaiknya kosongkan disk dulu (rekaman Zoom, Downloads, Recycle Bin).\n\nTetap mulai rekam?`)) return;
   ke('rec');
   rekam.jenis = state.jenisAktif ? state.jenis : 'rapat';
+  $('r-judul-layar').textContent = 'Rekam ' + namaJenis(rekam.jenis).toLowerCase();
   $('r-judul').value = ''; $('r-time').textContent = '00:00:00'; $('r-saved').textContent = 'Tersimpan aman di HP: 0 menit';
   $('r-state').textContent = 'Menyiapkan mikrofon…'; $('rec-box').classList.remove('paused');
   if (!rekam.tipsAsli) rekam.tipsAsli = $('r-tips').innerHTML;
+  $('r-tips-box').open = IOS || sumberSuara !== 'mic';
   $('r-tips').innerHTML = sumberSuara === 'mic' ? (IOS ? TIPS_IOS : rekam.tipsAsli)
     : 'Boleh pindah ke Zoom/tab lain. <b>Jangan tutup tab ini</b> dan jangan klik “Berhenti berbagi”.' +
       (sumberSuara === 'campur' ? ' Pakai <b>headset/earphone</b> biar suara Zoom ga kerekam dobel lewat mic.' : '');
@@ -1920,7 +1948,7 @@ async function bukaDetail(id, diam) {
   state.rapat = r;
   aturTabJenis(r);
   $('d-judul').textContent = r.judul;
-  $('d-meta').textContent = new Date(r.created_at).toLocaleString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' }) + (r.durasi_detik ? ' · ' + menit(r.durasi_detik) : '') +
+  $('d-meta').textContent = new Date(r.created_at).toLocaleString('id-ID', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) + (r.durasi_detik ? ' · ' + menit(r.durasi_detik) : '') +
     (state.admin && r.pemilik !== state.uid ? ' · milik ' + namaPemilik(r) : '');
   $('d-status').outerHTML = chip(r.status).replace('<span', '<span id="d-status"');
   const b = hitungBiaya(r);
@@ -1945,7 +1973,7 @@ async function bukaDetail(id, diam) {
     (r.status === 'selesai' && r.error ? `<div class="warn">${esc(pesanAa(r.error))}</div>` : '');
 
   if (!sebelumnya || sebelumnya.resume !== r.resume) {
-    if (!state.mengedit) $('d-resume').innerHTML = r.resume ? waHtml(r.resume) : 'Ringkasan belum ada.';
+    if (!state.mengedit) { $('d-resume').innerHTML = r.resume ? ringkasanHtml(r.resume) : 'Ringkasan belum ada.'; $('d-resume').classList.toggle('rapi', !!r.resume); }
     $('d-alat').classList.toggle('hidden', !r.resume || state.mengedit || SEDANG.includes(r.status));
     const rg = r.rentang;
     $('d-rentang-info').classList.toggle('hidden', !rg || !!state.mengedit);
@@ -1980,6 +2008,35 @@ async function bukaDetail(id, diam) {
   }
 }
 const tanpaLabel = (t) => String(t || '').replace(/^(\s*\*?)\s*NOTULEN\s*:\s*/i, '$1');
+// Ringkasan untuk dibaca di app: daftar sungguhan, judul bagian, tanpa blok kepala
+// (judul/tanggal/durasi sudah ada di kepala halaman). Salin/Bagikan tetap pakai teks WhatsApp aslinya.
+function ringkasanHtml(t) {
+  let baris = tanpaLabel(t).replace(/\r/g, '').split('\n');
+  const awal = baris.findIndex(x => x.trim());
+  if (awal >= 0 && /^\*[^*]+\*$/.test(baris[awal].trim())) {
+    let akhir = baris.findIndex((x, i) => i > awal && !x.trim()); if (akhir < 0) akhir = baris.length;
+    if (akhir - awal <= 4 && /durasi|\|/i.test(baris.slice(awal, akhir).join(' '))) baris = baris.slice(akhir);
+  }
+  const inl = (x) => esc(x).replace(/\*([^*\n]+)\*/g, '<b>$1</b>').replace(/(^|\s)_([^_\n]+)_/g, '$1<i>$2</i>');
+  let html = '', daftar = false;
+  const tutup = () => { if (daftar) { html += '</ul>'; daftar = false; } };
+  for (const mentah of baris) {
+    const x = mentah.replace(/\s+$/, '');
+    if (!x.trim()) { tutup(); continue; }
+    const m = x.match(/^(\s*)(-|•|☐|☑|\d+[.)])\s+(.*)$/);
+    if (m) {
+      if (!daftar) { html += '<ul class="r-daftar">'; daftar = true; }
+      const cek = /☐|☑/.test(m[2]), angka = /\d/.test(m[2]);
+      html += `<li class="${m[1].length >= 2 ? 'sub' : ''}${cek ? ' cek' : ''}">${cek || angka ? esc(m[2]) + ' ' : ''}${inl(m[3])}</li>`;
+      continue;
+    }
+    tutup();
+    if (/^\*[^*]+\*:?$/.test(x.trim())) html += `<h2 class="r-h">${esc(x.trim().replace(/^\*|\*:?$/g, '').replace(/\*$/, ''))}</h2>`;
+    else html += `<p>${inl(x)}</p>`;
+  }
+  tutup();
+  return html;
+}
 function waHtml(t) {
   t = tanpaLabel(t);
   return esc(t).replace(/\*([^*\n]+)\*/g, '<b>$1</b>').replace(/_([^_\n]+)_/g, '<i>$1</i>');
@@ -2084,7 +2141,7 @@ async function simpanEdit() {
   const { error } = await sb.from('rapat').update({ resume: t }).eq('id', state.rapat.id);
   b.disabled = false; b.textContent = 'Simpan';
   if (error) return toast(pesanAa(error.message), 5000);
-  state.rapat.resume = t; $('d-resume').innerHTML = waHtml(t);
+  state.rapat.resume = t; $('d-resume').innerHTML = ringkasanHtml(t); $('d-resume').classList.add('rapi');
   batalEdit(); toast('Ringkasan disimpan.');
 }
 
@@ -2276,6 +2333,39 @@ async function buatUlangNotulen() {
   if (error) return toast(pesanAa(error.message), 5000);
   toast('Siap, Aa tulis ulang ringkasannya…'); bukaDetail(r.id);
 }
+
+// ---- Menu "Lainnya" (aksi jarang dipakai; isi menyesuaikan tab yang dibuka) ----
+function bukaAksi() {
+  const r = state.rapat; if (!r) return;
+  const tab = (document.querySelector('#d-tabs button.on') || {}).dataset?.t || 'resume';
+  const ada = (x) => Array.isArray(x) && x.length;
+  const it = [];
+  const tambah = (ikon, teks, fn, kelas) => it.push({ ikon, teks, fn, kelas });
+  if (tab === 'resume' && r.resume && !SEDANG.includes(r.status)) {
+    if (ada(r.transkrip)) tambah('i-ulang', 'Buat ulang ringkasan', buatUlangNotulen);
+  }
+  if (tab === 'notulensi' && r.notulensi && !ntSibuk(r)) {
+    tambah('i-kilau', 'Minta revisi notulensi', () => bukaRevisi('notulensi'));
+    tambah('i-ulang', 'Buat ulang notulensi', () => buatNotulensi(true));
+  }
+  if (it.length) it.push('hr');
+  if ('koreksi' in r) tambah('i-koreksi', 'Koreksi istilah', bukaKoreksi);
+  tambah('i-pen', 'Ganti judul', gantiJudul);
+  if (state.jenisAktif) tambah('i-doc', `Ganti jenis (${namaJenis(r.jenis)})`, bukaJenis);
+  it.push('hr');
+  tambah('i-hapus', 'Hapus catatan ini', hapusRapat, 'danger');
+  state.aksi = it.filter(x => x !== 'hr').map(x => x.fn);
+  let n = 0;
+  $('aksi-daftar').innerHTML = it.map(x => x === 'hr' ? '<hr>' :
+    `<button data-n="${n++}" class="${x.kelas || ''}"><svg class="i"><use href="#${x.ikon}"/></svg>${esc(x.teks)}</button>`).join('');
+  $('aksi').classList.remove('hidden');
+  setTimeout(() => { const b = $('aksi-daftar').querySelector('button'); if (b) b.focus({ preventScroll: true }); }, 50);
+}
+function tutupAksi() { $('aksi').classList.add('hidden'); }
+$('aksi-daftar').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  const fn = state.aksi[+b.dataset.n]; tutupAksi(); if (fn) fn();
+});
 
 async function gantiJudul() {
   const j = prompt('Judul rapat:', state.rapat.judul); if (!j || !j.trim()) return;
