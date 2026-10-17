@@ -727,7 +727,8 @@ body.ada-player .aksi{bottom:4.5rem}
       <summary>Rekam rapat di HP</summary>
       <ul>
         <li>Tekan <b>Rekam rapat</b>. Judul boleh diisi nanti.</li>
-        <li>Biar ga putus: <b>layar tetap nyala</b>, colok charger, jangan pindah ke aplikasi lain. Di iPhone ini paling penting.</li>
+        <li>Biar ga putus: <b>layar tetap nyala</b>, colok charger, jangan pindah ke aplikasi lain.</li>
+        <li><b>iPhone</b>: iOS menghentikan rekaman & unggahan begitu layar terkunci atau pindah aplikasi. Sebelum rapat, set Pengaturan iPhone → Tampilan &amp; Kecerahan → <b>Kunci Otomatis: Tidak Pernah</b> (kembalikan setelahnya), lalu pakai mode tidur. Setelah Selesai, tunggu sampai “Terunggah”. Kalau unggahan sempat berhenti, buka lagi app-nya: unggahan nyambung sendiri dari posisi terakhir.</li>
         <li>Silau? Tekan <b>ikon bulan</b> → mode tidur (layar gelap, ada jam). Ketuk dua kali buat balik.</li>
         <li><b>Jeda</b> buat istirahat, <b>Selesai</b> buat kirim. Salah rekam? Tekan <b>✕</b> di kiri atas buat batalin.</li>
         <li>Rekaman disimpan ke HP tiap 10 detik. Kalau app ketutup atau sinyal hilang, rekamannya aman dan bisa diunggah lagi dari beranda.</li>
@@ -987,7 +988,7 @@ const jam = (d) => [Math.floor(d / 3600), Math.floor(d / 60) % 60, Math.floor(d 
 const MAKS_BYTE = 50 * 1024 * 1024;
 
 // ===== Harga (USD). Ubah di sini kalau harga berubah. =====
-const VERSI = 'v46';   // samakan dengan CACHE di sw.js
+const VERSI = 'v47';   // samakan dengan CACHE di sw.js
 const KURS = 16500;                        // kurs cadangan (dipakai rapat lama & kalau kurs harian gagal diambil)
 // Kurs harian USD→IDR: diambil sekali sehari, lalu DIKUNCI di tiap rapat saat dibuat (kolom rapat.kurs),
 // jadi biaya rapat yang sudah lewat tidak ikut berubah.
@@ -1502,7 +1503,7 @@ async function muatPending() {
     return `<div class="card">
       <b>${naik ? 'Mengunggah…' : 'Rekaman belum terunggah'}</b>
       <div class="muted">${esc(r.judul || 'Rapat')} · ${tglPendek(r.mulai)} · sekitar ${menit(r.detik || 60)}</div>
-      ${naik ? `<div class="progress" id="pg-${r.id}"><div style="width:${naik.pct || 0}%"></div></div>` : `
+      ${naik ? `<div class="progress" id="pg-${r.id}"><div style="width:${naik.pct || 0}%"></div></div>${IOS ? '<div class="muted" style="font-size:.75rem;margin-top:.4rem">Biarkan app tetap terbuka & layar nyala sampai selesai.</div>' : ''}` : `
       <div class="row" style="margin-top:10px">
         <button class="primary" onclick="unggahRec('${r.id}')">Unggah sekarang</button>
         <button class="danger" onclick="buangRec('${r.id}')">Buang</button>
@@ -1556,6 +1557,10 @@ function hentikanSumber() {
   rekam.ctxCampur = null;
 }
 
+// iPhone/iPad: app di-pause iOS begitu layar terkunci atau pindah aplikasi (rekaman & unggahan berhenti)
+const IOS = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+const TIPS_IOS = 'Di iPhone, rekaman <b>berhenti kalau layar terkunci atau pindah aplikasi</b>. Biar aman: Pengaturan iPhone → Tampilan & Kecerahan → <b>Kunci Otomatis: Tidak Pernah</b> selama rapat, colok charger, dan pakai <b>mode tidur</b> (ikon bulan) biar layar redup. Setelah Selesai, tunggu sampai “Terunggah” sebelum menutup app.';
+
 // ---- Penyimpanan browser (rekaman disimpan sementara di IndexedDB sampai terunggah) ----
 const MB_PER_JAM = 15;   // audio 32 kbps ≈ 14,4 MB/jam
 const mbTeks = (b) => b >= 1e9 ? (b / 1e9).toFixed(1).replace('.', ',') + ' GB' : Math.max(0, Math.round(b / 1e6)) + ' MB';
@@ -1589,7 +1594,7 @@ async function bukaRekam() {
   $('r-judul').value = ''; $('r-time').textContent = '00:00:00'; $('r-saved').textContent = 'Tersimpan aman di HP: 0 menit';
   $('r-state').textContent = 'Menyiapkan mikrofon…'; $('rec-box').classList.remove('paused');
   if (!rekam.tipsAsli) rekam.tipsAsli = $('r-tips').innerHTML;
-  $('r-tips').innerHTML = sumberSuara === 'mic' ? rekam.tipsAsli
+  $('r-tips').innerHTML = sumberSuara === 'mic' ? (IOS ? TIPS_IOS : rekam.tipsAsli)
     : 'Boleh pindah ke Zoom/tab lain. <b>Jangan tutup tab ini</b> dan jangan klik “Berhenti berbagi”.' +
       (sumberSuara === 'campur' ? ' Pakai <b>headset/earphone</b> biar suara Zoom ga kerekam dobel lewat mic.' : '');
   rekam.mentah = [];
@@ -1785,6 +1790,11 @@ document.addEventListener('visibilitychange', () => {
 });
 
 // ================= Unggah =================
+const UNGGAH = {};   // unggahan yang sedang jalan: id → { sambung, jaga }
+document.addEventListener('visibilitychange', () => {
+  // balik ke app (iOS sempat mem-pause): sambung ulang unggahan yang mungkin nyangkut
+  if (document.visibilityState === 'visible') Object.values(UNGGAH).forEach(u => { if (Date.now() - u.jaga.t > 5000) u.sambung(); });
+});
 function ekstensi(mime, nama) {
   const m = (nama || '').match(/\.([a-z0-9]{2,5})$/i);
   if (m) return m[1].toLowerCase();
@@ -1846,22 +1856,33 @@ async function unggah(blob, mime, judul, id, ext, detik, jenis) {
   const barUI = () => document.querySelector(`#pg-${id} > div`);
   toast('Mengunggah…', 2000);
   const hasil = await new Promise((resolve) => {
+    const jaga = { t: Date.now() };
+    const selesai = (v) => { clearInterval(jaga.iv); delete UNGGAH[id]; resolve(v); };
     const up = new tus.Upload(blob, {
       endpoint: bacaLS('supa_url') + '/storage/v1/upload/resumable',
       retryDelays: [0, 3000, 5000, 10000, 20000, 30000, 60000],
       headers: { authorization: 'Bearer ' + s.session.access_token, apikey: bacaLS('supa_key'), 'x-upsert': 'true' },
+      // token login berlaku ±1 jam: ambil yang terbaru tiap potongan (unggahan panjang / sempat ke-pause)
+      onBeforeRequest: async (req) => {
+        try { const { data } = await sb.auth.getSession(); if (data.session) req.setHeader('authorization', 'Bearer ' + data.session.access_token); } catch (_) {}
+      },
       uploadDataDuringCreation: true,
       removeFingerprintOnSuccess: true,
       chunkSize: 6 * 1024 * 1024,
       metadata: { bucketName: 'audio', objectName: path, contentType: mime.split(';')[0], cacheControl: '3600' },
       onProgress: (a, b) => {
+        jaga.t = Date.now();
         const pct = Math.round(a / b * 100), el = barUI();
         if (state.uploading[id]) state.uploading[id].pct = pct;
         if (el) el.style.width = pct + '%'; else toast(`Mengunggah ${pct}%`, 4000);
       },
-      onError: (e) => resolve(e),
-      onSuccess: () => resolve(null),
+      onError: (e) => selesai(e),
+      onSuccess: () => selesai(null),
     });
+    // Penjaga: kalau 90 detik ga ada kemajuan (mis. app sempat di-pause iOS, sinyal nyangkut), sambung ulang dari posisi terakhir
+    const sambung = () => { jaga.t = Date.now(); up.abort().then(() => up.start()).catch(() => up.start()); };
+    UNGGAH[id] = { sambung, jaga };
+    jaga.iv = setInterval(() => { if (Date.now() - jaga.t > 90000) sambung(); }, 15000);
     up.findPreviousUploads().then(p => { if (p.length) up.resumeFromPreviousUpload(p[0]); up.start(); });
   });
   if (hasil) {
