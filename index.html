@@ -1024,7 +1024,7 @@ const jam = (d) => [Math.floor(d / 3600), Math.floor(d / 60) % 60, Math.floor(d 
 const MAKS_BYTE = 50 * 1024 * 1024;
 
 // ===== Harga (USD). Ubah di sini kalau harga berubah. =====
-const VERSI = 'v50';   // samakan dengan CACHE di sw.js
+const VERSI = 'v51';   // samakan dengan CACHE di sw.js
 const KURS = 16500;                        // kurs cadangan (dipakai rapat lama & kalau kurs harian gagal diambil)
 // Kurs harian USD→IDR: diambil sekali sehari, lalu DIKUNCI di tiap rapat saat dibuat (kolom rapat.kurs),
 // jadi biaya rapat yang sudah lewat tidak ikut berubah.
@@ -1137,6 +1137,7 @@ const POLA_ERROR = [
   [/Ga bisa (nurunin|nonaktifkan)/i, null],
   [/insufficient_quota|quota|billing|balance|credit/i, 'Duh, Aa laper nih, ga bisa kerja. Saldo AI-nya kayaknya habis — isi dulu saldo OpenAI, terus tekan Coba lagi ya.'],
   [/too many requests|429|rate.?limit|tokens per min|TPM/i, 'Duh, Aa laper nih, ga kuat mikir. Kemungkinan saldo AI habis, atau rapatnya kepanjangan buat jatah per menit akun AI. Isi saldo dulu, atau ganti model ke yang “mini”, lalu Coba lagi.'],
+  [/Unggah gagal.*(JWS|JWT|unauthori[sz]ed|403|401)/i, 'Unggahan ditolak server karena tanda login-nya tidak terbaca. Rekaman masih aman di HP — buka beranda lalu tekan Unggah sekarang.'],
   [/401|403|unauthori[sz]ed|invalid.*(api|key)|incorrect api key|forbidden|kunci salah/i, 'Aa ga dikasih masuk — kunci API-nya salah atau kedaluwarsa. Cek credential di n8n ya.'],
   [/timeout|timed out|ETIMEDOUT|ECONNRESET|ECONNREFUSED|socket hang up|network|Failed to fetch|NetworkError|Load failed/i, 'Aa ketiduran nungguin jawaban server. Sinyal atau servernya lagi lemot, coba lagi bentar ya.'],
   [/Waktu tunggu habis/i, 'Aa nunggu transkripnya kelamaan (lebih dari 2 jam) terus nyerah. Coba lagi ya.'],
@@ -1904,10 +1905,14 @@ async function unggah(blob, mime, judul, id, ext, detik, jenis) {
     const up = new tus.Upload(blob, {
       endpoint: bacaLS('supa_url') + '/storage/v1/upload/resumable',
       retryDelays: [0, 3000, 5000, 10000, 20000, 30000, 60000, 60000, 60000],
-      headers: { authorization: 'Bearer ' + s.session.access_token, apikey: bacaLS('supa_key'), 'x-upsert': 'true' },
+      headers: { apikey: bacaLS('supa_key'), 'x-upsert': 'true' },
       // token login berlaku ±1 jam: ambil yang terbaru tiap potongan (unggahan panjang / sempat ke-pause)
       onBeforeRequest: async (req) => {
-        try { const { data } = await sb.auth.getSession(); if (data.session) req.setHeader('authorization', 'Bearer ' + data.session.access_token); } catch (_) {}
+        // header authorization HANYA dipasang di sini: kalau juga ada di `headers`, browser menggabungkan
+        // dua nilainya ("Bearer a, Bearer b") dan Supabase menolak dengan "Invalid Compact JWS".
+        let tok = s.session.access_token;
+        try { const { data } = await sb.auth.getSession(); if (data.session) tok = data.session.access_token; } catch (_) {}
+        req.setHeader('authorization', 'Bearer ' + tok);
       },
       // buat dulu alamat unggahannya, baru kirim isinya: kalau putus di tengah, lanjut dari posisi terakhir
       // (bukan bikin unggahan baru ke file yang sama, yang bisa ditolak server karena masih "terkunci")
@@ -1975,7 +1980,9 @@ async function bukaDetail(id, diam) {
   }[r.status];
   $('d-info').innerHTML =
     (info ? `<div class="warn">${info} <button class="ghost" style="min-height:0;padding:0;text-decoration:underline;color:inherit" onclick="prosesUlang()">Macet lebih dari 30 menit? Proses ulang</button></div>` : '') +
-    (r.status === 'gagal' ? kotakGagal(r.error, '<br><button class="primary" style="margin-top:8px" onclick="prosesUlang()">Coba lagi</button>') : '') +
+    (r.status === 'gagal' ? kotakGagal(r.error, /^Unggah gagal/.test(r.error || '') && !r.transcript_id
+      ? '<br><button class="primary" style="margin-top:8px" onclick="ke(\'home\')">Unggah ulang dari beranda</button>'
+      : '<br><button class="primary" style="margin-top:8px" onclick="prosesUlang()">Coba lagi</button>') : '') +
     (r.status === 'selesai' && r.error ? `<div class="warn">${esc(pesanAa(r.error))}</div>` : '');
 
   if (!sebelumnya || sebelumnya.resume !== r.resume) {
