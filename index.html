@@ -90,6 +90,10 @@ header.top h1{font-size:1.0625rem;font-weight:700;margin:0;flex:1;white-space:no
 @keyframes napas{0%,100%{transform:scale(1)}50%{transform:scale(1.07)}}
 .cta:active .rec::before,.cta:active .rec::after{animation-duration:.9s}
 @media (prefers-reduced-motion:reduce){.cta .rec::before,.cta .rec::after,.cta .rec svg{animation:none}}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+input:focus-visible,textarea:focus-visible,select:focus-visible{outline:none}
+h1,h2,h3{text-wrap:balance}
 .cta .rec svg{width:1.75rem;height:1.75rem;stroke:#fff;stroke-width:2}
 .cta b{display:block;font-size:1.1875rem;letter-spacing:-.01em}
 .cta small{display:block;font-weight:500;color:#aebdcc;font-size:.8125rem;margin-top:.15rem;font-style:italic}
@@ -110,6 +114,8 @@ header.top h1{font-size:1.0625rem;font-weight:700;margin:0;flex:1;white-space:no
 .bagian .muted{font-size:.8125rem}
 .grup{font-size:.75rem;font-weight:700;color:var(--muted);margin:1.1rem .25rem .4rem;letter-spacing:.02em}
 .list{display:flex;flex-direction:column;gap:.5rem}
+a.item{color:inherit;text-decoration:none}
+.spasi{flex:1}
 .item{display:flex;gap:.875rem;align-items:center;padding:.9rem 1rem;background:var(--surface);border:1px solid var(--line-2);border-radius:var(--r);cursor:pointer;transition:border-color .15s,transform .08s}
 .item:active{transform:scale(.99)}
 .item:hover{border-color:var(--line)}
@@ -204,6 +210,7 @@ details#d-biaya summary::-webkit-details-marker{display:none}
 .tabs{display:flex;gap:.5rem;justify-content:space-between;border-bottom:1px solid var(--line);margin:1.25rem 0 0;overflow-x:auto;scrollbar-width:none}
 .tabs button{flex:none;border:0;background:none;border-radius:0;min-height:2.75rem;padding:.5rem 0;color:var(--muted);font-weight:600;font-size:.875rem;border-bottom:2px solid transparent;margin-bottom:-1px}
 .tabs button.on{color:var(--ink);border-bottom-color:var(--ink)}
+@media (max-width:380px){.tabs{gap:.25rem}.tabs button{font-size:.8125rem;letter-spacing:-.01em}}
 .seg{display:flex;background:var(--raised);border:1px solid var(--line-2);border-radius:var(--r-sm);padding:.2rem;gap:.2rem}
 .seg button{flex:1;border:0;background:none;min-height:2.5rem;border-radius:.6rem;color:var(--muted);font-weight:600;font-size:.875rem;flex-direction:column;gap:0;line-height:1.25}
 .seg button.on{background:var(--surface);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.08)}
@@ -228,7 +235,7 @@ details#d-biaya summary::-webkit-details-marker{display:none}
 
 /* ---------- lembar pengaturan ---------- */
 .lembar{position:fixed;inset:0;z-index:40;display:flex;align-items:flex-end;justify-content:center;background:rgba(8,10,14,.45);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);animation:muncul .15s}
-.lembar>div{max-height:92vh;overflow-y:auto;width:100%;max-width:40rem;background:var(--surface);border-radius:var(--r-lg) var(--r-lg) 0 0;padding:.75rem 1.25rem calc(1.5rem + env(safe-area-inset-bottom));animation:naik .22s cubic-bezier(.2,.8,.2,1)}
+.lembar>div{max-height:92vh;overflow-y:auto;overscroll-behavior:contain;width:100%;max-width:40rem;background:var(--surface);border-radius:var(--r-lg) var(--r-lg) 0 0;padding:.75rem 1.25rem calc(1.5rem + env(safe-area-inset-bottom));animation:naik .22s cubic-bezier(.2,.8,.2,1)}
 .lembar .pegangan{width:2.5rem;height:.3rem;border-radius:99px;background:var(--line);margin:0 auto 1rem}
 .lembar h3{font-size:1.125rem;margin:0 0 .25rem;letter-spacing:-.02em}
 #atur-model select{display:none}
@@ -415,22 +422,24 @@ body.ada-player .aksi{bottom:4.5rem}
 </svg>
 
 <!-- ===== SETUP ===== -->
-<section id="v-setup" class="hidden">
+<section id="v-setup" class="hidden" role="main">
   <div class="wrap">
     <div class="hero" style="margin-bottom:.5rem"><img src="icon-192.png" alt=""></div>
     <h1 class="d-judul center">Pengaturan awal</h1>
     <p class="muted center">Isi sekali saja. Ambil dari Supabase → Project Settings → API Keys.</p>
-    <label>Project URL</label>
-    <input id="s-url" placeholder="https://xxxx.supabase.co" autocomplete="off">
-    <label>Publishable key (atau anon key)</label>
-    <input id="s-key" placeholder="sb_publishable_… / eyJ…" autocomplete="off">
+    <form onsubmit="event.preventDefault();simpanSetup()">
+    <label for="s-url">Project URL</label>
+    <input id="s-url" type="url" inputmode="url" placeholder="https://xxxx.supabase.co" autocomplete="off" spellcheck="false" autocapitalize="none">
+    <label for="s-key">Publishable key (atau anon key)</label>
+    <input id="s-key" placeholder="sb_publishable_… / eyJ…" autocomplete="off" spellcheck="false" autocapitalize="none">
     <p class="muted">Ini kunci publik, aman disimpan di HP. Jangan isi service_role / secret key.</p>
-    <button class="primary" style="width:100%;margin-top:.75rem" onclick="simpanSetup()">Simpan</button>
+    <button type="submit" class="primary" style="width:100%;margin-top:.75rem">Simpan</button>
+    </form>
   </div>
 </section>
 
 <!-- ===== LOGIN ===== -->
-<section id="v-login" class="hidden">
+<section id="v-login" class="hidden" role="main">
   <div class="wrap">
     <div class="hero">
       <img src="icon-192.png" alt="">
@@ -438,25 +447,26 @@ body.ada-player .aksi{bottom:4.5rem}
       <div class="aa">(Aa Ibot)</div>
       <p class="tagline">“Rapat itu berat. Biar Aa aja yang nyatet.”</p>
     </div>
-    <label>Email atau username</label>
-    <input id="l-email" type="text" autocomplete="username" autocapitalize="none" spellcheck="false" placeholder="email atau username">
-    <label>Password</label>
+    <form onsubmit="event.preventDefault();login()">
+    <label for="l-email">Email atau username</label>
+    <input id="l-email" type="text" autocomplete="username" autocapitalize="none" spellcheck="false" placeholder="mis. nama@email.com atau budi">
+    <label for="l-pass">Password</label>
     <input id="l-pass" type="password" autocomplete="current-password">
-    <button id="l-btn" class="primary" style="width:100%;margin-top:1.25rem" onclick="login()">Masuk</button>
-    <p class="muted center" style="margin-top:1rem">Sampurasun! Aa siap nyatet.</p>
+    <button type="submit" id="l-btn" class="primary" style="width:100%;margin-top:1.25rem">Masuk</button>
+    </form>
     <p class="center"><button class="ghost muted" style="font-size:.8125rem" onclick="resetSetup()">Ganti pengaturan Supabase</button></p>
   </div>
 </section>
 
 <!-- ===== BERANDA ===== -->
-<section id="v-home" class="hidden">
+<section id="v-home" class="hidden" role="main">
   <header class="top">
     <div class="brand"><img src="icon-192.png" alt=""><div><b>Notulen AI</b><small>(Aa Ibot)</small></div></div>
     <button class="ghost icon" title="Panduan" aria-label="Panduan" onclick="bukaPanduan()"><svg class="i"><use href="#i-bantu"/></svg></button>
     <button class="ghost icon" title="Pengaturan" aria-label="Pengaturan" onclick="bukaAtur()"><svg class="i"><use href="#i-atur"/></svg></button>
   </header>
   <div class="wrap">
-    <div class="sapa" id="sapa">Halo.</div>
+    <h1 class="sapa" id="sapa">Halo.</h1>
     <div class="sumber hidden" id="jenis-box">
       <span>Jenis</span>
       <div class="seg" id="jenis-seg"></div>
@@ -483,8 +493,8 @@ body.ada-player .aksi{bottom:4.5rem}
 
     <div id="pending"></div>
 
-    <div class="bagian"><h2 id="judul-daftar">Rapat</h2><div class="muted" id="total-biaya"></div></div>
-    <div id="cari-box" class="cari hidden"><svg class="i"><use href="#i-cari"/></svg><input id="cari" type="search" placeholder="Cari judul atau isi notulen" oninput="ketikCari(this.value)" autocomplete="off"></div>
+    <div class="bagian"><h2 id="judul-daftar">Catatan</h2><div class="muted" id="total-biaya"></div></div>
+    <div id="cari-box" class="cari hidden"><svg class="i"><use href="#i-cari"/></svg><input id="cari" type="search" placeholder="Cari judul atau isi ringkasan" oninput="ketikCari(this.value)" autocomplete="off"></div>
     <div id="saring-jenis" class="saring"></div>
     <div id="saring" class="saring"></div>
     <div id="daftar" class="list"><div class="item kosong">Memuat…</div></div>
@@ -492,7 +502,7 @@ body.ada-player .aksi{bottom:4.5rem}
 </section>
 
 <!-- ===== REKAM ===== -->
-<section id="v-rec" class="hidden">
+<section id="v-rec" class="hidden" role="main">
   <header class="top"><button class="ghost icon" id="r-batal" onclick="batalRekam()" title="Batalkan rekaman" aria-label="Batalkan rekaman"><svg class="i"><use href="#i-tutup"/></svg></button><h1>Notulen AI · Merekam</h1><button class="ghost icon" id="r-tidur" onclick="masukTidur()" title="Mode tidur" aria-label="Mode tidur"><svg class="i"><use href="#i-bulan"/></svg></button></header>
   <div class="wrap rec-screen" id="rec-box">
     <input id="r-judul" placeholder="Judul (boleh diisi nanti)">
@@ -519,14 +529,14 @@ body.ada-player .aksi{bottom:4.5rem}
 </div>
 
 <!-- ===== DETAIL ===== -->
-<section id="v-detail" class="hidden">
+<section id="v-detail" class="hidden" role="main">
   <header class="top">
     <button class="ghost icon" onclick="ke('home')" aria-label="Kembali"><svg class="i"><use href="#i-back"/></svg></button>
-    <h1></h1>
+    <div class="spasi" aria-hidden="true"></div>
     <button class="ghost icon" onclick="gantiJudul()" title="Ganti judul" aria-label="Ganti judul"><svg class="i"><use href="#i-pen"/></svg></button>
   </header>
   <div class="wrap" style="padding-top:.25rem">
-    <h2 class="d-judul" id="d-judul">Rapat</h2>
+    <h1 class="d-judul" id="d-judul">Rapat</h1>
     <div class="d-meta"><span id="d-meta"></span><span id="d-status" class="chip"></span><button id="d-jenis" class="jenis-chip hidden" onclick="bukaJenis()"></button></div>
     <details id="d-biaya" class="hidden"><summary></summary><div style="margin-top:.5rem;line-height:1.6"></div></details>
     <div id="d-info"></div>
@@ -548,7 +558,7 @@ body.ada-player .aksi{bottom:4.5rem}
       </div>
       <div id="d-rentang-info" class="rentang-info hidden"></div>
       <div id="d-koreksi-info" class="rentang-info hidden"></div>
-      <div id="d-resume" class="resume muted">Notulen belum ada.</div>
+      <div id="d-resume" class="resume muted">Ringkasan belum ada.</div>
       <div id="d-edit" class="hidden">
         <textarea id="d-edit-teks" class="edit-teks" spellcheck="false"></textarea>
         <div class="muted" style="font-size:.75rem;margin-top:.4rem">Format WhatsApp: *tebal*, _miring_, daftar pakai "- ".</div>
@@ -573,9 +583,9 @@ body.ada-player .aksi{bottom:4.5rem}
     </div>
 
     <div id="t-speaker" class="panel hidden">
-      <p class="muted" style="margin-top:0">Kasih nama tiap suara. Tekan ▶ untuk dengar cuplikannya. Notulen dibuat ulang pakai nama ini.</p>
+      <p class="muted" style="margin-top:0">Kasih nama tiap suara. Tekan ▶ untuk dengar cuplikannya. Ringkasan dibuat ulang pakai nama ini.</p>
       <div id="d-speaker">Transkrip belum ada.</div>
-      <button class="primary" style="width:100%;margin-top:.5rem" id="d-simpan-nama" onclick="simpanNama()">Simpan nama &amp; buat ulang notulen</button>
+      <button class="primary" style="width:100%;margin-top:.5rem" id="d-simpan-nama" onclick="simpanNama()">Simpan nama &amp; buat ulang ringkasan</button>
     </div>
 
     <div id="t-notulensi" class="panel hidden">
@@ -627,7 +637,7 @@ body.ada-player .aksi{bottom:4.5rem}
       <button id="pl-speed" class="pl-kecil" onclick="gantiKecepatan()">1×</button>
       <button class="pl-kecil" onclick="tutupPlayer()" aria-label="Tutup pemutar"><svg class="i"><use href="#i-tutup"/></svg></button>
     </div>
-    <div class="hapus"><button class="ghost danger" onclick="hapusRapat()">Hapus rapat ini</button></div>
+    <div class="hapus"><button class="ghost danger" onclick="hapusRapat()">Hapus catatan ini</button></div>
   </div>
 </section>
 
@@ -646,13 +656,13 @@ body.ada-player .aksi{bottom:4.5rem}
     <div class="lbl">Ukuran teks</div>
     <div class="skala">
       <span style="font-size:.8125rem">A</span>
-      <input id="atur-skala" type="range" min="0" max="4" step="1">
+      <input id="atur-skala" type="range" min="0" max="4" step="1" aria-label="Ukuran teks">
       <span style="font-size:1.25rem">A</span>
     </div>
     <div class="contoh">Rapat itu berat. Biar Aa aja yang nyatet.</div>
     <div class="lbl">Model AI</div>
     <div id="atur-model">
-      <label style="margin-top:0">Untuk notulen</label>
+      <label style="margin-top:0">Untuk ringkasan &amp; notulensi</label>
       <select id="atur-model-notulen" data-k="model_notulen">
         <option value="otomatis">Otomatis</option>
         <optgroup label="Teliti">
@@ -694,8 +704,8 @@ body.ada-player .aksi{bottom:4.5rem}
     <div class="muted" id="atur-simpan" style="font-size:.8125rem;line-height:1.5">Menghitung…</div>
     <button class="ke-panduan" onclick="formSandi()" id="gs-btn"><svg class="i"><use href="#i-kunci"/></svg>Ganti password</button>
     <div id="gs-form" class="ak-form hidden">
-      <label>Password baru</label><input id="gs-1" type="password" autocomplete="new-password" placeholder="min. 8 karakter">
-      <label>Ulangi password baru</label><input id="gs-2" type="password" autocomplete="new-password">
+      <label for="gs-1">Password baru</label><input id="gs-1" type="password" autocomplete="new-password" placeholder="min. 8 karakter">
+      <label for="gs-2">Ulangi password baru</label><input id="gs-2" type="password" autocomplete="new-password">
       <div class="row" style="margin-top:1rem"><button onclick="formSandi(false)">Batal</button><button class="primary" id="gs-simpan" onclick="gantiSandi()">Simpan</button></div>
     </div>
     <button class="ke-panduan khusus-admin" onclick="salinUndangan()"><svg class="i"><use href="#i-bagi"/></svg>Salin link undangan</button>
@@ -719,7 +729,7 @@ body.ada-player .aksi{bottom:4.5rem}
     <ol class="alur">
       <li><span><b>Rekam</b> atau <b>upload</b> rekaman rapat</span></li>
       <li><span>Aa nyimak dan <b>misahin suara tiap orang</b> (transkrip)</span></li>
-      <li><span>Aa <b>nulis notulen</b> siap dibagikan</span></li>
+      <li><span>Aa <b>nulis ringkasan</b> siap dibagikan</span></li>
       <li><span>Kalau perlu, Aa bikinin <b>paparan</b> (slide + infografis)</span></li>
     </ol>
 
@@ -759,13 +769,13 @@ body.ada-player .aksi{bottom:4.5rem}
     <details>
       <summary>Setelah rekaman terkirim</summary>
       <ul>
-        <li>Statusnya jalan sendiri: <b>Mengunggah → Antri → Ditranskrip → Bikin notulen → Selesai</b>. Biasanya beres dalam beberapa menit, tergantung panjang rapat.</li>
+        <li>Statusnya jalan sendiri: <b>Mengunggah → Antri → Ditranskrip → Bikin ringkasan → Selesai</b>. Biasanya beres dalam beberapa menit, tergantung panjang rapat.</li>
         <li>App boleh ditutup, prosesnya jalan di server.</li>
-        <li>Daftar rapat menampilkan 30 terbaru; tekan <b>Tampilkan rapat lebih lama</b> di paling bawah untuk yang lebih lama. Pakai kolom <b>Cari</b> buat nyari judul atau isi notulen.</li>
+        <li>Daftar menampilkan 30 catatan terbaru; tekan <b>Tampilkan yang lebih lama</b> di paling bawah untuk yang lebih lama. Pakai kolom <b>Cari</b> buat nyari judul atau isi ringkasan.</li>
         <li>Arti ikon di daftar rapat:
           <span class="lg"><i class="ikon run"><svg class="i"><use href="#i-jam"/></svg></i>lagi diproses</span>
-          <span class="lg"><i class="ikon ok"><svg class="i"><use href="#i-doc"/></svg></i>notulen jadi</span>
-          <span class="lg"><i class="ikon pp"><svg class="i"><use href="#i-slide"/></svg></i>notulen + paparan sudah ada</span>
+          <span class="lg"><i class="ikon ok"><svg class="i"><use href="#i-doc"/></svg></i>ringkasan jadi</span>
+          <span class="lg"><i class="ikon pp"><svg class="i"><use href="#i-slide"/></svg></i>ringkasan + paparan sudah ada</span>
           <span class="lg"><i class="ikon bad"><svg class="i"><use href="#i-x"/></svg></i>gagal, buka lalu Coba lagi</span>
         </li>
         <li>Kalau <b>Gagal</b>, baca pesannya lalu tekan <b>Coba lagi</b>. Ketuk “Detail teknis” kalau perlu laporan ke yang bikin app.</li>
@@ -790,14 +800,14 @@ body.ada-player .aksi{bottom:4.5rem}
     <details>
       <summary>Ringkasan, transkrip & pembicara</summary>
       <ul>
-        <li><b>Notulen</b>: tekan <b>Salin</b> atau <b>Bagikan</b> (WA, email, dll). Formatnya sudah rapi untuk WhatsApp.</li>
+        <li><b>Ringkasan</b>: tekan <b>Salin</b> atau <b>Bagikan</b> (WA, email, dll). Formatnya sudah rapi untuk WhatsApp.</li>
         <li><b>Edit</b>: benerin langsung kata/frasa yang salah, lalu Simpan. Gratis.</li>
         <li><b>Minta revisi</b>: tulis instruksi (mis. "bagian anggaran kurang lengkap"), Aa nulis ulang ringkasannya. Kalau notulensi sudah ada, centang <b>Revisi notulensi juga</b> biar ikut dibenerin (jalan otomatis setelah ringkasan selesai). Biaya ±sama dengan bikin sekali lagi per hasil.</li>
         <li><b>Koreksi istilah</b>: daftar salah dengar & nama yang benar (mis. "Bakom → BAKTI", "Speaker C itu Bu Nuning"). Beda dengan revisi, catatan ini <b>tersimpan terus</b> dan selalu dipakai di ringkasan, notulensi, dan paparan, termasuk kalau dibuat ulang. Saat menyimpan, bisa langsung diterapkan ke ringkasan dan notulensi yang sudah ada.</li>
         <li><b>Buat ulang</b>: tulis ulang dari nol, misalnya setelah ganti model AI. Hasil edit/revisi sebelumnya ketimpa.</li>
-        <li><b>Buang bagian yang ga perlu</b> (mis. obrolan sebelum rapat mulai): tab Transkrip → <b>Pilih bagian</b> → ketuk baris pertama lalu baris terakhir yang dipakai → Simpan. Notulen & paparan cuma dibuat dari bagian itu, tanpa transkrip ulang.</li>
+        <li><b>Buang bagian yang ga perlu</b> (mis. obrolan sebelum rapat mulai): tab Transkrip → <b>Pilih bagian</b> → ketuk baris pertama lalu baris terakhir yang dipakai → Simpan. Ringkasan, notulensi & paparan cuma dibuat dari bagian itu, tanpa transkrip ulang.</li>
         <li><b>Transkrip</b>: ketuk satu baris untuk dengar audionya dari titik itu.</li>
-        <li><b>Pembicara</b>: dengar cuplikan ▶ tiap suara, isi namanya, lalu <b>Simpan nama</b>. Notulen ditulis ulang pakai nama asli.</li>
+        <li><b>Pembicara</b>: dengar cuplikan ▶ tiap suara, isi namanya, lalu <b>Simpan nama</b>. Ringkasan ditulis ulang pakai nama asli.</li>
         <li>Judul rapat bisa diganti lewat ikon pensil di kanan atas.</li>
       </ul>
     </details>
@@ -818,7 +828,7 @@ body.ada-player .aksi{bottom:4.5rem}
     <details>
       <summary>Paparan (slide & infografis)</summary>
       <ul>
-        <li>Buka tab <b>Paparan</b>, pilih <b>Dari notulen</b> (lebih ringkas) atau <b>Dari transkrip</b> (lebih lengkap).</li>
+        <li>Buka tab <b>Paparan</b>, pilih <b>Dari ringkasan</b> (lebih ringkas) atau <b>Dari transkrip</b> (lebih lengkap).</li>
         <li>Tekan <b>Buat paparan</b>, lalu unduh <b>Deck PPTX</b> atau <b>Infografis PNG</b>.</li>
         <li>Hasil dari dua sumber disimpan terpisah, jadi bisa dibandingkan.</li>
         <li>Rapat yang sudah punya paparan ditandai <b>ikon presentasi ungu</b> di daftar rapat.</li>
@@ -851,7 +861,7 @@ body.ada-player .aksi{bottom:4.5rem}
       <summary>Hal yang perlu diingat</summary>
       <ul>
         <li>Rekaman disimpan dulu di penyimpanan browser sampai selesai terunggah (±15 MB per jam), lalu otomatis dihapus. Sisa jatahnya bisa dilihat di Pengaturan. Kalau disk laptop/HP hampir penuh, jatahnya ikut menyusut dan Aa akan ngingetin sebelum mulai rekam.</li>
-        <li>Notulen buatan AI adalah <b>draf</b>. Cek lagi nama, angka, dan keputusan sebelum dikirim ke pimpinan.</li>
+        <li>Ringkasan dan notulensi buatan AI adalah <b>draf</b>. Cek lagi nama, angka, dan keputusan sebelum dikirim ke pimpinan.</li>
         <li>Istilah atau nama yang jarang bisa salah dengar. Isi nama pembicara supaya hasilnya lebih rapi.</li>
         <li>Audio diproses layanan AI di luar negeri. <b>Jangan dipakai untuk rapat yang sifatnya rahasia.</b></li>
       </ul>
@@ -903,7 +913,7 @@ body.ada-player .aksi{bottom:4.5rem}
       <button type="button">Buat lebih ringkas</button>
     </div>
     <label class="cek-baris" id="rv-ikut-baris"><input type="checkbox" id="rv-ikut" checked><span id="rv-ikut-teks">Revisi notulensi juga pakai instruksi ini</span></label>
-    <label class="cek-baris"><input type="checkbox" id="rv-simpan"><span>Simpan juga ke <b>catatan koreksi</b> rapat ini, biar selalu dipakai (termasuk paparan dan kalau dibuat ulang). Cocok buat koreksi nama/istilah.</span></label>
+    <label class="cek-baris"><input type="checkbox" id="rv-simpan"><span>Simpan juga ke <b>catatan koreksi</b> catatan ini, biar selalu dipakai (termasuk paparan dan kalau dibuat ulang). Cocok buat koreksi nama/istilah.</span></label>
     <div class="row" style="margin-top:1rem"><button onclick="tutupRevisi()">Batal</button><button class="primary" id="rv-kirim" onclick="kirimRevisi()">Kirim ke Aa</button></div>
   </div>
 </div>
@@ -936,7 +946,7 @@ body.ada-player .aksi{bottom:4.5rem}
   <div>
     <div class="pegangan"></div>
     <h3>Catatan koreksi</h3>
-    <div class="muted" style="font-size:.8125rem">Daftar salah dengar & koreksi nama/istilah untuk rapat ini. Tersimpan terus dan selalu dipakai Aa di ringkasan, notulensi, dan paparan, termasuk kalau dibuat ulang.</div>
+    <div class="muted" style="font-size:.8125rem">Daftar salah dengar & koreksi nama/istilah untuk catatan ini. Tersimpan terus dan selalu dipakai Aa di ringkasan, notulensi, dan paparan, termasuk kalau dibuat ulang.</div>
     <textarea id="kr-teks" class="edit-teks" style="min-height:9rem;margin-top:1rem" placeholder="Satu koreksi per baris, mis.&#10;Bakom → BAKTI&#10;Pak Budi = Kepala Biro Humas&#10;Speaker C itu Bu Nuning"></textarea>
     <div class="lbl" id="kr-terapkan-lbl">Terapkan sekarang ke</div>
     <label class="cek-baris" id="kr-r-baris"><input type="checkbox" id="kr-r" checked><span>Ringkasan</span></label>
@@ -970,7 +980,7 @@ body.ada-player .aksi{bottom:4.5rem}
   </div>
 </div>
 
-<div id="toast" class="toast hidden"></div>
+<div id="toast" class="toast hidden" role="status" aria-live="polite"></div>
 
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.js"></script>
@@ -988,7 +998,7 @@ const jam = (d) => [Math.floor(d / 3600), Math.floor(d / 60) % 60, Math.floor(d 
 const MAKS_BYTE = 50 * 1024 * 1024;
 
 // ===== Harga (USD). Ubah di sini kalau harga berubah. =====
-const VERSI = 'v47';   // samakan dengan CACHE di sw.js
+const VERSI = 'v48';   // samakan dengan CACHE di sw.js
 const KURS = 16500;                        // kurs cadangan (dipakai rapat lama & kalau kurs harian gagal diambil)
 // Kurs harian USD→IDR: diambil sekali sehari, lalu DIKUNCI di tiap rapat saat dibuat (kolom rapat.kurs),
 // jadi biaya rapat yang sudah lewat tidak ikut berubah.
@@ -1079,8 +1089,8 @@ const STATUS = {
   mengunggah:   ['Mengunggah', 'run'],
   antri:        ['Antri', 'run'],
   ditranskrip:  ['Ditranskrip', 'run'],
-  minta_resume: ['Bikin notulen', 'run'],
-  meresume:     ['Bikin notulen', 'run'],
+  minta_resume: ['Bikin ringkasan', 'run'],
+  meresume:     ['Bikin ringkasan', 'run'],
   selesai:      ['Selesai', 'ok'],
   gagal:        ['Gagal', 'bad'],
 };
@@ -1107,7 +1117,7 @@ const POLA_ERROR = [
   [/Transkrip kosong|no spoken audio|no speech/i, 'Aa ga denger suara apa-apa di rekaman ini. Mungkin mic-nya ketutup atau filenya hening.'],
   [/Unggah gagal|upload/i, 'Upload-nya putus di jalan. Tenang, rekaman masih aman di HP — unggah lagi dari beranda.'],
   [/download|could not (fetch|process)|unsupported|format|codec|decode/i, 'Aa ga bisa dengerin file ini — formatnya mungkin ga didukung atau filenya rusak.'],
-  [/terpotong|terlalu panjang|length/i, 'Notulennya kepanjangan sampai kepotong di akhir. Coba buat ulang, atau ringkas lewat tab Paparan.'],
+  [/terpotong|terlalu panjang|length/i, 'Hasilnya kepanjangan sampai kepotong di akhir. Coba buat ulang, atau ringkas lewat tab Paparan.'],
   [/Bahan kosong/i, 'Bahannya belum ada, jadi Aa belum bisa nyusun apa-apa.'],
   [/Format balasan AI/i, 'Aa salah format pas nyusun slide. Tekan Buat ulang ya.'],
   [/Invalid login credentials/i, 'Username/email atau password-nya salah, Aa ga kenal nih.'],
@@ -1264,6 +1274,12 @@ async function mulai() {
   ke(m ? 'detail' : 'home', m && m[1]);
 }
 
+// Lembar bawah = dialog (untuk pembaca layar)
+document.querySelectorAll('.lembar').forEach(l => {
+  l.setAttribute('role', 'dialog'); l.setAttribute('aria-modal', 'true');
+  const h = l.querySelector('h3'); if (h) { if (!h.id) h.id = l.id + '-judul'; l.setAttribute('aria-labelledby', h.id); }
+});
+
 // ================= Jenis kegiatan =================
 // Daftar jenis dari tabel jenis_kegiatan (setup/16). Tabel belum ada = fitur disembunyikan, semua dianggap Rapat.
 const JENIS_INFO = {
@@ -1303,7 +1319,6 @@ $('jenis-seg').addEventListener('click', e => {
 });
 function isiSaringJenis() {
   const tampil = state.jenisAktif && (state.adaJenisLain || state.filterJenis);
-  $('judul-daftar').textContent = tampil ? 'Catatan' : 'Rapat';
   $('saring-jenis').innerHTML = !tampil ? '' : [['', 'Semua'], ...state.jenisList.map(j => [j.kode, j.nama])]
     .map(([v, t]) => `<button data-v="${esc(v)}" class="${v === (state.filterJenis || '') ? 'on' : ''}">${esc(t)}</button>`).join('');
 }
@@ -1420,7 +1435,7 @@ async function muatDaftar() {
   if (!data.length && q) { $('daftar').innerHTML = `<div class="item kosong">Ga ketemu rapat dengan kata “${esc(q)}”.</div>`; return; }
   if (!data.length && state.filterJenis) { $('daftar').innerHTML = `<div class="item kosong">Belum ada catatan ${esc(namaJenis(state.filterJenis).toLowerCase())}.</div>`; return; }
   if (!data.length && state.filterPemilik) { $('daftar').innerHTML = '<div class="item kosong">Orang ini belum punya rapat.</div>'; return; }
-  if (!data.length) { $('daftar').innerHTML = '<div class="item kosong">Belum ada rapat.<br>Aa nganggur nih — tekan “Rekam rapat”.</div>'; return; }
+  if (!data.length) { $('daftar').innerHTML = `<div class="item kosong">Belum ada catatan.<br>Aa nganggur nih, tekan “${esc($('cta-judul').textContent)}”.</div>`; return; }
   let grupLalu = '';
   $('daftar').innerHTML = data.map(r => {
     const g = labelHari(r.created_at);
@@ -1431,16 +1446,16 @@ async function muatDaftar() {
     const ikon = pp ? 'i-slide' : r.status === 'selesai' ? 'i-doc' : r.status === 'gagal' ? 'i-x' : 'i-jam';
     const biaya = hitungBiaya(r).total;
     return kepala + `
-    <div class="item" onclick="ke('detail','${r.id}')">
-      <div class="ikon ${jenis}" title="${pp ? 'Notulen + paparan' : ''}"><svg class="i"><use href="#${ikon}"/></svg></div>
+    <a class="item" href="#r/${r.id}" onclick="if(!event.ctrlKey&&!event.metaKey){event.preventDefault();ke('detail','${r.id}')}">
+      <div class="ikon ${jenis}" title="${pp ? 'Ringkasan + paparan' : ''}"><svg class="i"><use href="#${ikon}"/></svg></div>
       <div class="grow">
         <div class="t">${esc(r.judul)}</div>
         <div class="m">${jenisRapat(r) ? '' : `<span class="jn">${esc(namaJenis(r.jenis))}</span>`}${jamSaja(r.created_at)}${r.durasi_detik ? ' · ' + menit(r.durasi_detik) : ''}${biaya ? ' · ±' + rupiah(biaya) : ''}</div>
         ${state.admin && r.pemilik !== state.uid ? `<div class="milik">${esc(namaPemilik(r))}</div>` : ''}
       </div>
       ${r.status === 'selesai' ? '' : chip(r.status)}
-    </div>`;
-  }).join('') + (adaLagi ? `<button class="lagi" onclick="state.halaman=(state.halaman||1)+1;muatDaftar()">Tampilkan rapat lebih lama</button>` : '');
+    </a>`;
+  }).join('') + (adaLagi ? `<button class="lagi" onclick="state.halaman=(state.halaman||1)+1;muatDaftar()">Tampilkan yang lebih lama</button>` : '');
   if (!q && !state.filterPemilik && !state.filterJenis && (state.halaman || 1) === 1) {
     setTimeout(() => simpanLS(cacheDaftarKey(), JSON.stringify({ uid: state.uid, html: $('daftar').innerHTML, total: $('total-biaya').textContent })), 1500);
   }
@@ -1921,8 +1936,8 @@ async function bukaDetail(id, diam) {
     mengunggah: 'File belum selesai terunggah. Kalau macet, buka beranda dan unggah ulang rekaman dari HP.',
     antri: 'Antri, Aa siap-siap nyimak…',
     ditranskrip: 'Aa lagi nyimak & misahin siapa ngomong apa. Rapat 1 jam biasanya 3–10 menit.',
-    minta_resume: 'Transkrip jadi. Aa lagi ngetik notulen…',
-    meresume: 'Transkrip jadi. Aa lagi ngetik notulen…',
+    minta_resume: 'Transkrip jadi. Aa lagi ngetik ringkasan…',
+    meresume: 'Transkrip jadi. Aa lagi ngetik ringkasan…',
   }[r.status];
   $('d-info').innerHTML =
     (info ? `<div class="warn">${info} <button class="ghost" style="min-height:0;padding:0;text-decoration:underline;color:inherit" onclick="prosesUlang()">Macet lebih dari 30 menit? Proses ulang</button></div>` : '') +
@@ -1930,11 +1945,11 @@ async function bukaDetail(id, diam) {
     (r.status === 'selesai' && r.error ? `<div class="warn">${esc(pesanAa(r.error))}</div>` : '');
 
   if (!sebelumnya || sebelumnya.resume !== r.resume) {
-    if (!state.mengedit) $('d-resume').innerHTML = r.resume ? waHtml(r.resume) : 'Notulen belum ada.';
+    if (!state.mengedit) $('d-resume').innerHTML = r.resume ? waHtml(r.resume) : 'Ringkasan belum ada.';
     $('d-alat').classList.toggle('hidden', !r.resume || state.mengedit || SEDANG.includes(r.status));
     const rg = r.rentang;
     $('d-rentang-info').classList.toggle('hidden', !rg || !!state.mengedit);
-    if (rg) $('d-rentang-info').innerHTML = `Notulen hanya dari bagian <b>${rg.mulai != null ? jam(rg.mulai) : 'awal'} – ${rg.akhir != null ? jam(rg.akhir) : 'akhir'}</b> rekaman. Atur di tab Transkrip.`;
+    if (rg) $('d-rentang-info').innerHTML = `Ringkasan hanya dari bagian <b>${rg.mulai != null ? jam(rg.mulai) : 'awal'} – ${rg.akhir != null ? jam(rg.akhir) : 'akhir'}</b> rekaman. Atur di tab Transkrip.`;
     $('d-resume').classList.toggle('muted', !r.resume);
     $('d-resume-btn').classList.toggle('hidden', !r.resume || !!state.mengedit);
   }
@@ -1981,7 +1996,7 @@ function gabung() {
 function renderTranskrip() {
   const b = gabung();
   $('d-transkrip').innerHTML = b.length
-    ? b.map((u, i) => `<div class="line" data-m="${u.m}" data-i="${i}" onclick="ketukBaris(${i}, ${u.m})"><span class="ts">▶ ${jam(u.m)}</span><b>${esc(labelSpk(u.s))}</b>: ${esc(u.t)}</div>`).join('')
+    ? b.map((u, i) => `<div class="line" role="button" tabindex="0" data-m="${u.m}" data-i="${i}" onclick="ketukBaris(${i}, ${u.m})" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click()}"><span class="ts">▶ ${jam(u.m)}</span><b>${esc(labelSpk(u.s))}</b>: ${esc(u.t)}</div>`).join('')
     : 'Transkrip belum ada.';
   $('d-transkrip').classList.toggle('muted', !b.length);
   $('rg-btn').classList.toggle('hidden', !b.length || !('rentang' in state.rapat));
@@ -2039,12 +2054,12 @@ async function simpanRentang() {
   const sama = JSON.stringify(r.rentang || null) === JSON.stringify(nilai);
   modePilih(false);
   if (sama) return;
-  const buat = !!r.resume && confirm('Bagian rekaman disimpan. Buat ulang notulen dari bagian ini sekarang?');
+  const buat = !!r.resume && confirm('Bagian rekaman disimpan. Buat ulang ringkasan dari bagian ini sekarang?');
   const ubah = { rentang: nilai };
   if (buat) Object.assign(ubah, { status: 'minta_resume', error: null, revisi: null });
   const { error } = await sb.from('rapat').update(ubah).eq('id', r.id);
   if (error) return toast(pesanAa(error.message), 5000);
-  toast(buat ? 'Siap, Aa tulis ulang notulen dari bagian itu…' : kosong ? 'Sekarang semua rekaman dipakai.' : 'Bagian rekaman disimpan. Tekan Buat ulang di tab Notulen kalau mau dipakai.', 4500);
+  toast(buat ? 'Siap, Aa tulis ulang ringkasan dari bagian itu…' : kosong ? 'Sekarang semua rekaman dipakai.' : 'Bagian rekaman disimpan. Tekan Buat ulang di tab Ringkasan atau Notulensi kalau mau dipakai.', 4500);
   if (buat) pilihTab('resume');
   bukaDetail(r.id);
 }
@@ -2064,13 +2079,13 @@ function batalEdit() {
 }
 async function simpanEdit() {
   const t = $('d-edit-teks').value.trim();
-  if (!t) return toast('Notulennya kosong. Kalau mau dibuat ulang, pakai Buat ulang.');
+  if (!t) return toast('Ringkasannya kosong. Kalau mau dibuat ulang, pakai Buat ulang.');
   const b = $('d-edit-simpan'); b.disabled = true; b.textContent = 'Menyimpan…';
   const { error } = await sb.from('rapat').update({ resume: t }).eq('id', state.rapat.id);
   b.disabled = false; b.textContent = 'Simpan';
   if (error) return toast(pesanAa(error.message), 5000);
   state.rapat.resume = t; $('d-resume').innerHTML = waHtml(t);
-  batalEdit(); toast('Notulen disimpan.');
+  batalEdit(); toast('Ringkasan disimpan.');
 }
 
 // ---- Minta revisi ke AI (ringkasan / notulensi) + catatan koreksi ----
@@ -2238,7 +2253,7 @@ async function simpanNama() {
   document.querySelectorAll('#d-speaker input[data-spk]').forEach(i => { if (i.value.trim()) nama[i.dataset.spk] = i.value.trim(); });
   const { error } = await sb.from('rapat').update({ nama_speaker: nama, status: 'minta_resume', error: null, ...('revisi' in state.rapat ? { revisi: null } : {}) }).eq('id', state.rapat.id);
   if (error) return toast(pesanAa(error.message), 5000);
-  toast('Tersimpan. Aa lagi nulis ulang notulennya…');
+  toast('Tersimpan. Aa lagi nulis ulang ringkasannya…');
   pilihTab('resume'); bukaDetail(state.rapat.id);
 }
 
@@ -2255,11 +2270,11 @@ async function prosesUlang() {
 
 async function buatUlangNotulen() {
   const r = state.rapat;
-  if (!Array.isArray(r.transkrip) || !r.transkrip.length) return toast('Transkripnya belum ada, jadi notulen belum bisa dibuat ulang.');
-  if (!confirm('Buat ulang notulen pakai model di Pengaturan? Notulen yang sekarang akan diganti.')) return;
+  if (!Array.isArray(r.transkrip) || !r.transkrip.length) return toast('Transkripnya belum ada, jadi ringkasan belum bisa dibuat ulang.');
+  if (!confirm('Buat ulang ringkasan pakai model di Pengaturan? Ringkasan yang sekarang akan diganti.')) return;
   const { error } = await sb.from('rapat').update({ status: 'minta_resume', error: null, ...('revisi' in r ? { revisi: null } : {}) }).eq('id', r.id);
   if (error) return toast(pesanAa(error.message), 5000);
-  toast('Siap, Aa tulis ulang notulennya…'); bukaDetail(r.id);
+  toast('Siap, Aa tulis ulang ringkasannya…'); bukaDetail(r.id);
 }
 
 async function gantiJudul() {
@@ -2270,7 +2285,7 @@ async function gantiJudul() {
 }
 
 async function hapusRapat() {
-  if (!confirm('Hapus rapat ini beserta audio, transkrip, dan notulennya?')) return;
+  if (!confirm('Hapus catatan ini beserta audio, transkrip, dan semua hasilnya?')) return;
   const r = state.rapat;
   if (r.audio_path) await sb.storage.from('audio').remove([r.audio_path]);
   const { error } = await sb.from('rapat').delete().eq('id', r.id);
@@ -2556,9 +2571,9 @@ function renderPaparan() {
   });
 
   let status = '';
-  if (sibuk) status = `<div class="warn">Aa lagi nyusun slide dari ${r.deck_sumber === 'transkrip' ? 'transkrip' : 'notulen'}… biasanya 20–60 detik.</div>`;
+  if (sibuk) status = `<div class="warn">Aa lagi nyusun slide dari ${r.deck_sumber === 'transkrip' ? 'transkrip' : 'ringkasan'}… biasanya 20–60 detik.</div>`;
   else if (r.deck_status === 'gagal') status = kotakGagal(r.deck_error);
-  else if (!punyaBahan) status = `<div class="muted">${src === 'resume' ? 'Notulen' : 'Transkrip'} belum ada.</div>`;
+  else if (!punyaBahan) status = `<div class="muted">${src === 'resume' ? 'Ringkasan' : 'Transkrip'} belum ada.</div>`;
   $('pp-status').innerHTML = status;
 
   const btn = $('pp-buat');
@@ -2744,7 +2759,7 @@ function segarkanTombolModel() {
   });
 }
 function bukaPilihModel(sel) {
-  $('pm-judul').textContent = sel.dataset.k === 'model_paparan' ? 'Model AI untuk paparan' : 'Model AI untuk notulen';
+  $('pm-judul').textContent = sel.dataset.k === 'model_paparan' ? 'Model AI untuk paparan' : 'Model AI untuk ringkasan & notulensi';
   let html = '';
   for (const el of sel.children) {
     const opsi = el.tagName === 'OPTGROUP' ? [...el.children] : [el];
