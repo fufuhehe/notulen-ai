@@ -104,6 +104,14 @@ h1,h2,h3{text-wrap:balance}
 .sumber .seg{flex:1}
 .sumber .seg button{min-height:2.25rem;font-size:.8125rem}
 #mic-box select{flex:1;min-width:0;padding:.55rem .8rem;font-size:.875rem}
+.tm-tombol{flex:none;min-height:2.5rem;padding:.4rem .85rem;font-size:.8125rem;font-weight:700}
+.tm-daftar{display:flex;flex-direction:column;gap:.5rem;margin-top:1rem}
+.tm-baris{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:.45rem .75rem;text-align:left;padding:.75rem .9rem;width:100%}
+.tm-baris.on{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent) inset}
+.tm-nama{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tm-meter{grid-column:1/-1;height:.5rem;border-radius:99px;background:var(--line-2);overflow:hidden}
+.tm-meter i{display:block;height:100%;width:0;background:var(--accent);border-radius:99px}
+.tm-st{font-size:.75rem;font-weight:700;color:var(--muted);white-space:nowrap}.tm-st.ok{color:var(--accent)}.tm-st.sepi{color:var(--aa)}
 #jenis-box{margin:0 0 .9rem}
 #jenis-box>span{display:none}
 #jenis-box .seg button{min-width:0;padding:0 .25rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block}
@@ -511,7 +519,8 @@ body.ada-player .aksi{bottom:4.5rem}
     </div>
     <div class="sumber hidden" id="mic-box">
       <span>Mic</span>
-      <select id="mic-pilih" aria-label="Pilih mikrofon"></select>
+      <select id="mic-pilih" aria-label="Pilih mikrofon"><option value="">Otomatis (ikut HP)</option></select>
+      <button type="button" id="mic-tes" class="tm-tombol" onclick="bukaTesMic()">Tes mic</button>
     </div>
     <div class="sekunder">
       <button onclick="document.getElementById('file').click()"><svg class="i"><use href="#i-upload"/></svg>Upload rekaman</button>
@@ -768,7 +777,7 @@ body.ada-player .aksi{bottom:4.5rem}
         <li>Rekaman disimpan ke HP tiap 10 detik. Kalau app ketutup atau sinyal hilang, rekamannya aman dan bisa diunggah lagi dari beranda.</li>
         <li>Taruh HP di tengah meja, dekat orang yang paling banyak ngomong.</li>
         <li>Rapat penting? Rekam juga pakai perekam bawaan HP sebagai cadangan, lalu upload kalau perlu.</li>
-        <li><b>HP tersambung ke smartwatch atau earphone Bluetooth?</b> Aa otomatis pakai mic HP. Kalau ada lebih dari satu mic, pilih di <b>Mic</b> di beranda. Kalau 12 detik pertama ga ada suara masuk, Aa kasih peringatan di layar rekam.</li>
+        <li><b>HP tersambung ke smartwatch atau earphone Bluetooth?</b> Aa otomatis pakai mic HP. Sebelum rapat, tekan <b>Tes mic</b> di beranda: ngomong sebentar, mic yang bener batangnya gerak, ketuk buat milih. Kalau 12 detik pertama ga ada suara masuk, Aa kasih peringatan di layar rekam.</li>
         <li><b>Telepon atau Zoom di HP</b> ga bisa direkam app ini: Android/iPhone tidak mengizinkan app lain ikut mengambil suara panggilan. Pakai Zoom di laptop dengan sumber <b>Mic + laptop</b>, atau rekam pakai fitur rekam Zoom / perekam panggilan bawaan HP lalu <b>Upload rekaman</b>.</li>
       </ul>
     </details>
@@ -953,6 +962,16 @@ body.ada-player .aksi{bottom:4.5rem}
   </div>
 </div>
 
+<div id="tesmic" class="lembar hidden" onclick="if(event.target===this)tutupTesMic()">
+  <div>
+    <div class="pegangan"></div>
+    <h3>Tes mic</h3>
+    <div class="muted" style="font-size:.8125rem">Ngomong biasa atau ketuk meja. Mic yang bener batangnya ikut gerak. Ketuk mic lain buat ngetes &amp; milih.</div>
+    <div class="tm-daftar" id="tm-daftar"></div>
+    <div class="row" style="margin-top:1rem"><button onclick="tutupTesMic()">Selesai</button></div>
+  </div>
+</div>
+
 <div id="pilih-jenis" class="lembar hidden" onclick="if(event.target===this)tutupJenis()">
   <div>
     <div class="pegangan"></div>
@@ -1033,7 +1052,7 @@ const jam = (d) => [Math.floor(d / 3600), Math.floor(d / 60) % 60, Math.floor(d 
 const MAKS_BYTE = 50 * 1024 * 1024;
 
 // ===== Harga (USD). Ubah di sini kalau harga berubah. =====
-const VERSI = 'v52';   // samakan dengan CACHE di sw.js
+const VERSI = 'v53';   // samakan dengan CACHE di sw.js
 const KURS = 16500;                        // kurs cadangan (dipakai rapat lama & kalau kurs harian gagal diambil)
 // Kurs harian USD→IDR: diambil sekali sehari, lalu DIKUNCI di tiap rapat saat dibuat (kolom rapat.kurs),
 // jadi biaya rapat yang sudah lewat tidak ikut berubah.
@@ -1584,20 +1603,19 @@ async function daftarMic() {
 const namaMic = (d) => micVirtual(d) ? 'Otomatis (ikut HP)' : (d.label || 'Mic') + (MIC_BT.test(d.label) ? ' · Bluetooth' : '');
 async function isiMic() {
   if (!navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices) return;
-  const d = (await daftarMic()).filter(x => x.label);   // label baru ada setelah izin mic pernah diberikan
-  const nyata = d.filter(x => !micVirtual(x));
-  $('mic-box').classList.toggle('hidden', nyata.length < 2);
-  if (nyata.length < 2) return;
-  const simpan = bacaLS('mic_id');
-  const awal = d.find(x => x.deviceId === simpan) || nyata.find(x => !MIC_BT.test(x.label)) || d[0];
-  $('mic-pilih').innerHTML = d.map(x => `<option value="${esc(x.deviceId)}"${x === awal ? ' selected' : ''}>${esc(namaMic(x))}</option>`).join('');
+  $('mic-box').classList.remove('hidden');
+  const nyata = (await daftarMic()).filter(x => x.label && !micVirtual(x));   // label baru ada setelah izin mic pernah diberikan
+  const simpan = bacaLS('mic_id') || '';
+  const ada = nyata.some(x => x.deviceId === simpan);
+  $('mic-pilih').innerHTML = `<option value=""${ada ? '' : ' selected'}>Otomatis (mic HP)</option>` +
+    nyata.map(x => `<option value="${esc(x.deviceId)}"${x.deviceId === simpan ? ' selected' : ''}>${esc(namaMic(x))}</option>`).join('');
 }
 $('mic-pilih').addEventListener('change', e => simpanLS('mic_id', e.target.value));
 if (navigator.mediaDevices && navigator.mediaDevices.addEventListener) navigator.mediaDevices.addEventListener('devicechange', () => isiMic());
 // Mic yang dipakai: pilihan user; kalau belum pernah memilih, otomatis mic HP (bukan Bluetooth)
 async function ambilMic() {
   const dasar = { channelCount: 1, echoCancellation: true, noiseSuppression: true, autoGainControl: true };
-  const pilihan = !$('mic-box').classList.contains('hidden') ? $('mic-pilih').value : bacaLS('mic_id');
+  const pilihan = $('mic-pilih').value || bacaLS('mic_id') || '';
   let s = null;
   if (pilihan) { try { s = await navigator.mediaDevices.getUserMedia({ audio: { ...dasar, deviceId: { exact: pilihan } } }); } catch (_) { s = null; } }
   if (!s) s = await navigator.mediaDevices.getUserMedia({ audio: dasar });
@@ -1615,6 +1633,64 @@ async function ambilMic() {
   isiMic();
   return s;
 }
+
+// ---- Tes mic: level suara tiap mic sebelum rapat, sekalian memilih ----
+const tesMic = { stream: null, ctx: null, raf: 0, id: null, puncak: {} };
+function tesStop() {
+  cancelAnimationFrame(tesMic.raf);
+  try { tesMic.stream && tesMic.stream.getTracks().forEach(t => t.stop()); } catch (_) {}
+  try { tesMic.ctx && tesMic.ctx.close(); } catch (_) {}
+  tesMic.stream = tesMic.ctx = null;
+}
+async function bukaTesMic() {
+  if (rekam.mr) return;
+  $('tesmic').classList.remove('hidden');
+  $('tm-daftar').innerHTML = '<div class="muted">Minta izin mic…</div>';
+  try { const s = await navigator.mediaDevices.getUserMedia({ audio: true }); s.getTracks().forEach(t => t.stop()); }
+  catch (_) { $('tm-daftar').innerHTML = '<div class="warn">Aa ga dikasih izin pakai mic. Buka pengaturan browser → izinkan Mikrofon.</div>'; return; }
+  const d = (await daftarMic()).filter(x => x.label);
+  const nyata = d.filter(x => !micVirtual(x));
+  tesMic.list = nyata.length ? nyata : d;
+  tesMic.puncak = {};
+  $('tm-daftar').innerHTML = tesMic.list.map(x => `<button type="button" class="tm-baris" data-id="${esc(x.deviceId)}"><span class="tm-nama">${esc(namaMic(x))}</span><span class="tm-st">belum dites</span><span class="tm-meter"><i></i></span></button>`).join('');
+  await isiMic();
+  const simpan = bacaLS('mic_id');
+  const awal = tesMic.list.find(x => x.deviceId === simpan) || tesMic.list.find(x => !MIC_BT.test(x.label)) || tesMic.list[0];
+  if (awal) tesMulai(awal.deviceId);
+}
+async function tesMulai(id) {
+  tesStop(); tesMic.id = id;
+  const baris = [...$('tm-daftar').querySelectorAll('.tm-baris')];
+  baris.forEach(b => b.classList.toggle('on', b.dataset.id === id));
+  const b = baris.find(x => x.dataset.id === id); if (!b) return;
+  const bar = b.querySelector('.tm-meter i'), st = b.querySelector('.tm-st');
+  st.textContent = 'ngetes…'; st.className = 'tm-st';
+  try {
+    tesMic.stream = await navigator.mediaDevices.getUserMedia({ audio: { deviceId: { exact: id }, echoCancellation: true, noiseSuppression: true, autoGainControl: true } });
+    tesMic.ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const an = tesMic.ctx.createAnalyser(); an.fftSize = 512;
+    tesMic.ctx.createMediaStreamSource(tesMic.stream).connect(an);
+    const buf = new Uint8Array(an.fftSize), t0 = performance.now();
+    tesMic.puncak[id] = 0;
+    const loop = () => {
+      if (tesMic.id !== id) return;
+      an.getByteTimeDomainData(buf);
+      let p = 0; for (const v of buf) p = Math.max(p, Math.abs(v - 128));
+      tesMic.puncak[id] = Math.max(tesMic.puncak[id], p);
+      bar.style.width = Math.min(100, p / 128 * 220) + '%';
+      if (tesMic.puncak[id] > 6) { st.textContent = 'Terdengar ✓'; st.className = 'tm-st ok'; }
+      else if (performance.now() - t0 > 4000) { st.textContent = 'Sepi, coba ngomong'; st.className = 'tm-st sepi'; }
+      tesMic.raf = requestAnimationFrame(loop);
+    };
+    loop();
+  } catch (_) { st.textContent = 'Ga bisa dibuka'; st.className = 'tm-st sepi'; }
+}
+$('tm-daftar').addEventListener('click', e => {
+  const b = e.target.closest('.tm-baris'); if (!b) return;
+  simpanLS('mic_id', b.dataset.id); $('mic-pilih').value = b.dataset.id;
+  tesMulai(b.dataset.id);
+});
+function tutupTesMic() { tesStop(); tesMic.id = null; $('tesmic').classList.add('hidden'); isiMic(); }
 
 // ---- sumber suara (khusus laptop/PC): mic, suara laptop, atau campuran ----
 const BISA_LAPTOP = !!(navigator.mediaDevices && navigator.mediaDevices.getDisplayMedia) && !/Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
