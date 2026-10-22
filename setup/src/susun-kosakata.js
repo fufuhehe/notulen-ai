@@ -1,5 +1,5 @@
 // Gabungkan kosakata akun (jenis 'semua' + jenis rapat ini).
-// Tiap baris bisa berupa istilah ("PP Tunas") atau perbaikan salah dengar ("kuatitatif → kuantitatif").
+// Tiap baris bisa berupa istilah ("regresi linier") atau perbaikan salah dengar ("kuatitatif → kuantitatif").
 // - istilah + sisi benar → keyterms AssemblyAI (maks 200, maks 6 kata) dan bahan ejaan untuk AI
 // - pasangan salah → benar → diganti langsung di teks transkrip (node Ringkas transkrip)
 // Tabel belum ada / kosong = semua kosong (transkrip tetap jalan seperti biasa).
