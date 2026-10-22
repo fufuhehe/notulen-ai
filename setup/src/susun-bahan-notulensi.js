@@ -26,12 +26,16 @@ const tanggal = new Date(r.created_at).toLocaleDateString('id-ID', {
 const peserta = [...new Set(dipakai.map(u => u.s))].sort().map(label).join(', ');
 
 const koreksi = String(r.koreksi || '').trim();
+const kosakata = String(r.kosakata || '').trim();
 let prompt = `Judul rapat (dari pengguna, boleh diperbaiki): ${r.judul || 'Rapat'}
 Tanggal: ${tanggal}
 Pembicara yang terekam: ${peserta}
 ${koreksi ? `
 CATATAN KOREKSI DARI PENGGUNA (wajib diterapkan di seluruh notulensi; lebih diutamakan daripada transkrip, terutama ejaan nama, jabatan, dan istilah):
 ${koreksi}
+` : ''}${kosakata ? `
+KOSAKATA PENGGUNA (ejaan yang benar untuk nama/istilah yang mungkin muncul):
+${kosakata}
 ` : ''}
 TRANSKRIP:
 ${baris.map(b => `[${jam(b.m)}] ${label(b.s)}: ${b.t}`).join('\n')}`;

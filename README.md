@@ -81,6 +81,7 @@ Pasang sekali: jalankan [`setup/12-edit-rentang.sql`](setup/12-edit-rentang.sql)
 
 ### Catatan koreksi & revisi notulensi
 - **Koreksi istilah**: daftar salah dengar & nama yang benar per rapat (`rapat.koreksi`). Tersimpan terus dan selalu dimasukkan ke prompt ringkasan, notulensi, dan paparan, termasuk saat dibuat ulang. Saat disimpan bisa langsung diterapkan ke ringkasan/notulensi yang ada.
+- **Kosakata & salah dengar** (Pengaturan, tiap akun, per jenis kegiatan; `setup/17-kosakata.sql`): istilah/nama yang sering muncul dan pasangan `salah → benar`. Pasangan langsung dibetulkan di transkrip saat n8n memproses (deterministik), istilahnya dikirim ke AssemblyAI sebagai `keyterms_prompt` dan ke prompt AI sebagai ejaan yang benar. Rekaman lama: ⋯ Lainnya → Terapkan kosakata ke transkrip.
 - **Minta revisi** juga ada di tab Notulensi (`rapat.notulensi_revisi`, sekali pakai). Revisi bisa diterapkan ke ringkasan dan notulensi sekaligus: ringkasan jalan dulu, lalu workflow Resume memicu revisi notulensi (biar hitungan token tidak saling timpa).
 
 Pasang sekali: jalankan [`setup/15-koreksi.sql`](setup/15-koreksi.sql), lalu impor ulang workflow Resume, Paparan, dan Notulensi (node Tandai sekarang `select=*`).

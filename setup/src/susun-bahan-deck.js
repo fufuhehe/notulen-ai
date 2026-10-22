@@ -30,6 +30,7 @@ if (!bahan) {
 }
 
 const koreksi = String(r.koreksi || '').trim();
+const kosakata = String(r.kosakata || '').trim();
 
 return [{ json: {
   gagal: false,
@@ -41,6 +42,9 @@ Sumber bahan: ${sumber === 'resume' ? 'NOTULEN (sudah diringkas)' : 'TRANSKRIP M
 ${koreksi ? `
 CATATAN KOREKSI DARI PENGGUNA (wajib diterapkan; lebih diutamakan daripada bahan, terutama ejaan nama, jabatan, dan istilah):
 ${koreksi}
+` : ''}${kosakata ? `
+KOSAKATA PENGGUNA (ejaan yang benar untuk nama/istilah):
+${kosakata}
 ` : ''}
 BAHAN:
 ${bahan}`,

@@ -9,7 +9,7 @@
         "responseMode": "onReceived",
         "options": {}
       },
-      "id": "6a813422-3895-4ad0-96d8-7f7352bd8db6",
+      "id": "345f2dbd-93e1-4bc0-9dbf-9d180f659441",
       "name": "Webhook",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2,
@@ -17,7 +17,7 @@
         0,
         0
       ],
-      "webhookId": "0a1835af-0d68-478c-a3a5-005726acb4d9",
+      "webhookId": "7e008818-c0a8-446b-ad38-cdfd423f183f",
       "credentials": {
         "httpHeaderAuth": {
           "id": "",
@@ -28,7 +28,7 @@
     {
       "parameters": {
         "method": "PATCH",
-        "url": "={{ $('Webhook').first().json.body.supa_url }}/rest/v1/rapat?id=eq.{{ $('Webhook').first().json.body.rapat_id }}&select=id,audio_path,stt_detik",
+        "url": "={{ $('Webhook').first().json.body.supa_url }}/rest/v1/rapat?id=eq.{{ $('Webhook').first().json.body.rapat_id }}&select=*",
         "authentication": "predefinedCredentialType",
         "nodeCredentialType": "supabaseApi",
         "sendHeaders": true,
@@ -45,7 +45,7 @@
         "jsonBody": "={{ JSON.stringify({ status: 'ditranskrip', error: null }) }}",
         "options": {}
       },
-      "id": "4efdfbe3-c5aa-42b4-8201-6da3077758cf",
+      "id": "f7afd3a0-1e01-4ac7-9705-d6243bcce664",
       "name": "Tandai ditranskrip",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
@@ -62,8 +62,51 @@
     },
     {
       "parameters": {
+        "url": "={{ $('Webhook').first().json.body.supa_url }}/rest/v1/kosakata?select=istilah&pemilik=eq.{{ $json.pemilik }}&jenis=in.(semua,{{ encodeURIComponent($json.jenis || 'rapat') }})",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
+      },
+      "id": "54a265bf-f9a5-48ba-93ce-881810b0e687",
+      "name": "Ambil kosakata",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        330,
+        160
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "",
+          "name": "Supabase Notulen"
+        }
+      },
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Gabungkan kosakata akun (jenis 'semua' + jenis rapat ini).\n// Tiap baris bisa berupa istilah (\"PP Tunas\") atau perbaikan salah dengar (\"kuatitatif → kuantitatif\").\n// - istilah + sisi benar → keyterms AssemblyAI (maks 200, maks 6 kata) dan bahan ejaan untuk AI\n// - pasangan salah → benar → diganti langsung di teks transkrip (node Ringkas transkrip)\n// Tabel belum ada / kosong = semua kosong (transkrip tetap jalan seperti biasa).\nconst r = $('Tandai ditranskrip').first().json;\nconst baris = $input.all().map(i => i.json)\n  .filter(j => j && typeof j.istilah === 'string')\n  .flatMap(j => j.istilah.split(/\\n+/));\nconst bersih = (x) => String(x || '').replace(/\\s+/g, ' ').replace(/^[-•*\\d.)\\s]+/, '').trim();\nconst ganti = [], istilahMentah = [];\nfor (const b of baris) {\n  const m = b.split(/\\s*(?:→|->|=>|=)\\s*/);\n  if (m.length >= 2 && bersih(m[0]) && bersih(m[1])) {\n    for (const salah of m[0].split(/\\s*[\\/|]\\s*/).map(bersih).filter(Boolean)) ganti.push([salah, bersih(m[1])]);\n    istilahMentah.push(bersih(m[1]));\n  } else istilahMentah.push(...b.split(/[,;]+/).map(bersih));\n}\nconst lihat = new Set();\nconst istilah = istilahMentah\n  .filter(x => x && x.length <= 60 && x.split(' ').length <= 6)     // batas AssemblyAI: maks 6 kata per istilah\n  .filter(x => { const k = x.toLowerCase(); if (lihat.has(k)) return false; lihat.add(k); return true; })\n  .slice(0, 200);                                                      // Universal-2: maks 200 istilah\nconst teks = [istilah.join(', '), ...ganti.map(([a, b]) => `${a} → ${b}`)].filter(Boolean).join('\\n');\nreturn [{ json: { istilah, ganti, teks, adaKolom: 'kosakata' in r } }];\n"
+      },
+      "id": "2a531deb-d9f1-4634-8783-bd2278d0de4a",
+      "name": "Susun kosakata",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        440,
+        160
+      ]
+    },
+    {
+      "parameters": {
         "method": "POST",
-        "url": "={{ $('Webhook').first().json.body.supa_url }}/storage/v1/object/sign/audio/{{ $json.audio_path }}",
+        "url": "={{ $('Webhook').first().json.body.supa_url }}/storage/v1/object/sign/audio/{{ $('Tandai ditranskrip').first().json.audio_path }}",
         "authentication": "predefinedCredentialType",
         "nodeCredentialType": "supabaseApi",
         "sendHeaders": true,
@@ -80,7 +123,7 @@
         "jsonBody": "={{ JSON.stringify({ expiresIn: 86400 }) }}",
         "options": {}
       },
-      "id": "d9b73d1f-9ff9-4d33-b364-b56a07e3c181",
+      "id": "5fc0f73d-6d64-42b3-a983-c4007e741db3",
       "name": "Bikin link audio",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
@@ -98,19 +141,19 @@
     },
     {
       "parameters": {
-        "resource": "transcript",
-        "operation": "create",
-        "audioUrl": "={{ $('Webhook').first().json.body.supa_url }}/storage/v1{{ $json.signedURL }}",
-        "additionalFields": {
-          "speaker_labels": true,
-          "language_code": "={{ 'id' }}",
-          "speech_models": "universal-3-5-pro,universal-2"
-        }
+        "method": "POST",
+        "url": "https://api.assemblyai.com/v2/transcript",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "assemblyAiApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ (() => { const k = $('Susun kosakata').first().json.istilah || []; return JSON.stringify(Object.assign({ audio_url: $('Webhook').first().json.body.supa_url + '/storage/v1' + $json.signedURL, language_code: 'id', speaker_labels: true, speech_models: ['universal-3-5-pro', 'universal-2'], remove_audio_tags: 'all' }, k.length ? { keyterms_prompt: k } : {})); })() }}",
+        "options": {}
       },
-      "id": "b841b784-1c40-4208-bf16-bf138ad6828d",
+      "id": "44c0fb1a-5ea4-4912-9bad-fc4e7fb5b11a",
       "name": "Kirim ke AssemblyAI",
-      "type": "n8n-nodes-assemblyai.assemblyAi",
-      "typeVersion": 1,
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
       "position": [
         660,
         0
@@ -128,7 +171,7 @@
         "amount": 30,
         "unit": "seconds"
       },
-      "id": "cd76b3c1-be2f-4ae0-a7ce-24c52ff970b9",
+      "id": "c64aa277-e0ed-4de3-9abe-89c8715a0494",
       "name": "Tunggu 30 detik",
       "type": "n8n-nodes-base.wait",
       "typeVersion": 1.1,
@@ -136,7 +179,7 @@
         880,
         0
       ],
-      "webhookId": "b0c9f798-d6c4-425b-ab9f-4a2a34b61fe8"
+      "webhookId": "add32ffa-f7db-4390-b94a-cd6d5a888ced"
     },
     {
       "parameters": {
@@ -144,7 +187,7 @@
         "operation": "get",
         "transcriptId": "={{ $('Kirim ke AssemblyAI').first().json.id }}"
       },
-      "id": "6fd5588d-aaa7-470d-96ad-934609bf1e4f",
+      "id": "9c529ffb-2993-4439-bcc5-62ba299ea652",
       "name": "Cek hasil",
       "type": "n8n-nodes-assemblyai.assemblyAi",
       "typeVersion": 1,
@@ -172,7 +215,7 @@
           },
           "conditions": [
             {
-              "id": "14ebfb22-ced9-4691-ac41-da1fa5777579",
+              "id": "86d29701-23f0-4ad0-9b9f-1e0f0b98bd54",
               "leftValue": "={{ $json.status }}",
               "rightValue": "completed",
               "operator": {
@@ -185,7 +228,7 @@
         },
         "options": {}
       },
-      "id": "0c5f622c-8957-4e69-bcd0-e159cade10d4",
+      "id": "059e6f6c-d49c-4615-92ae-eece2212a5de",
       "name": "Sudah jadi?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
@@ -204,7 +247,7 @@
           },
           "conditions": [
             {
-              "id": "0f40afef-efdc-41c7-9d5f-814fc298e71b",
+              "id": "8075cbc2-bc81-4944-8e4a-a6eb3784012c",
               "leftValue": "={{ $json.status }}",
               "rightValue": "error",
               "operator": {
@@ -213,7 +256,7 @@
               }
             },
             {
-              "id": "a5cb04d5-6671-4245-bf80-ab1575e8dc1b",
+              "id": "254d015e-ae17-4c1d-b9fb-78f0e68149f4",
               "leftValue": "={{ $runIndex }}",
               "rightValue": 240,
               "operator": {
@@ -226,7 +269,7 @@
         },
         "options": {}
       },
-      "id": "fb7d7e06-ff52-4f53-9edf-f68883e5a348",
+      "id": "89afd9db-7fb4-49b0-9290-26162838bafc",
       "name": "Error / kelamaan?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
@@ -237,9 +280,9 @@
     },
     {
       "parameters": {
-        "jsCode": "// Ambil hasil AssemblyAI, simpan versi ringkas: speaker, detik mulai, teks\nconst t = $input.first().json;\nconst lama = $('Tandai ditranskrip').first().json;   // untuk menjumlah biaya kalau diproses ulang\n\nconst transkrip = (t.utterances || []).map(u => ({\n  s: u.speaker,\n  m: Math.round(u.start / 1000),\n  t: u.text,\n}));\nif (!transkrip.length && t.text) transkrip.push({ s: 'A', m: 0, t: t.text });\n\nif (!transkrip.length) {\n  return [{ json: { status: 'gagal', error: 'Transkrip kosong. Audio mungkin tanpa suara atau rusak.',\n    stt_detik: (lama.stt_detik || 0) + Math.round(t.audio_duration || 0) } }];\n}\n\nreturn [{ json: {\n  status: 'minta_resume',          // otomatis memicu workflow Resume\n  transcript_id: t.id,\n  durasi_detik: Math.round(t.audio_duration || 0),\n  stt_model: t.speech_model_used || null,\n  stt_detik: (lama.stt_detik || 0) + Math.round(t.audio_duration || 0),\n  transkrip,\n  error: null,\n} }];\n"
+        "jsCode": "// Ambil hasil AssemblyAI, simpan versi ringkas: speaker, detik mulai, teks\nconst t = $input.first().json;\nconst lama = $('Tandai ditranskrip').first().json;   // untuk menjumlah biaya kalau diproses ulang\nconst kos = $('Susun kosakata').first().json;         // kosakata yang dipakai, disimpan untuk ringkasan/notulensi\n\n// Perbaikan salah dengar dari kosakata (\"kuatitatif → kuantitatif\"), utuh per kata, tanpa peduli huruf besar/kecil\nconst lolos = (x) => x.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\\\$&');\nconst aturan = (kos.ganti || []).map(([salah, benar]) => [new RegExp(`(?<![\\\\p{L}\\\\p{N}])${lolos(salah)}(?![\\\\p{L}\\\\p{N}])`, 'giu'), benar]);\nconst perbaiki = (x) => aturan.reduce((a, [re, b]) => a.replace(re, b), String(x || ''));\n\nconst transkrip = (t.utterances || []).map(u => ({\n  s: u.speaker,\n  m: Math.round(u.start / 1000),\n  t: perbaiki(u.text),\n}));\nif (!transkrip.length && t.text) transkrip.push({ s: 'A', m: 0, t: perbaiki(t.text) });\n\nif (!transkrip.length) {\n  return [{ json: { status: 'gagal', error: 'Transkrip kosong. Audio mungkin tanpa suara atau rusak.',\n    stt_detik: (lama.stt_detik || 0) + Math.round(t.audio_duration || 0) } }];\n}\n\nreturn [{ json: {\n  status: 'minta_resume',          // otomatis memicu workflow Resume\n  transcript_id: t.id,\n  durasi_detik: Math.round(t.audio_duration || 0),\n  stt_model: t.speech_model_used || null,\n  stt_detik: (lama.stt_detik || 0) + Math.round(t.audio_duration || 0),\n  transkrip,\n  error: null,\n  ...(kos.adaKolom ? { kosakata: kos.teks || null } : {}),\n} }];\n"
       },
-      "id": "fbae5e86-8e13-4741-8574-5bd2ab60e514",
+      "id": "42f951be-80be-47c0-8b1f-bddca63e30f4",
       "name": "Ringkas transkrip",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -268,7 +311,7 @@
         "jsonBody": "={{ JSON.stringify($json) }}",
         "options": {}
       },
-      "id": "1897558e-ca16-4fbe-9e05-9e7ad2cdb937",
+      "id": "5e76db6d-a516-4f66-94cf-69fd52fc1da7",
       "name": "Simpan transkrip",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
@@ -303,7 +346,7 @@
         "jsonBody": "={{ JSON.stringify({ status: 'gagal', error: String(typeof $json.error === 'object' && $json.error ? ($json.error.message || JSON.stringify($json.error)) : ($json.error || 'Waktu tunggu habis (lebih dari 2 jam)')).slice(0, 500) }) }}",
         "options": {}
       },
-      "id": "e46300a5-502c-4dca-a252-608c5a8d7aba",
+      "id": "2289b833-9b64-4965-895d-6e0efe46d502",
       "name": "Tandai gagal",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
@@ -332,6 +375,28 @@
       ]
     },
     "Tandai ditranskrip": {
+      "main": [
+        [
+          {
+            "node": "Ambil kosakata",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ambil kosakata": {
+      "main": [
+        [
+          {
+            "node": "Susun kosakata",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Susun kosakata": {
       "main": [
         [
           {

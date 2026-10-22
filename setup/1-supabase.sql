@@ -36,7 +36,8 @@ create table if not exists public.rapat (
   info_rapat    jsonb,                      -- waktu, tempat, pimpinan, peserta, notulis, mengetahui
   koreksi       text,                       -- catatan koreksi nama/istilah, dipakai di semua proses AI
   notulensi_revisi text,                    -- instruksi revisi notulensi (sekali pakai)
-  jenis         text not null default 'rapat' -- rapat | kuliah | bimbingan | ngobrol (prompt di tabel jenis_kegiatan, 16-jenis-kegiatan.sql)
+  jenis         text not null default 'rapat', -- rapat | kuliah | bimbingan | ngobrol (prompt di tabel jenis_kegiatan, 16-jenis-kegiatan.sql)
+  kosakata      text                      -- salinan kosakata yang dipakai saat diproses (17-kosakata.sql)
 );
 
 -- Hanya user yang login (akun lo sendiri) yang bisa akses.

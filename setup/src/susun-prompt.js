@@ -42,12 +42,18 @@ ${koreksi}
 
 ` : '';
 
+const kosakata = String(r.kosakata || '').trim();
+const blokKosakata = kosakata ? `KOSAKATA PENGGUNA (ejaan yang benar untuk nama/istilah yang mungkin muncul; pakai ejaan ini kalau transkrip menulisnya mirip):
+${kosakata}
+
+` : '';
+
 let prompt = `Judul: ${r.judul || 'Rapat'}
 Tanggal: ${tanggal}
 Durasi: ${durasi}
 Peserta bicara: ${peserta}
 ${dipotong ? `Catatan: yang dicatat hanya bagian rekaman ${jam(awalBagian)}–${jam(akhirBagian)}; bagian lain sengaja dibuang.\n` : ''}
-${blokKoreksi}TRANSKRIP:
+${blokKoreksi}${blokKosakata}TRANSKRIP:
 ${baris.map(b => `[${jam(b.m)}] ${label(b.s)}: ${b.t}`).join('\n')}`;
 
 const revisi = String(r.revisi || '').trim();

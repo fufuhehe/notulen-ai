@@ -62,27 +62,35 @@ const wf = (name, nodes, connections) => ({
 const w1 = wf('Notulen - 1 Transkrip', [
   webhook('notulen-transkrip'),
   supa('Tandai ditranskrip', [220, 0], {
-    url: rapatUrl + '&select=id,audio_path,stt_detik',
+    url: rapatUrl + '&select=*',
     body: `={{ JSON.stringify({ status: 'ditranskrip', error: null }) }}`,
     representation: true,
   }),
+  {   // kosakata akun: jenis 'semua' + jenis rapat ini (tabel belum ada = kosong, tetap lanjut)
+    parameters: {
+      url: `={{ ${WH}.supa_url }}/rest/v1/kosakata?select=istilah&pemilik=eq.{{ $json.pemilik }}&jenis=in.(semua,{{ encodeURIComponent($json.jenis || 'rapat') }})`,
+      authentication: 'predefinedCredentialType', nodeCredentialType: 'supabaseApi',
+      options: { response: { response: { neverError: true } } },
+    },
+    id: uid(), name: 'Ambil kosakata', type: 'n8n-nodes-base.httpRequest', typeVersion: 4.2, position: [330, 160],
+    credentials: CRED.supa, alwaysOutputData: true, onError: 'continueRegularOutput',
+  },
+  code('Susun kosakata', 'susun-kosakata.js', [440, 160]),
   supa('Bikin link audio', [440, 0], {
     method: 'POST',
-    url: `={{ ${WH}.supa_url }}/storage/v1/object/sign/audio/{{ $json.audio_path }}`,
+    url: `={{ ${WH}.supa_url }}/storage/v1/object/sign/audio/{{ $('Tandai ditranskrip').first().json.audio_path }}`,
     body: '={{ JSON.stringify({ expiresIn: 86400 }) }}',
     onError: 'continueErrorOutput',
   }),
-  {
+  {   // HTTP langsung (bukan node AssemblyAI) supaya daftar kosakata bisa dikirim sebagai keyterms_prompt
     parameters: {
-      resource: 'transcript', operation: 'create',
-      audioUrl: `={{ ${WH}.supa_url }}/storage/v1{{ $json.signedURL }}`,
-      additionalFields: {
-        speaker_labels: true,
-        language_code: "={{ 'id' }}",
-        speech_models: 'universal-3-5-pro,universal-2',
-      },
+      method: 'POST', url: 'https://api.assemblyai.com/v2/transcript',
+      authentication: 'predefinedCredentialType', nodeCredentialType: 'assemblyAiApi',
+      sendBody: true, specifyBody: 'json',
+      jsonBody: `={{ (() => { const k = $('Susun kosakata').first().json.istilah || []; return JSON.stringify(Object.assign({ audio_url: ${WH}.supa_url + '/storage/v1' + $json.signedURL, language_code: 'id', speaker_labels: true, speech_models: ['universal-3-5-pro', 'universal-2'], remove_audio_tags: 'all' }, k.length ? { keyterms_prompt: k } : {})); })() }}`,
+      options: {},
     },
-    id: uid(), name: 'Kirim ke AssemblyAI', type: 'n8n-nodes-assemblyai.assemblyAi', typeVersion: 1,
+    id: uid(), name: 'Kirim ke AssemblyAI', type: 'n8n-nodes-base.httpRequest', typeVersion: 4.2,
     position: [660, 0], credentials: CRED.aai, onError: 'continueErrorOutput',
   },
   {
@@ -108,7 +116,9 @@ const w1 = wf('Notulen - 1 Transkrip', [
   supa('Tandai gagal', [1760, 300], { body: '=' + errExpr }),
 ], {
   Webhook: { main: [[L('Tandai ditranskrip')]] },
-  'Tandai ditranskrip': { main: [[L('Bikin link audio')]] },
+  'Tandai ditranskrip': { main: [[L('Ambil kosakata')]] },
+  'Ambil kosakata': { main: [[L('Susun kosakata')]] },
+  'Susun kosakata': { main: [[L('Bikin link audio')]] },
   'Bikin link audio': { main: [[L('Kirim ke AssemblyAI')], [L('Tandai gagal')]] },
   'Kirim ke AssemblyAI': { main: [[L('Tunggu 30 detik')], [L('Tandai gagal')]] },
   'Tunggu 30 detik': { main: [[L('Cek hasil')]] },

@@ -742,6 +742,7 @@ body.ada-player .aksi{bottom:4.5rem}
       <div class="row" style="margin-top:1rem"><button onclick="formSandi(false)">Batal</button><button class="primary" id="gs-simpan" onclick="gantiSandi()">Simpan</button></div>
     </div>
     <button class="ke-panduan khusus-admin" onclick="salinUndangan()"><svg class="i"><use href="#i-bagi"/></svg>Salin link undangan</button>
+    <button class="ke-panduan" onclick="tutupAtur();bukaKosakata()" id="ks-btn"><svg class="i"><use href="#i-koreksi"/></svg>Kosakata &amp; salah dengar</button>
     <button class="ke-panduan khusus-admin" onclick="tutupAtur();bukaAturJenis()" id="aj-btn"><svg class="i"><use href="#i-koreksi"/></svg>Jenis kegiatan &amp; prompt</button>
     <button class="ke-panduan khusus-admin" onclick="tutupAtur();bukaAkun()"><svg class="i"><use href="#i-orang"/></svg>Kelola akun</button>
     <button class="ke-panduan" onclick="tutupAtur();bukaPanduan()"><svg class="i"><use href="#i-bantu"/></svg>Panduan pakai Notulen AI</button>
@@ -840,6 +841,7 @@ body.ada-player .aksi{bottom:4.5rem}
         <li><b>Edit</b>: benerin langsung kata/frasa yang salah, lalu Simpan. Gratis.</li>
         <li><b>Minta revisi</b>: tulis instruksi (mis. "bagian anggaran kurang lengkap"), Aa nulis ulang ringkasannya. Kalau notulensi sudah ada, centang <b>Revisi notulensi juga</b> biar ikut dibenerin (jalan otomatis setelah ringkasan selesai). Biaya ±sama dengan bikin sekali lagi per hasil.</li>
         <li><b>Koreksi istilah</b> (menu <b>⋯ Lainnya</b>): daftar salah dengar & nama yang benar (mis. "Bakom → BAKTI", "Speaker C itu Bu Nuning"). Beda dengan revisi, catatan ini <b>tersimpan terus</b> dan selalu dipakai di ringkasan, notulensi, dan paparan, termasuk kalau dibuat ulang. Saat menyimpan, bisa langsung diterapkan ke ringkasan dan notulensi yang sudah ada.</li>
+        <li><b>Kosakata &amp; salah dengar</b> (Pengaturan): istilah yang sering muncul di rekamanmu dan kata yang selalu salah dengar, mis. "kuatitatif → kuantitatif", "regresi linier". Bisa khusus satu jenis (mis. Bimbingan). Berlaku otomatis untuk rekaman baru; untuk rekaman lama pakai <b>⋯ Lainnya → Terapkan kosakata ke transkrip</b>. Bedanya dengan Koreksi istilah: kosakata berlaku ke semua rekaman, koreksi cuma ke satu catatan.</li>
         <li><b>Buat ulang</b> (menu <b>⋯ Lainnya</b>): tulis ulang dari nol, misalnya setelah ganti model AI. Hasil edit/revisi sebelumnya ketimpa.</li>
         <li><b>Buang bagian yang ga perlu</b> (mis. obrolan sebelum rapat mulai): tab Transkrip → <b>Pilih bagian</b> → ketuk baris pertama lalu baris terakhir yang dipakai → Simpan. Ringkasan, notulensi & paparan cuma dibuat dari bagian itu, tanpa transkrip ulang.</li>
         <li><b>Transkrip</b>: ketuk satu baris untuk dengar audionya dari titik itu.</li>
@@ -996,6 +998,20 @@ body.ada-player .aksi{bottom:4.5rem}
   </div>
 </div>
 
+<div id="kosakata" class="lembar hidden" onclick="if(event.target===this)tutupKosakata()">
+  <div>
+    <div class="pegangan"></div>
+    <h3>Kosakata &amp; salah dengar</h3>
+    <div class="muted" style="font-size:.8125rem">Istilah dan nama yang sering muncul di rekamanmu. Dipakai otomatis di setiap rekaman baru: salah dengar langsung dibetulkan di transkrip, dan AI memakai ejaan yang benar.</div>
+    <label for="ks-jenis">Berlaku untuk</label>
+    <select id="ks-jenis"></select>
+    <label for="ks-teks">Satu per baris</label>
+    <textarea id="ks-teks" class="edit-teks" style="min-height:12rem" spellcheck="false" placeholder="Pak Hendra&#10;regresi linier&#10;kuatitatif → kuantitatif&#10;langit digital → ruang digital&#10;es i o / SIO → SEO"></textarea>
+    <div class="muted" style="font-size:.75rem;margin-top:.4rem">Tulis <b>istilah</b> saja (mis. <i>EPPM</i>), atau <b>salah → benar</b> untuk kata yang selalu salah dengar. Beberapa salah dengar bisa dipisah “/”. Untuk rekaman yang sudah ada: buka catatannya → ⋯ Lainnya → <b>Terapkan kosakata ke transkrip</b>.</div>
+    <div class="row" style="margin-top:1rem"><button onclick="tutupKosakata()">Batal</button><button class="primary" id="ks-simpan" onclick="simpanKosakata()">Simpan</button></div>
+  </div>
+</div>
+
 <div id="koreksi" class="lembar hidden" onclick="if(event.target===this)tutupKoreksi()">
   <div>
     <div class="pegangan"></div>
@@ -1052,7 +1068,7 @@ const jam = (d) => [Math.floor(d / 3600), Math.floor(d / 60) % 60, Math.floor(d 
 const MAKS_BYTE = 50 * 1024 * 1024;
 
 // ===== Harga (USD). Ubah di sini kalau harga berubah. =====
-const VERSI = 'v53';   // samakan dengan CACHE di sw.js
+const VERSI = 'v54';   // samakan dengan CACHE di sw.js
 const KURS = 16500;                        // kurs cadangan (dipakai rapat lama & kalau kurs harian gagal diambil)
 // Kurs harian USD→IDR: diambil sekali sehari, lalu DIKUNCI di tiap rapat saat dibuat (kolom rapat.kurs),
 // jadi biaya rapat yang sudah lewat tidak ikut berubah.
@@ -2299,6 +2315,7 @@ const ntSibuk = (r) => ['minta', 'proses'].includes(r.notulensi_status);
 // otomatis setelah ringkasan selesai (diatur n8n), biar hitungan token ga balapan.
 async function kirimPerbaikan(ins, keR, keN) {
   const r = state.rapat;
+  await segarkanKosakata(r);
   if (keR) {
     await sb.from('rapat').update({ status: 'gagal' }).eq('id', r.id).neq('status', 'selesai');   // pastikan status berubah
     const ubah = { revisi: ins, status: 'minta_resume', error: null };
@@ -2474,11 +2491,95 @@ async function prosesUlang() {
 
 async function buatUlangNotulen() {
   const r = state.rapat;
+  await segarkanKosakata(r);
   if (!Array.isArray(r.transkrip) || !r.transkrip.length) return toast('Transkripnya belum ada, jadi ringkasan belum bisa dibuat ulang.');
   if (!confirm('Buat ulang ringkasan pakai model di Pengaturan? Ringkasan yang sekarang akan diganti.')) return;
   const { error } = await sb.from('rapat').update({ status: 'minta_resume', error: null, ...('revisi' in r ? { revisi: null } : {}) }).eq('id', r.id);
   if (error) return toast(pesanAa(error.message), 5000);
   toast('Siap, Aa tulis ulang ringkasannya…'); bukaDetail(r.id);
+}
+
+// ---- Kosakata & salah dengar (tabel kosakata per akun per jenis; setup/17) ----
+const KS_SEMUA = 'semua';
+function uraiKosakata(teksSemua) {   // sama dengan node "Susun kosakata" di n8n
+  const bersih = (x) => String(x || '').replace(/\s+/g, ' ').replace(/^[-•*\d.)\s]+/, '').trim();
+  const ganti = [], istilah = [];
+  for (const b of String(teksSemua || '').split(/\n+/)) {
+    const m = b.split(/\s*(?:→|->|=>|=)\s*/);
+    if (m.length >= 2 && bersih(m[0]) && bersih(m[1])) {
+      for (const salah of m[0].split(/\s*[\/|]\s*/).map(bersih).filter(Boolean)) ganti.push([salah, bersih(m[1])]);
+      istilah.push(bersih(m[1]));
+    } else istilah.push(...b.split(/[,;]+/).map(bersih));
+  }
+  const lihat = new Set();
+  const unik = istilah.filter(x => x && x.length <= 60 && x.split(' ').length <= 6)
+    .filter(x => { const k = x.toLowerCase(); if (lihat.has(k)) return false; lihat.add(k); return true; }).slice(0, 200);
+  return { istilah: unik, ganti, teks: [unik.join(', '), ...ganti.map(([a, b]) => `${a} → ${b}`)].filter(Boolean).join('\n') };
+}
+async function ambilKosakata() {
+  const { data, error } = await sb.from('kosakata').select('jenis,istilah').eq('pemilik', state.uid);
+  if (error) return { error };
+  const peta = {}; (data || []).forEach(x => { peta[x.jenis] = x.istilah || ''; });
+  return { peta };
+}
+async function bukaKosakata() {
+  $('kosakata').classList.remove('hidden');
+  $('ks-teks').value = ''; $('ks-teks').disabled = true;
+  const pil = [[KS_SEMUA, 'Semua jenis kegiatan'], ...(state.jenisAktif ? state.jenisList.map(j => [j.kode, 'Khusus ' + j.nama]) : [])];
+  $('ks-jenis').innerHTML = pil.map(([v, t]) => `<option value="${esc(v)}">${esc(t)}</option>`).join('');
+  const { peta, error } = await ambilKosakata();
+  if (error) { $('ks-teks').value = ''; toast(/kosakata|schema cache|PGRST20/i.test(error.message) ? 'Fitur kosakata belum aktif — jalankan setup/17-kosakata.sql di Supabase.' : pesanAa(error.message), 6000); tutupKosakata(); return; }
+  state.kosakata = peta;
+  $('ks-teks').disabled = false; $('ks-teks').value = peta[KS_SEMUA] || '';
+}
+$('ks-jenis').addEventListener('change', () => { $('ks-teks').value = (state.kosakata || {})[$('ks-jenis').value] || ''; });
+function tutupKosakata() { $('kosakata').classList.add('hidden'); }
+async function simpanKosakata() {
+  const jenis = $('ks-jenis').value, istilah = $('ks-teks').value.trim();
+  const b = $('ks-simpan'); b.disabled = true;
+  const { error } = await sb.from('kosakata').upsert({ pemilik: state.uid, jenis, istilah, diubah: new Date().toISOString() });
+  b.disabled = false;
+  if (error) return toast(pesanAa(error.message), 5000);
+  (state.kosakata = state.kosakata || {})[jenis] = istilah;
+  toast('Kosakata disimpan. Dipakai di rekaman berikutnya.', 4000);
+}
+// Kosakata yang berlaku untuk satu catatan (semua + jenisnya)
+async function kosakataUntuk(r) {
+  const { peta, error } = await ambilKosakata();
+  if (error) return null;
+  return uraiKosakata([peta[KS_SEMUA], peta[r.jenis || 'rapat']].filter(Boolean).join('\n'));
+}
+// Perbarui salinan kosakata di catatan sebelum AI dipanggil ulang (biar kosakata terbaru ikut)
+async function segarkanKosakata(r) {
+  try {
+    if (!('kosakata' in r) || (state.multi && r.pemilik !== state.uid)) return;
+    const k = await kosakataUntuk(r); if (!k) return;
+    if ((k.teks || null) !== (r.kosakata || null)) { await sb.from('rapat').update({ kosakata: k.teks || null }).eq('id', r.id); r.kosakata = k.teks || null; }
+  } catch (_) {}
+}
+// Terapkan perbaikan salah dengar ke transkrip catatan yang sudah ada
+async function terapkanKosakata() {
+  const r = state.rapat;
+  if (!('kosakata' in r)) return toast('Fitur kosakata belum aktif — jalankan setup/17-kosakata.sql di Supabase.', 5000);
+  const k = await kosakataUntuk(r);
+  if (!k) return toast('Kosakata belum bisa dibaca. Coba lagi.', 4000);
+  if (!k.ganti.length) return toast('Belum ada baris “salah → benar” di Kosakata (Pengaturan).', 5000);
+  const lolos = (x) => x.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const aturan = k.ganti.map(([a, b]) => [new RegExp(`(?<![\\p{L}\\p{N}])${lolos(a)}(?![\\p{L}\\p{N}])`, 'giu'), b]);
+  let n = 0;
+  const baru = (r.transkrip || []).map(u => {
+    let t = u.t || '';
+    for (const [re, b] of aturan) t = t.replace(re, () => { n++; return b; });
+    return { ...u, t };
+  });
+  if (!n) { await segarkanKosakata(r); return toast('Ga ada kata yang perlu diganti di transkrip ini.', 4000); }
+  const ulang = !!r.resume && confirm(`${n} kata dibetulkan di transkrip. Buat ulang ringkasan pakai transkrip yang sudah dibetulkan?`);
+  const ubah = { transkrip: baru, kosakata: k.teks || null };
+  if (ulang) Object.assign(ubah, { status: 'minta_resume', error: null, revisi: null });
+  const { error } = await sb.from('rapat').update(ubah).eq('id', r.id);
+  if (error) return toast(pesanAa(error.message), 5000);
+  toast(ulang ? `${n} kata dibetulkan. Aa tulis ulang ringkasannya…` : `${n} kata dibetulkan di transkrip.`, 4500);
+  bukaDetail(r.id);
 }
 
 // ---- Menu "Lainnya" (aksi jarang dipakai; isi menyesuaikan tab yang dibuka) ----
@@ -2497,6 +2598,7 @@ function bukaAksi() {
   }
   if (it.length) it.push('hr');
   if ('koreksi' in r) tambah('i-koreksi', 'Koreksi istilah', bukaKoreksi);
+  if ('kosakata' in r && ada(r.transkrip) && !SEDANG.includes(r.status) && (!state.multi || r.pemilik === state.uid)) tambah('i-cek', 'Terapkan kosakata ke transkrip', terapkanKosakata);
   tambah('i-pen', 'Ganti judul', gantiJudul);
   if (state.jenisAktif) tambah('i-doc', `Ganti jenis (${namaJenis(r.jenis)})`, bukaJenis);
   it.push('hr');
@@ -2626,6 +2728,7 @@ function renderNotulensi() {
 
 async function buatNotulensi(ulang) {
   const r = state.rapat;
+  await segarkanKosakata(r);
   if (ulang && !confirm('Buat ulang notulensi? Hasil sekarang akan diganti (info rapat yang udah lo isi tetap).')) return;
   if (['minta', 'proses'].includes(r.notulensi_status)) await sb.from('rapat').update({ notulensi_status: 'gagal' }).eq('id', r.id);
   const { error } = await sb.from('rapat').update({ notulensi_status: 'minta', notulensi_error: null, ...('notulensi_revisi' in r ? { notulensi_revisi: null } : {}) }).eq('id', r.id);
@@ -2826,6 +2929,7 @@ function renderPaparan() {
 
 async function buatPaparan() {
   const r = state.rapat;
+  await segarkanKosakata(r);
   if (['minta', 'proses'].includes(r.deck_status)) await sb.from('rapat').update({ deck_status: 'gagal' }).eq('id', r.id);
   const { error } = await sb.from('rapat').update({ deck_sumber: state.srcDeck, deck_status: 'minta', deck_error: null }).eq('id', r.id);
   if (error) return toast(pesanAa(error.message), 5000);
