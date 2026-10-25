@@ -798,7 +798,7 @@ body.ada-player .aksi{bottom:4.5rem}
       <summary>Upload rekaman</summary>
       <ul>
         <li>Bisa file suara atau video: m4a, mp3, wav, webm, mp4, dll.</li>
-        <li>Maksimal <b>50 MB</b> per file. Rekaman dari app ini ±13 MB/jam, jadi 3 jam masih aman.</li>
+        <li>Maksimal <b>50 MB</b> per file. Rekaman dari app ini ±7 MB/jam (iPhone ±15 MB/jam). Rekaman atau file WebM yang lebih besar otomatis dipecah jadi beberapa bagian saat diunggah; tiap bagian jadi catatan sendiri.</li>
         <li>File Zoom (.m4a) ±25–30 MB/jam. Rapat lebih dari 1,5 jam sebaiknya dikompres dulu ke MP3 64 kbps.</li>
       </ul>
     </details>
@@ -1068,7 +1068,7 @@ const jam = (d) => [Math.floor(d / 3600), Math.floor(d / 60) % 60, Math.floor(d 
 const MAKS_BYTE = 50 * 1024 * 1024;
 
 // ===== Harga (USD). Ubah di sini kalau harga berubah. =====
-const VERSI = 'v54';   // samakan dengan CACHE di sw.js
+const VERSI = 'v55';   // samakan dengan CACHE di sw.js
 const KURS = 16500;                        // kurs cadangan (dipakai rapat lama & kalau kurs harian gagal diambil)
 // Kurs harian USD→IDR: diambil sekali sehari, lalu DIKUNCI di tiap rapat saat dibuat (kolom rapat.kurs),
 // jadi biaya rapat yang sudah lewat tidak ikut berubah.
@@ -1587,15 +1587,24 @@ async function muatPending() {
   $('pending').innerHTML = recs.map(r => {
     const naik = state.uploading[r.id];
     return `<div class="card">
-      <b>${naik ? 'Mengunggah…' : 'Rekaman belum terunggah'}</b>
+      <b>${naik ? 'Mengunggah' + (naik.bagian ? ' bagian ' + naik.bagian : '') + '…' : (r.bagianSelesai || []).length ? `Sebagian terunggah (${r.bagianSelesai.length}/${(r.idBagian || []).length} bagian)` : 'Rekaman belum terunggah'}</b>
       <div class="muted">${esc(r.judul || 'Rapat')} · ${tglPendek(r.mulai)} · sekitar ${menit(r.detik || 60)}</div>
       ${naik ? `<div class="progress" id="pg-${r.id}"><div style="width:${naik.pct || 0}%"></div></div>${IOS ? '<div class="muted" style="font-size:.75rem;margin-top:.4rem">Biarkan app tetap terbuka & layar nyala sampai selesai.</div>' : ''}` : `
       <div class="row" style="margin-top:10px">
-        <button class="primary" onclick="unggahRec('${r.id}')">Unggah sekarang</button>
+        <button class="primary" onclick="unggahRec('${r.id}')">${(r.bagianSelesai || []).length ? 'Lanjut unggah' : 'Unggah sekarang'}</button>
+        <button onclick="unduhRec('${r.id}')">Unduh</button>
         <button class="danger" onclick="buangRec('${r.id}')">Buang</button>
       </div>`}
     </div>`;
   }).join('');
+}
+async function unduhRec(id) {
+  const r = (await recAll()).find(x => x.id === id); if (!r) return;
+  const blob = await chunkBlob(id, r.mime);
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+  a.download = `${(r.judul || 'rekaman').replace(/[\\/:*?"<>|]+/g, ' ').trim()}.${ekstensi(r.mime)}`;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 60000);
 }
 async function buangRec(id) {
   if (!confirm('Buang rekaman ini dari HP? Tidak bisa dikembalikan.')) return;
@@ -1746,7 +1755,7 @@ const IOS = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform 
 const TIPS_IOS = 'Di iPhone, rekaman <b>berhenti kalau layar terkunci atau pindah aplikasi</b>. Biar aman: Pengaturan iPhone → Tampilan & Kecerahan → <b>Kunci Otomatis: Tidak Pernah</b> selama rapat, colok charger, dan pakai <b>mode tidur</b> (ikon bulan) biar layar redup. Setelah Selesai, tunggu sampai “Terunggah” sebelum menutup app.';
 
 // ---- Penyimpanan browser (rekaman disimpan sementara di IndexedDB sampai terunggah) ----
-const MB_PER_JAM = 15;   // audio 32 kbps ≈ 14,4 MB/jam
+const MB_PER_JAM = /opus/.test(pilihMime()) ? 8 : 15;   // 16 kbps Opus ≈ 7,2 MB/jam; 32 kbps AAC ≈ 14,4 MB/jam
 const mbTeks = (b) => b >= 1e9 ? (b / 1e9).toFixed(1).replace('.', ',') + ' GB' : Math.max(0, Math.round(b / 1e6)) + ' MB';
 const durasiTeks = (mnt) => mnt >= 120 ? `±${Math.floor(mnt / 60)} jam` : mnt >= 60 ? `±1 jam ${Math.round(mnt - 60)} menit` : `±${Math.max(0, Math.floor(mnt))} menit`;
 async function cekSimpan() {
@@ -1825,7 +1834,9 @@ async function bukaRekam() {
   rekam.mulai = new Date().toISOString(); rekam.antrian = Promise.resolve();
   await recPut({ id: rekam.id, judul: '', jenis: rekam.jenis, mime: mime.split(';')[0] || 'audio/webm', mulai: new Date().toISOString(), detik: 0 });
 
-  rekam.mr = new MediaRecorder(rekam.stream, mime ? { mimeType: mime, audioBitsPerSecond: 32000 } : { audioBitsPerSecond: 32000 });
+  const kbps = /opus/.test(mime) ? 16000 : 32000;   // Opus 16 kbps cukup jernih untuk suara orang (±7 MB/jam); AAC (iPhone) tetap 32 kbps
+  rekam.bytes = 0; rekam.peringatanBesar = false;
+  rekam.mr = new MediaRecorder(rekam.stream, mime ? { mimeType: mime, audioBitsPerSecond: kbps } : { audioBitsPerSecond: kbps });
   rekam.mr.ondataavailable = (e) => {
     if (!e.data || !e.data.size) return;
     const idRec = rekam.id, data = e.data;
@@ -1834,7 +1845,12 @@ async function bukaRekam() {
   async function simpanPotongan(idRec, data) {
     try {
       await chunkAdd(idRec, data);
-      rekam.potongan++;
+      rekam.potongan++; rekam.bytes = (rekam.bytes || 0) + data.size;
+      // file non-WebM (iPhone) ga bisa dipecah otomatis → ingatkan sebelum lewat batas unggah
+      if (rekam.bytes > MAKS_BYTE * 0.85 && !rekam.peringatanBesar && rekam.mr && !/webm/.test(rekam.mr.mimeType)) {
+        rekam.peringatanBesar = true;
+        toast(`Rekaman sudah ${Math.round(rekam.bytes / 1048576)} MB, mendekati batas unggah 50 MB. Selesaikan sekarang, lalu rekam lagi untuk bagian berikutnya.`, 12000);
+      }
       if (rekam.mr) await recPut({ id: idRec, judul: $('r-judul').value.trim(), jenis: rekam.jenis, mime: rekam.mr.mimeType.split(';')[0] || 'audio/webm', mulai: rekam.mulai, detik: Math.round(detikSekarang()) });
       $('r-saved').textContent = `Tersimpan aman di HP: ${Math.floor(detikSekarang() / 60)} menit`;
       if (rekam.potongan % 6 === 0) cekSimpan().then(i => {
@@ -2000,6 +2016,58 @@ function ekstensi(mime, nama) {
   return 'webm';
 }
 
+// Pecah WebM yang lewat batas jadi beberapa file utuh: potong tepat di awal "Cluster",
+// lalu tiap bagian sesudahnya diberi header WebM yang sama (EBML + Tracks) supaya bisa diputar/ditranskrip sendiri.
+async function pecahWebm(blob, maks) {
+  const u8 = new Uint8Array(await blob.arrayBuffer());
+  if (!(u8[0] === 0x1a && u8[1] === 0x45 && u8[2] === 0xdf && u8[3] === 0xa3)) return null;   // bukan WebM
+  const cl = [];
+  for (let i = 0; i + 3 < u8.length; i++) if (u8[i] === 0x1f && u8[i + 1] === 0x43 && u8[i + 2] === 0xb6 && u8[i + 3] === 0x75) cl.push(i);
+  if (cl.length < 2) return null;
+  const hdr = u8.slice(0, cl[0]), batas = [0];
+  // ukuran Segment dijadikan "tidak diketahui" supaya tiap bagian tidak dianggap terpotong
+  const sg = hdr.findIndex((v, i) => v === 0x18 && hdr[i + 1] === 0x53 && hdr[i + 2] === 0x80 && hdr[i + 3] === 0x67);
+  if (sg >= 0 && sg + 4 < hdr.length) {
+    const L = Math.clz32(hdr[sg + 4]) - 23;
+    if (L >= 1 && L <= 8) { hdr[sg + 4] = 0xff >> (L - 1); for (let j = 1; j < L; j++) hdr[sg + 4 + j] = 0xff; }
+  }
+  let awal = 0;
+  for (let k = 1; k < cl.length; k++) {
+    const isi = cl[k] - awal + (awal ? hdr.length : 0);
+    if (isi > maks) { const potong = cl[k - 1] > awal ? cl[k - 1] : cl[k]; batas.push(potong); awal = potong; }
+  }
+  const bagian = [];
+  for (let k = 0; k < batas.length; k++) {
+    const isi = u8.subarray(k ? batas[k] : cl[0], batas[k + 1] ?? u8.length);
+    bagian.push(new Blob([hdr, isi], { type: blob.type || 'audio/webm' }));
+  }
+  return bagian.some(b => b.size > MAKS_BYTE) ? null : bagian;
+}
+// Unggah rekaman yang lewat 50 MB sebagai beberapa catatan "(bagian 1/3)", dst.
+// r (rekaman lokal) dipakai untuk mencatat bagian yang sudah naik, jadi kalau putus bisa dilanjut tanpa dobel.
+async function unggahBagian(blob, mime, judul, detik, jenis, r) {
+  const bagian = await pecahWebm(blob, MAKS_BYTE - 2 * 1048576);
+  if (!bagian) {
+    toast(`Filenya ${(blob.size / 1048576).toFixed(0)} MB, lewat batas 50 MB dan formatnya ga bisa dipecah otomatis. ${r ? 'Tekan Unduh, kecilkan/pecah filenya, lalu Upload file.' : 'Kecilkan atau pecah dulu filenya (mis. MP3 64 kbps).'}`, 12000);
+    return false;
+  }
+  const n = bagian.length;
+  if (!(r && (r.bagianSelesai || []).length) && !confirm(`Rekaman ini ${(blob.size / 1048576).toFixed(0)} MB, lewat batas unggah 50 MB. Aa pecah jadi ${n} bagian dan unggah satu per satu? Tiap bagian jadi catatan sendiri.`)) return false;
+  const ids = (r && r.idBagian && r.idBagian.length === n) ? r.idBagian : bagian.map((_, k) => k === 0 && r ? r.id : crypto.randomUUID());
+  const selesai = new Set((r && r.bagianSelesai) || []);
+  if (r) { r.idBagian = ids; await recPut(r); }
+  for (let k = 0; k < n; k++) {
+    if (selesai.has(k)) continue;
+    if (r) { state.uploading[r.id] = { pct: 0, bagian: `${k + 1}/${n}` }; await muatPending(); }
+    const ok = await unggah(bagian[k], mime, `${judul} (bagian ${k + 1}/${n})`, ids[k], ekstensi(mime), detik ? Math.round(detik * bagian[k].size / blob.size) : null, jenis, r ? r.id : null);
+    if (!ok) return false;
+    selesai.add(k);
+    if (r) { r.bagianSelesai = [...selesai]; await recPut(r); }
+  }
+  toast(`${n} bagian terunggah. Aa proses satu per satu.`, 5000);
+  return true;
+}
+
 async function unggahRec(recId) {
   const recs = await recAll();
   const r = recs.find(x => x.id === recId); if (!r) return;
@@ -2007,7 +2075,9 @@ async function unggahRec(recId) {
   if (!blob.size) { toast('Rekamannya kosong, Aa ga dapet apa-apa.'); await recDel(recId); return muatPending(); }
   if (state.uploading[recId]) return;
   state.uploading[recId] = { pct: 0 }; await muatPending();
-  const ok = await unggah(blob, r.mime, r.judul, recId, ekstensi(r.mime), r.detik, r.jenis);
+  const ok = blob.size > MAKS_BYTE
+    ? await unggahBagian(blob, r.mime, r.judul || 'Rekaman', r.detik, r.jenis, r)
+    : await unggah(blob, r.mime, r.judul, recId, ekstensi(r.mime), r.detik, r.jenis);
   delete state.uploading[recId];
   if (ok) { await chunkDel(recId); await recDel(recId); }
   muatPending(); muatDaftar();
@@ -2020,12 +2090,14 @@ async function pilihFile(inp) {
   const judul = prompt(`Judul (${namaJenis(jenis).toLowerCase()}):`, f.name.replace(/\.[^.]+$/, '')) ;
   if (judul === null) return;
   const mime = f.type || 'audio/mpeg';
-  await unggah(f, mime, judul.trim() || f.name, crypto.randomUUID(), ekstensi(mime, f.name), null, jenis);
+  if (f.size > MAKS_BYTE) await unggahBagian(f, mime, judul.trim() || f.name, null, jenis, null);
+  else await unggah(f, mime, judul.trim() || f.name, crypto.randomUUID(), ekstensi(mime, f.name), null, jenis);
   muatDaftar();
 }
 
 // Unggah ke Supabase Storage (bisa lanjut kalau sinyal putus), lalu masuk antrian proses
-async function unggah(blob, mime, judul, id, ext, detik, jenis) {
+async function unggah(blob, mime, judul, id, ext, detik, jenis, uiId) {
+  uiId = uiId || id;   // id kartu progres (rekaman lokal); beda dengan id catatan kalau dipecah jadi beberapa bagian
   if (blob.size > MAKS_BYTE) {
     toast(`Filenya ${(blob.size / 1048576).toFixed(0)} MB, kegedean buat Aa (maks 50 MB). Rekaman tetap aman di HP.`, 8000);
     return false;
@@ -2047,7 +2119,7 @@ async function unggah(blob, mime, judul, id, ext, detik, jenis) {
   if (ins.error) { toast(pesanAa(ins.error.message), 6000); return false; }
 
   // 2) unggah file bertahap (6 MB per potong)
-  const barUI = () => document.querySelector(`#pg-${id} > div`);
+  const barUI = () => document.querySelector(`#pg-${uiId} > div`);
   toast('Mengunggah…', 2000);
   const hasil = await new Promise((resolve) => {
     const jaga = { t: Date.now() };
@@ -2073,7 +2145,7 @@ async function unggah(blob, mime, judul, id, ext, detik, jenis) {
       onProgress: (a, b) => {
         jaga.t = Date.now();
         const pct = Math.round(a / b * 100), el = barUI();
-        if (state.uploading[id]) state.uploading[id].pct = pct;
+        if (state.uploading[uiId]) state.uploading[uiId].pct = pct;
         if (el) el.style.width = pct + '%'; else toast(`Mengunggah ${pct}%`, 4000);
       },
       onError: (e) => selesai(e),
