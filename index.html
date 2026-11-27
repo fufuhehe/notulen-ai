@@ -344,6 +344,11 @@ button.lagi{width:100%;margin-top:.75rem;background:var(--surface);border:1px da
 .nt-doc .tg{margin-top:.75rem;font-weight:700;color:var(--ink)}
 .nt-doc .nt-penutup{padding:.6rem .8rem;border-top:1px solid var(--line-2)}
 @media (max-width:30rem){.nt-doc .nt-blok{grid-template-columns:1fr}.nt-doc .nt-blok>div:first-child{border-right:0;padding-bottom:0}}
+.cek-ruang{display:flex;gap:.6rem;align-items:flex-start;margin:-.3rem 0 .9rem;font-size:.8125rem;cursor:pointer}
+.cek-ruang input{width:1.1rem;height:1.1rem;margin-top:.15rem;flex:none;accent-color:var(--acc,#0f766e)}
+.cek-ruang small{display:block;color:var(--muted);font-size:.75rem;line-height:1.35}
+.r-bisu{margin:.6rem auto 0;display:inline-flex;align-items:center;gap:.4rem;border:1px solid rgba(255,255,255,.25);background:transparent;color:#dbe4ee;border-radius:999px;padding:.35rem .9rem;font-size:.8125rem}
+.r-bisu.mati{background:#b42318;border-color:#b42318;color:#fff}
 .kop-box{margin-top:1rem;padding:.8rem;border:1px dashed var(--line);border-radius:var(--r-sm)}
 .ke-panduan+.ke-panduan,#gs-form.hidden+.ke-panduan{margin-top:.5rem}
 .ke-panduan{width:100%;margin-top:1.5rem;justify-content:flex-start;background:var(--raised);border-color:var(--line);font-weight:600}
@@ -523,6 +528,7 @@ body.ada-player .aksi{bottom:4.5rem}
       <select id="mic-pilih" aria-label="Pilih mikrofon"><option value="">Otomatis (ikut HP)</option></select>
       <button type="button" id="mic-tes" class="tm-tombol" onclick="bukaTesMic()">Tes mic</button>
     </div>
+    <label class="cek-ruang" id="ruang-box"><input type="checkbox" id="mode-ruang"><span><b>Mode ruang rapat</b><small>HP ditaruh di tengah meja. Peredam bising &amp; gema dimatikan supaya suara orang yang jauh tetap masuk.</small></span></label>
     <div class="sekunder">
       <button onclick="document.getElementById('file').click()"><svg class="i"><use href="#i-upload"/></svg>Upload rekaman</button>
     </div>
@@ -548,6 +554,7 @@ body.ada-player .aksi{bottom:4.5rem}
     <div id="r-diam" class="warn hidden" style="text-align:left;margin:0 0 1rem"></div>
     <div id="r-saved">Tersimpan aman di HP: 0 menit</div>
     <div id="r-mic" class="muted" style="font-size:.75rem;margin-top:.3rem;color:#8ea3b8"></div>
+    <button type="button" id="r-bisu" class="r-bisu hidden" onclick="bisukanMic()" aria-pressed="false">Mic saya: nyala</button>
     <div class="rec-btns">
       <div class="rb"><button id="r-pause" onclick="jedaRekam()" disabled aria-label="Jeda"><svg class="i" style="width:1.5rem;height:1.5rem"><use href="#i-pause"/></svg></button><span id="r-pause-lbl">Jeda</span></div>
       <div class="rb"><button id="r-stop" class="stop" onclick="selesaiRekam()" disabled aria-label="Selesai"></button><span>Selesai</span></div>
@@ -780,6 +787,7 @@ body.ada-player .aksi{bottom:4.5rem}
         <li>Taruh HP di tengah meja, dekat orang yang paling banyak ngomong.</li>
         <li>Rapat penting? Rekam juga pakai perekam bawaan HP sebagai cadangan, lalu upload kalau perlu.</li>
         <li><b>HP tersambung ke smartwatch atau earphone Bluetooth?</b> Aa otomatis pakai mic HP. Sebelum rapat, tekan <b>Tes mic</b> di beranda: ngomong sebentar, mic yang bener batangnya gerak, ketuk buat milih. Kalau 12 detik pertama ga ada suara masuk, Aa kasih peringatan di layar rekam.</li>
+        <li><b>Rapat di ruangan, HP ditaruh di tengah meja?</b> Centang <b>Mode ruang rapat</b> di beranda. Peredam bising &amp; gema bawaan HP dimatikan (dibuat untuk telepon, bisa ikut meredam suara orang yang jauh). Taruh HP telentang, ujung bawahnya (mic) ke arah yang paling banyak bicara, beri alas map/kain, jauhkan dari AC/proyektor. Ruangan besar tetap paling bagus pakai mic meja.</li>
         <li><b>Telepon atau Zoom di HP</b> ga bisa direkam app ini: Android/iPhone tidak mengizinkan app lain ikut mengambil suara panggilan. Pakai Zoom di laptop dengan sumber <b>Mic + laptop</b>, atau rekam pakai fitur rekam Zoom / perekam panggilan bawaan HP lalu <b>Upload rekaman</b>.</li>
       </ul>
     </details>
@@ -788,7 +796,7 @@ body.ada-player .aksi{bottom:4.5rem}
       <summary>Rapat online di laptop (Zoom, Meet, YouTube)</summary>
       <ul>
         <li>Buka app ini di Chrome/Edge laptop. Di bawah tombol rekam ada <b>Sumber suara</b>.</li>
-        <li><b>Mic + laptop</b> buat rapat online (suara lawan bicara + suara lo). <b>Laptop</b> buat webinar/video saja.</li>
+        <li><b>Mic + laptop</b> buat rapat online (suara lawan bicara langsung dari sistem + suara lo dari mic). Saat merekam ada tombol <b>Mic saya</b> buat membisukan suaramu sendiri, misalnya waktu lo mute di Zoom (app ga bisa tahu status mute Zoom). <b>Laptop</b> buat webinar/video saja. Mau suaramu cuma kerekam pas unmute? Paling pas pakai fitur Record bawaan Zoom lalu Upload.</li>
         <li>Pas diminta milih: <b>Tab</b> untuk Meet/YouTube di browser (nyalakan “Bagikan audio tab”), atau <b>Seluruh layar</b> untuk aplikasi Zoom (nyalakan “Bagikan audio sistem”).</li>
         <li>Pakai <b>headset</b> biar suara ga kerekam dobel. Boleh pindah ke Zoom, tapi jangan tutup tab ini.</li>
         <li>Alternatif: rekam dari Zoom (<i>Record on this computer</i>), lalu <b>Upload rekaman</b>.</li>
@@ -1070,7 +1078,7 @@ const jam = (d) => [Math.floor(d / 3600), Math.floor(d / 60) % 60, Math.floor(d 
 const MAKS_BYTE = 50 * 1024 * 1024;
 
 // ===== Harga (USD). Ubah di sini kalau harga berubah. =====
-const VERSI = 'v57';   // samakan dengan CACHE di sw.js
+const VERSI = 'v58';   // samakan dengan CACHE di sw.js
 const KURS = 16500;                        // kurs cadangan (dipakai rapat lama & kalau kurs harian gagal diambil)
 // Kurs harian USD→IDR: diambil sekali sehari, lalu DIKUNCI di tiap rapat saat dibuat (kolom rapat.kurs),
 // jadi biaya rapat yang sudah lewat tidak ikut berubah.
@@ -1643,8 +1651,19 @@ async function isiMic() {
 $('mic-pilih').addEventListener('change', e => simpanLS('mic_id', e.target.value));
 if (navigator.mediaDevices && navigator.mediaDevices.addEventListener) navigator.mediaDevices.addEventListener('devicechange', () => isiMic());
 // Mic yang dipakai: pilihan user; kalau belum pernah memilih, otomatis mic HP (bukan Bluetooth)
+// Mode ruang rapat: filter bawaan browser (peredam bising & gema) dibuat untuk bicara dekat ke HP;
+// di ruang rapat suara orang yang jauh bisa ikut diredam. Penguat otomatis tetap nyala.
+const modeRuang = () => bacaLS('mode_ruang') === '1';
+const filterMic = () => modeRuang() && sumberSuara === 'mic'   // Mic + laptop tetap pakai peredam gema (suara Zoom dari speaker)
+  ? { echoCancellation: false, noiseSuppression: false, autoGainControl: true }
+  : { echoCancellation: true, noiseSuppression: true, autoGainControl: true };
+$('mode-ruang').checked = modeRuang();
+$('mode-ruang').addEventListener('change', e => {
+  simpanLS('mode_ruang', e.target.checked ? '1' : '0');
+  toast(e.target.checked ? 'Mode ruang rapat nyala. Taruh HP di tengah meja, mic (ujung bawah HP) menghadap ke yang paling banyak bicara.' : 'Mode ruang rapat mati. Cocok kalau HP dekat ke yang bicara.', 5000);
+});
 async function ambilMic() {
-  const dasar = { channelCount: 1, echoCancellation: true, noiseSuppression: true, autoGainControl: true };
+  const dasar = { channelCount: 1, ...filterMic() };
   const pilihan = $('mic-pilih').value || bacaLS('mic_id') || '';
   let s = null;
   if (pilihan) { try { s = await navigator.mediaDevices.getUserMedia({ audio: { ...dasar, deviceId: { exact: pilihan } } }); } catch (_) { s = null; } }
@@ -1696,7 +1715,7 @@ async function tesMulai(id) {
   const bar = b.querySelector('.tm-meter i'), st = b.querySelector('.tm-st');
   st.textContent = 'ngetes…'; st.className = 'tm-st';
   try {
-    tesMic.stream = await navigator.mediaDevices.getUserMedia({ audio: { deviceId: { exact: id }, echoCancellation: true, noiseSuppression: true, autoGainControl: true } });
+    tesMic.stream = await navigator.mediaDevices.getUserMedia({ audio: { deviceId: { exact: id }, ...filterMic() } });
     tesMic.ctx = new (window.AudioContext || window.webkitAudioContext)();
     const an = tesMic.ctx.createAnalyser(); an.fftSize = 512;
     tesMic.ctx.createMediaStreamSource(tesMic.stream).connect(an);
@@ -1727,6 +1746,7 @@ const BISA_LAPTOP = !!(navigator.mediaDevices && navigator.mediaDevices.getDispl
 let sumberSuara = BISA_LAPTOP ? (bacaLS('sumber_suara') || 'mic') : 'mic';
 function tandaiSumber() {
   document.querySelectorAll('#sumber button').forEach(b => b.classList.toggle('on', b.dataset.v === sumberSuara));
+  $('ruang-box').classList.toggle('hidden', sumberSuara !== 'mic');   // mode ruang rapat cuma untuk rekam lewat mic
 }
 if (BISA_LAPTOP) {
   $('sumber-box').classList.remove('hidden'); tandaiSumber();
@@ -1752,7 +1772,7 @@ function hentikanSumber() {
   (rekam.mentah || []).forEach(s => s.getTracks().forEach(t => t.stop()));
   rekam.mentah = [];
   try { rekam.ctxCampur && rekam.ctxCampur.close(); } catch (_) {}
-  rekam.ctxCampur = null;
+  rekam.ctxCampur = null; rekam.gainMic = null;
 }
 
 // iPhone/iPad: app di-pause iOS begitu layar terkunci atau pindah aplikasi (rekaman & unggahan berhenti)
@@ -1796,7 +1816,7 @@ async function bukaRekam() {
   $('r-tips-box').open = IOS || sumberSuara !== 'mic';
   $('r-tips').innerHTML = sumberSuara === 'mic' ? (IOS ? TIPS_IOS : rekam.tipsAsli)
     : 'Boleh pindah ke Zoom/tab lain. <b>Jangan tutup tab ini</b> dan jangan klik “Berhenti berbagi”.' +
-      (sumberSuara === 'campur' ? ' Pakai <b>headset/earphone</b> biar suara Zoom ga kerekam dobel lewat mic.' : '');
+      (sumberSuara === 'campur' ? ' Pakai <b>headset/earphone</b> biar suara Zoom ga kerekam dobel lewat mic. Lagi mute di Zoom? Tekan <b>Mic saya</b> di layar ini biar suaramu juga ga ikut kerekam.' : '');
   rekam.mentah = [];
   const pakaiLaptop = sumberSuara === 'campur' || sumberSuara === 'laptop';
   const pakaiMic = sumberSuara !== 'laptop';
@@ -1825,7 +1845,8 @@ async function bukaRekam() {
     const ctx = new (window.AudioContext || window.webkitAudioContext)();
     const tujuan = ctx.createMediaStreamDestination(); tujuan.channelCount = 1;
     ctx.createMediaStreamSource(laptop).connect(tujuan);
-    ctx.createMediaStreamSource(mic).connect(tujuan);
+    rekam.gainMic = ctx.createGain();   // bisa dibisukan dari layar rekam (mis. saat mute di Zoom)
+    ctx.createMediaStreamSource(mic).connect(rekam.gainMic).connect(tujuan);
     rekam.ctxCampur = ctx; rekam.stream = tujuan.stream;
   } else {
     rekam.stream = new MediaStream((laptop || mic).getAudioTracks());
@@ -1871,11 +1892,24 @@ async function bukaRekam() {
   $('r-state').textContent = 'Merekam';
   $('r-pause').disabled = false; $('r-stop').disabled = false; setJeda(false);
   rekam.timer = setInterval(() => { $('r-time').textContent = jam(detikSekarang()); if (rekam.tidur) isiTidur(); }, 500);
-  $('r-mic').textContent = mic ? 'Mic: ' + ((mic.getAudioTracks()[0] || {}).label || 'bawaan') : '';
+  $('r-mic').textContent = mic ? 'Mic: ' + ((mic.getAudioTracks()[0] || {}).label || 'bawaan') + (modeRuang() && !laptop ? ' · mode ruang rapat' : '') : '';
+  rekam.bisu = false; $('r-bisu').classList.toggle('hidden', !(laptop && mic)); aturTombolBisu();
   $('r-diam').classList.add('hidden'); rekam.puncak = 0; rekam.tDiam = performance.now();
   meterMulai();
   kunciLayar();
   window.onbeforeunload = () => 'Rekaman sedang berjalan';
+}
+// Mic + laptop: bisukan mic sendiri tanpa memutus suara laptop (Zoom tidak memberi tahu browser kapan kamu mute)
+function aturTombolBisu() {
+  const b = $('r-bisu');
+  b.textContent = rekam.bisu ? 'Mic saya: dibisukan (ketuk untuk nyalakan)' : 'Mic saya: nyala (ketuk untuk bisukan)';
+  b.classList.toggle('mati', !!rekam.bisu); b.setAttribute('aria-pressed', rekam.bisu ? 'true' : 'false');
+}
+function bisukanMic() {
+  if (!rekam.gainMic) return;
+  rekam.bisu = !rekam.bisu;
+  rekam.gainMic.gain.value = rekam.bisu ? 0 : 1;
+  aturTombolBisu();
 }
 function detikSekarang() { return (rekam.akumulasi + (rekam.jeda || !rekam.t0 ? 0 : performance.now() - rekam.t0)) / 1000; }
 
