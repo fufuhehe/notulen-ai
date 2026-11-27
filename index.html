@@ -697,11 +697,11 @@ body.ada-player .aksi{bottom:4.5rem}
     <div id="atur-model">
       <label style="margin-top:0">Untuk ringkasan &amp; notulensi</label>
       <select id="atur-model-notulen" data-k="model_notulen">
-        <option value="otomatis">Otomatis</option>
+        <option value="otomatis">Otomatis (Gemini 3.5 Flash, disarankan)</option>
         <optgroup label="Teliti">
-          <option value="claude-sonnet-5">Claude Sonnet 5 · ±Rp1.150/jam rapat</option>
+          <option value="gemini/gemini-3.5-flash">Gemini 3.5 Flash · ±Rp900/jam rapat</option>
+          <option value="claude-sonnet-5">Claude Sonnet 5 · paling lengkap, lebih boros</option>
           <option value="gpt-4.1">GPT-4.1 · ±Rp1.100</option>
-          <option value="gemini/gemini-3.5-flash">Gemini 3.5 Flash · ±Rp900</option>
         </optgroup>
         <optgroup label="Hemat">
           <option value="gemini/gemini-3-flash-preview">Gemini 3 Flash (preview) · ±Rp300</option>
@@ -715,7 +715,7 @@ body.ada-player .aksi{bottom:4.5rem}
       </select>
       <label>Untuk paparan</label>
       <select id="atur-model-paparan" data-k="model_paparan">
-        <option value="otomatis">Otomatis</option>
+        <option value="otomatis">Otomatis (GPT-4.1)</option>
         <optgroup label="Teliti">
           <option value="claude-sonnet-5">Claude Sonnet 5 · ±Rp1.150/jam rapat</option>
           <option value="gpt-4.1">GPT-4.1 · ±Rp1.100</option>
@@ -876,7 +876,7 @@ body.ada-player .aksi{bottom:4.5rem}
     <details>
       <summary>Model AI & biaya</summary>
       <ul>
-        <li>Ganti model di <b>Pengaturan → Model AI</b>. <b>Otomatis</b> sudah cukup untuk kebanyakan rapat.</li>
+        <li>Ganti model di <b>Pengaturan → Model AI</b>. <b>Otomatis</b> (Gemini 3.5 Flash untuk ringkasan &amp; notulensi) paling tepat soal nama dan istilah dari hasil uji banding. Claude Sonnet 5 paling lengkap tapi lebih boros.</li>
         <li>Model “Teliti” lebih bagus tapi lebih mahal; “Hemat” cocok buat rapat ringan.</li>
         <li>Biaya tiap rapat tampil di bawah judul. Ketuk untuk rinciannya (transkrip + AI).</li>
         <li>Harga AI dalam dolar, jadi Aa pakai <b>kurs hari rapat itu dibuat</b>. Kursnya dikunci, jadi biaya rapat lama ga ikut berubah.</li>
@@ -1068,7 +1068,7 @@ const jam = (d) => [Math.floor(d / 3600), Math.floor(d / 60) % 60, Math.floor(d 
 const MAKS_BYTE = 50 * 1024 * 1024;
 
 // ===== Harga (USD). Ubah di sini kalau harga berubah. =====
-const VERSI = 'v55';   // samakan dengan CACHE di sw.js
+const VERSI = 'v56';   // samakan dengan CACHE di sw.js
 const KURS = 16500;                        // kurs cadangan (dipakai rapat lama & kalau kurs harian gagal diambil)
 // Kurs harian USD→IDR: diambil sekali sehari, lalu DIKUNCI di tiap rapat saat dibuat (kolom rapat.kurs),
 // jadi biaya rapat yang sudah lewat tidak ikut berubah.
@@ -3206,7 +3206,7 @@ document.querySelectorAll('#atur-model select').forEach(x => x.addEventListener(
   const { error } = state.multi
     ? await sb.from('profil').update({ [x.dataset.k]: x.value }).eq('id', state.uid)
     : await sb.from('pengaturan_app').update({ [x.dataset.k]: x.value }).eq('id', 1);
-  toast(error ? pesanAa(error.message) : x.value === 'otomatis' ? 'Siap, Aa pilih modelnya sendiri sesuai panjang rapat.' : 'Siap, Aa pakai ' + x.options[x.selectedIndex].text.split(' · ')[0].replace(/ \(.*\)$/, '') + '.');
+  toast(error ? pesanAa(error.message) : x.value === 'otomatis' ? 'Siap, Aa pakai model yang disarankan.' : 'Siap, Aa pakai ' + x.options[x.selectedIndex].text.split(' · ')[0].replace(/ \(.*\)$/, '') + '.');
 }));
 // ================= Kelola akun (khusus admin) =================
 async function panggilAkun(body) {

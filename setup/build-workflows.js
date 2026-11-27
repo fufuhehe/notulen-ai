@@ -131,7 +131,10 @@ const w1 = wf('Notulen - 1 Transkrip', [
 
 // ---- node AI generik (OpenAI-compatible: Sumopod / OpenAI) ----
 const AI_URL = 'https://ai.sumopod.com/v1/chat/completions';   // ganti ke https://api.openai.com/v1/chat/completions kalau pakai OpenAI langsung
-const pilihModel = (key) => `(() => { const m = $('Webhook').first().json.body.${key} || 'otomatis'; return m === 'otomatis' ? (String($json.prompt || '').length > 60000 ? 'gpt-4.1-mini' : 'gpt-4.1') : m; })()`;
+// Model "Otomatis": ringkasan & notulensi pakai Gemini 3.5 Flash (menang uji banding Nov 2026:
+// paling tepat mengoreksi nama/istilah). Tidak ada lagi turun ke model mini untuk transkrip panjang.
+const OTOMATIS = { model_notulen: 'gemini/gemini-3.5-flash', model_paparan: 'gpt-4.1' };
+const pilihModel = (key) => `(() => { const m = $('Webhook').first().json.body.${key} || 'otomatis'; return m === 'otomatis' ? '${OTOMATIS[key]}' : m; })()`;
 const promptSistem = (teks, pos) => ({
   parameters: {
     mode: 'manual',
@@ -174,7 +177,7 @@ const w2 = wf('Notulen - 2 Resume', [
     credentials: CRED.supa, alwaysOutputData: true, onError: 'continueRegularOutput',
   },
   code('Pilih prompt', 'pilih-prompt.js', [880, 160]),
-  nodeAI('model_notulen', 8000, [1000, 0]),
+  nodeAI('model_notulen', 16000, [1000, 0]),   // longgar: Gemini ikut 'berpikir' dan menghabiskan jatah token
   ifNode('Ada jawaban?', [1100, 0], [{ leftValue: '={{ Array.isArray($json.choices) && $json.choices.length > 0 }}', rightValue: '', operator: { type: 'boolean', operation: 'true', singleValue: true } }]),
   supa('Simpan resume', [1320, -80], {
     body: `={{ (() => { const c = $json.choices[0], u = $json.usage || {}, lama = $('Tandai meresume').first().json; return JSON.stringify({ status: 'selesai', revisi: null, resume: String(c.message.content || '').trim(), error: c.finish_reason === 'length' ? 'Resume terpotong karena terlalu panjang' : null, ai_model: $json.model, ai_token_in: (lama.ai_token_in || 0) + (u.prompt_tokens || 0), ai_token_out: (lama.ai_token_out || 0) + (u.completion_tokens || 0), ...(lama.notulensi_revisi && lama.notulensi && !['minta', 'proses'].includes(lama.notulensi_status) ? { notulensi_status: 'minta' } : {}) }); })() }}`,   // revisi notulensi yang dititip: jalan setelah ringkasan selesai
@@ -225,7 +228,7 @@ const w5 = wf('Notulen - 5 Notulensi', [
   }),
   code('Susun bahan', 'susun-bahan-notulensi.js', [440, 0]),
   promptSistem(PROMPT_NOTULENSI, [660, 0]),
-  nodeAI('model_notulen', 16000, [880, 0]),
+  nodeAI('model_notulen', 32000, [880, 0]),
   code('Rakit notulensi', 'rakit-notulensi.js', [1100, 0]),
   supa('Simpan notulensi', [1320, 0], { body: '={{ JSON.stringify($json) }}' }),
 ], {
