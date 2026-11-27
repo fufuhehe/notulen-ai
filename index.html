@@ -807,7 +807,7 @@ body.ada-player .aksi{bottom:4.5rem}
       <summary>Upload rekaman</summary>
       <ul>
         <li>Bisa file suara atau video: m4a, mp3, wav, webm, mp4, dll.</li>
-        <li>Maksimal <b>50 MB</b> per file. Rekaman dari app ini ±7 MB/jam (iPhone ±15 MB/jam). Rekaman atau file WebM yang lebih besar otomatis dipecah jadi beberapa bagian saat diunggah; tiap bagian jadi catatan sendiri.</li>
+        <li>Maksimal <b>50 MB</b> per file. Rekaman dari app ini ±7 MB/jam (iPhone ±15 MB/jam). File m4a/mp4 yang lebih besar (rekaman Zoom, perekam HP, video) otomatis <b>dikecilkan dulu di perangkatmu</b> jadi satu file (±8 MB/jam; perlu Chrome/Edge, ±2–4 menit per jam rekaman, jangan tutup app). File WebM yang lewat batas dipecah jadi beberapa bagian.</li>
         <li>File Zoom (.m4a) ±25–30 MB/jam. Rapat lebih dari 1,5 jam sebaiknya dikompres dulu ke MP3 64 kbps.</li>
       </ul>
     </details>
@@ -1078,7 +1078,7 @@ const jam = (d) => [Math.floor(d / 3600), Math.floor(d / 60) % 60, Math.floor(d 
 const MAKS_BYTE = 50 * 1024 * 1024;
 
 // ===== Harga (USD). Ubah di sini kalau harga berubah. =====
-const VERSI = 'v58';   // samakan dengan CACHE di sw.js
+const VERSI = 'v59';   // samakan dengan CACHE di sw.js
 const KURS = 16500;                        // kurs cadangan (dipakai rapat lama & kalau kurs harian gagal diambil)
 // Kurs harian USD→IDR: diambil sekali sehari, lalu DIKUNCI di tiap rapat saat dibuat (kolom rapat.kurs),
 // jadi biaya rapat yang sudah lewat tidak ikut berubah.
@@ -1600,7 +1600,7 @@ async function muatPending() {
   $('pending').innerHTML = recs.map(r => {
     const naik = state.uploading[r.id];
     return `<div class="card">
-      <b>${naik ? 'Mengunggah' + (naik.bagian ? ' bagian ' + naik.bagian : '') + '…' : (r.bagianSelesai || []).length ? `Sebagian terunggah (${r.bagianSelesai.length}/${(r.idBagian || []).length} bagian)` : 'Rekaman belum terunggah'}</b>
+      <b>${naik ? (naik.kecil !== undefined ? 'Mengecilkan file…' : 'Mengunggah' + (naik.bagian ? ' bagian ' + naik.bagian : '') + '…') : (r.bagianSelesai || []).length ? `Sebagian terunggah (${r.bagianSelesai.length}/${(r.idBagian || []).length} bagian)` : 'Rekaman belum terunggah'}</b>
       <div class="muted">${esc(r.judul || 'Rapat')} · ${tglPendek(r.mulai)} · sekitar ${menit(r.detik || 60)}</div>
       ${naik ? `<div class="progress" id="pg-${r.id}"><div style="width:${naik.pct || 0}%"></div></div>${IOS ? '<div class="muted" style="font-size:.75rem;margin-top:.4rem">Biarkan app tetap terbuka & layar nyala sampai selesai.</div>' : ''}` : `
       <div class="row" style="margin-top:10px">
@@ -2058,8 +2058,9 @@ function ekstensi(mime, nama) {
 // Pecah WebM yang lewat batas jadi beberapa file utuh: potong tepat di awal "Cluster",
 // lalu tiap bagian sesudahnya diberi header WebM yang sama (EBML + Tracks) supaya bisa diputar/ditranskrip sendiri.
 async function pecahWebm(blob, maks) {
+  const kepala = new Uint8Array(await blob.slice(0, 4).arrayBuffer());
+  if (!(kepala[0] === 0x1a && kepala[1] === 0x45 && kepala[2] === 0xdf && kepala[3] === 0xa3)) return null;   // bukan WebM
   const u8 = new Uint8Array(await blob.arrayBuffer());
-  if (!(u8[0] === 0x1a && u8[1] === 0x45 && u8[2] === 0xdf && u8[3] === 0xa3)) return null;   // bukan WebM
   const cl = [];
   for (let i = 0; i + 3 < u8.length; i++) if (u8[i] === 0x1f && u8[i + 1] === 0x43 && u8[i + 2] === 0xb6 && u8[i + 3] === 0x75) cl.push(i);
   if (cl.length < 2) return null;
@@ -2084,8 +2085,151 @@ async function pecahWebm(blob, maks) {
 }
 // Unggah rekaman yang lewat 50 MB sebagai beberapa catatan "(bagian 1/3)", dst.
 // r (rekaman lokal) dipakai untuk mencatat bagian yang sudah naik, jadi kalau putus bisa dilanjut tanpa dobel.
+// ---- Kecilkan audio di browser (WebCodecs): file m4a/mp4/mp3 besar → WebM Opus 16 kbps mono ----
+// Dipakai untuk file yang lewat 50 MB dan tidak bisa dipecah (rekaman Zoom/perekam HP, video MP4).
+const LIB_MP4BOX = 'https://cdn.jsdelivr.net/npm/mp4box@2.6.0/+esm';
+const LIB_WEBM_MUXER = 'https://cdn.jsdelivr.net/npm/webm-muxer@5.1.4/build/webm-muxer.js';
+const bisaKecilkan = () => typeof AudioDecoder === 'function' && typeof AudioEncoder === 'function' && typeof AudioData === 'function';
+
+async function kecilkanAudio(file, kabar) {
+  if (!bisaKecilkan()) throw new Error('Browser ini belum bisa mengecilkan file (butuh Chrome/Edge terbaru).');
+  const MP4Box = await import(LIB_MP4BOX);
+  if (!window.WebMMuxer) await new Promise((ok, gagal) => { const s = document.createElement('script'); s.src = LIB_WEBM_MUXER; s.onload = ok; s.onerror = () => gagal(new Error('Library WebM gagal dimuat. Cek internet.')); document.head.appendChild(s); });
+  const KELUAR_SR = 48000;
+
+  // 1) baca kontainer MP4/M4A dan cari track audio
+  const mp4 = MP4Box.createFile(true);   // simpan data mdat: sampel dibaca sebelum start() juga ikut diambil
+  let info = null, gagalBaca = null;
+  mp4.onReady = (i) => { info = i; };
+  mp4.onError = (e) => { gagalBaca = e; };
+  const POTONG = 8 * 1024 * 1024;
+  let posBaca = 0;
+  while (posBaca < file.size && !info && !gagalBaca) {
+    const ab = await file.slice(posBaca, posBaca + POTONG).arrayBuffer();
+    mp4.appendBuffer(MP4Box.MP4BoxBuffer.fromArrayBuffer(ab, posBaca), posBaca + POTONG >= file.size);
+    posBaca += POTONG;
+  }
+  if (!info) throw new Error('Format file ini tidak dikenali (bukan m4a/mp4).');
+  const at = (info.audioTracks || [])[0];
+  if (!at) throw new Error('File ini tidak punya suara.');
+  const trak = mp4.getTrackById(at.id);
+  const entri = trak.mdia.minf.stbl.stsd.entries[0];
+  let desc = null;
+  try { desc = entri.esds.esd.descs[0].descs[0].data; } catch (_) {}
+  const masukSR = at.audio.sample_rate, masukCh = at.audio.channel_count;
+  const totalSampel = at.nb_samples || 1;
+
+  // 2) siapkan muxer + encoder Opus
+  const target = new WebMMuxer.ArrayBufferTarget();
+  const muxer = new WebMMuxer.Muxer({ target, audio: { codec: 'A_OPUS', numberOfChannels: 1, sampleRate: KELUAR_SR } });
+  let galatEnc = null, galatDec = null;
+  const enc = new AudioEncoder({ output: (c, m) => muxer.addAudioChunk(c, m), error: (e) => { galatEnc = e; } });
+  enc.configure({ codec: 'opus', sampleRate: KELUAR_SR, numberOfChannels: 1, bitrate: 16000 });
+
+  // 3) decoder: tiap AudioData → mono → resample 48 kHz → encoder
+  let frameKeluar = 0, sisa = new Float32Array(0), posSumber = 0;
+  const kirim = (mono) => {
+    if (!mono.length) return;
+    const ad = new AudioData({ format: 'f32-planar', sampleRate: KELUAR_SR, numberOfFrames: mono.length, numberOfChannels: 1, timestamp: Math.round(frameKeluar / KELUAR_SR * 1e6), data: mono });
+    frameKeluar += mono.length;
+    enc.encode(ad); ad.close();
+  };
+  const rasio = masukSR / KELUAR_SR;
+  const dec = new AudioDecoder({
+    error: (e) => { galatDec = e; },
+    output: (ad) => {
+      const n = ad.numberOfFrames, ch = ad.numberOfChannels;
+      const mono = new Float32Array(n);
+      const tmp = new Float32Array(n);
+      for (let c = 0; c < ch; c++) {
+        ad.copyTo(tmp, { planeIndex: c, format: 'f32-planar' });
+        for (let i = 0; i < n; i++) mono[i] += tmp[i] / ch;
+      }
+      ad.close();
+      if (masukSR === KELUAR_SR) return kirim(mono);
+      // resample linear (cukup untuk suara orang)
+      const gabung = new Float32Array(sisa.length + n); gabung.set(sisa); gabung.set(mono, sisa.length);
+      const out = [];
+      let t = posSumber;
+      while (t + 1 < gabung.length) { const i = Math.floor(t), f = t - i; out.push(gabung[i] * (1 - f) + gabung[i + 1] * f); t += rasio; }
+      const buang = Math.floor(t);
+      sisa = gabung.slice(buang); posSumber = t - buang;
+      kirim(Float32Array.from(out));
+    },
+  });
+  const cfg = { codec: /^mp4a\.(6b|69)$/i.test(at.codec) || entri.type === '.mp3' ? 'mp3' : at.codec, sampleRate: masukSR, numberOfChannels: masukCh };
+  if (desc) cfg.description = desc;
+  const dukung = await AudioDecoder.isConfigSupported(cfg).catch(() => ({ supported: false }));
+  if (!dukung.supported) throw new Error(`Jenis suara di file ini (${at.codec}) belum bisa dikecilkan di browser ini.`);
+  dec.configure(cfg);
+
+  // 4) ambil sampel audio dari MP4 dan umpankan ke decoder (dengan rem supaya memori aman)
+  let antre = [], selesaiAmbil = false, sampelKe = 0;
+  mp4.onSamples = (_id, _u, samples) => { for (const s of samples) antre.push(s); };
+  mp4.setExtractionOptions(at.id, null, { nbSamples: 500 });
+  mp4.start();
+  const tunggu = () => new Promise(r => setTimeout(r, 0));
+  const umpan = async () => {
+    while (antre.length) {
+      const s = antre.shift();
+      dec.decode(new EncodedAudioChunk({ type: 'key', timestamp: Math.round(s.cts / s.timescale * 1e6), duration: Math.round(s.duration / s.timescale * 1e6), data: s.data }));
+      sampelKe++;
+      if (sampelKe % 200 === 0) mp4.releaseUsedSamples(at.id, s.number + 1);   // bebaskan memori sampel yang sudah didekode
+      if (dec.decodeQueueSize > 50 || enc.encodeQueueSize > 50) { await tunggu(); while (dec.decodeQueueSize > 20 || enc.encodeQueueSize > 20) await tunggu(); }
+      if (galatDec || galatEnc) throw (galatDec || galatEnc);
+      if (sampelKe % 500 === 0 && kabar) kabar(Math.min(99, Math.round(sampelKe / totalSampel * 100)));
+    }
+  };
+  await umpan();
+  for (let pos = posBaca; pos < file.size; pos += POTONG) {
+    const ab = await file.slice(pos, pos + POTONG).arrayBuffer();
+    mp4.appendBuffer(MP4Box.MP4BoxBuffer.fromArrayBuffer(ab, pos), pos + POTONG >= file.size);
+    await umpan();
+  }
+  mp4.flush();
+  await umpan();
+  await dec.flush();
+  if (sisa.length && masukSR !== KELUAR_SR) { kirim(Float32Array.from(sisa)); sisa = new Float32Array(0); }
+  await enc.flush();
+  if (galatDec || galatEnc) throw (galatDec || galatEnc);
+  dec.close(); enc.close();
+  muxer.finalize();
+  if (kabar) kabar(100);
+  return { blob: new Blob([target.buffer], { type: 'audio/webm' }), detik: frameKeluar / KELUAR_SR };
+}
+
+// Kecilkan sambil memberi kabar progres (toast + kartu rekaman lokal)
+async function kecilkanDenganKabar(blob, r) {
+  toast(`File ${(blob.size / 1048576).toFixed(0)} MB, lewat batas 50 MB. Aa kecilin dulu di perangkat ini, jangan tutup app ya…`, 8000);
+  let terakhir = -10;
+  if (r) { state.uploading[r.id] = { pct: 0, kecil: 0 }; await muatPending(); }
+  try {
+    const hasil = await kecilkanAudio(blob, (pct) => {
+      if (r && state.uploading[r.id]) { state.uploading[r.id].kecil = pct; const el = document.querySelector(`#pg-${r.id} > div`); if (el) el.style.width = pct + '%'; }
+      if (pct - terakhir >= 10 || pct === 100) { terakhir = pct; toast(`Aa lagi ngecilin file… ${pct}%`, 15000); }
+    });
+    toast(`Beres: ${(blob.size / 1048576).toFixed(0)} MB jadi ${(hasil.blob.size / 1048576).toFixed(1)} MB. Lanjut unggah…`, 5000);
+    return hasil;
+  } catch (e) {
+    toast('Gagal ngecilin file: ' + (e && e.message ? e.message : e), 9000);
+    return null;
+  }
+}
+
 async function unggahBagian(blob, mime, judul, detik, jenis, r) {
-  const bagian = await pecahWebm(blob, MAKS_BYTE - 2 * 1048576);
+  let bagian = await pecahWebm(blob, MAKS_BYTE - 2 * 1048576);
+  if (!bagian && bisaKecilkan()) {   // m4a/mp4 (Zoom, perekam HP, iPhone): kecilkan jadi WebM Opus 16 kbps
+    const hasil = await kecilkanDenganKabar(blob, r);
+    if (hasil) {
+      detik = detik || Math.round(hasil.detik);
+      if (hasil.blob.size <= MAKS_BYTE) {
+        if (r) state.uploading[r.id] = { pct: 0 };
+        return unggah(hasil.blob, 'audio/webm', judul, r ? r.id : crypto.randomUUID(), 'webm', detik, jenis, r ? r.id : null);
+      }
+      blob = hasil.blob; mime = 'audio/webm';
+      bagian = await pecahWebm(blob, MAKS_BYTE - 2 * 1048576);   // masih kegedean (> ±6 jam): pecah
+    }
+  }
   if (!bagian) {
     toast(`Filenya ${(blob.size / 1048576).toFixed(0)} MB, lewat batas 50 MB dan formatnya ga bisa dipecah otomatis. ${r ? 'Tekan Unduh, kecilkan/pecah filenya, lalu Upload file.' : 'Kecilkan atau pecah dulu filenya (mis. MP3 64 kbps).'}`, 12000);
     return false;
