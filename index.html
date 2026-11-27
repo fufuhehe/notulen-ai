@@ -114,7 +114,8 @@ h1,h2,h3{text-wrap:balance}
 .tm-st{font-size:.75rem;font-weight:700;color:var(--muted);white-space:nowrap}.tm-st.ok{color:var(--accent)}.tm-st.sepi{color:var(--aa)}
 #jenis-box{margin:0 0 .9rem}
 #jenis-box>span{display:none}
-#jenis-box .seg button{min-width:0;padding:0 .25rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block}
+#jenis-box .seg{flex-wrap:wrap}
+#jenis-box .seg button{flex:1 1 auto;min-width:0;padding:0 .7rem;white-space:nowrap;display:block}
 .sekunder{display:flex;gap:.625rem}
 .sekunder button{flex:1;justify-content:flex-start;background:var(--surface);border-color:var(--line);font-weight:600}
 .catatan{font-size:.8125rem;color:var(--muted);margin:.75rem .25rem 0}
@@ -823,12 +824,13 @@ body.ada-player .aksi{bottom:4.5rem}
       <summary>Jenis kegiatan: rapat, kuliah, bimbingan, ngobrol</summary>
       <ul>
         <li>Pilih <b>Jenis</b> di beranda sebelum rekam atau upload. Pilihan terakhir diingat.</li>
-        <li><b>Rapat</b>: ringkasan rapat, notulensi resmi + Word, dan paparan.</li>
+        <li><b>Rapat kantor</b>: rapat kerja di kantor. Ringkasan, notulensi resmi + Word (kop kantor), dan paparan.</li>
+        <li><b>Rapat umum</b>: rapat di luar kantor (bisnis, komunitas, proyek, keluarga). Sama lengkapnya, tapi Aa ga memakai konteks kantor, dan kop Word diisi per catatan di Info rapat.</li>
         <li><b>Kuliah</b>: ringkasan pembuka + pointer materi per topik, istilah penting, yang ditekankan dosen, rujukan, tugas & tenggat.</li>
         <li><b>Bimbingan</b>: masukan dosen per bab, checklist revisi, yang sudah disetujui, dan PR sebelum bimbingan berikutnya.</li>
         <li><b>Ngobrol</b>: topik yang dibahas, info penting (nama, angka, kontak), janji & rencana.</li>
         <li>Salah pilih? Di halaman catatan, ketuk label jenis di bawah judul, pilih yang benar, lalu buat ulang ringkasannya.</li>
-        <li>Tab Notulensi dan Paparan cuma muncul di Rapat. Koreksi istilah, Pilih bagian, dan Minta revisi jalan di semua jenis.</li>
+        <li>Tab Notulensi dan Paparan cuma muncul di Rapat kantor dan Rapat umum. Koreksi istilah, Pilih bagian, dan Minta revisi jalan di semua jenis.</li>
         <li>Di daftar, saring per jenis lewat chip di atas daftar (muncul setelah ada catatan selain rapat).</li>
         <li class="khusus-admin">Admin bisa mengubah prompt tiap jenis di Pengaturan → <b>Jenis kegiatan &amp; prompt</b>.</li>
       </ul>
@@ -1041,7 +1043,7 @@ body.ada-player .aksi{bottom:4.5rem}
       <div class="row"><div style="flex:1"><label>Mengetahui (jabatan)</label><input id="if-tahu-jab" placeholder="mis. Ketua Tim"></div><div style="flex:1"><label>Mengetahui (nama)</label><input id="if-tahu-nama"></div></div>
       <label>Kota penandatanganan</label><input id="if-kota" placeholder="Jakarta">
       <div class="kop-box">
-        <label style="margin-top:0">Kop dokumen <span class="muted" style="font-weight:500">(berlaku untuk semua rapat)</span></label>
+        <label style="margin-top:0">Kop dokumen <span class="muted" style="font-weight:500" id="if-kop-ket">(berlaku untuk semua rapat kantor)</span></label>
         <input id="if-kop1" placeholder="Baris 1, mis. nama unit/direktorat">
         <input id="if-kop2" placeholder="Baris 2, mis. nama instansi" style="margin-top:.4rem">
       </div>
@@ -1068,7 +1070,7 @@ const jam = (d) => [Math.floor(d / 3600), Math.floor(d / 60) % 60, Math.floor(d 
 const MAKS_BYTE = 50 * 1024 * 1024;
 
 // ===== Harga (USD). Ubah di sini kalau harga berubah. =====
-const VERSI = 'v56';   // samakan dengan CACHE di sw.js
+const VERSI = 'v57';   // samakan dengan CACHE di sw.js
 const KURS = 16500;                        // kurs cadangan (dipakai rapat lama & kalau kurs harian gagal diambil)
 // Kurs harian USD→IDR: diambil sekali sehari, lalu DIKUNCI di tiap rapat saat dibuat (kolom rapat.kurs),
 // jadi biaya rapat yang sudah lewat tidak ikut berubah.
@@ -1354,7 +1356,8 @@ document.querySelectorAll('.lembar').forEach(l => {
 // ================= Jenis kegiatan =================
 // Daftar jenis dari tabel jenis_kegiatan (setup/16). Tabel belum ada = fitur disembunyikan, semua dianggap Rapat.
 const JENIS_INFO = {
-  rapat: ['Ringkasan, notulensi resmi + Word, paparan', 'Rapat itu berat. Biar Aa aja yang nyatet.'],
+  rapat: ['Rapat kerja di kantor. Ringkasan, notulensi resmi + Word, paparan', 'Rapat itu berat. Biar Aa aja yang nyatet.'],
+  rapat_umum: ['Rapat di luar kantor (bisnis, komunitas, proyek). Ringkasan, notulensi + Word, paparan', 'Rapat itu berat. Biar Aa aja yang nyatet.'],
   kuliah: ['Ringkasan + pointer materi, istilah, tugas & tenggat', 'Fokus dengerin dosen, Aa yang nyatet.'],
   bimbingan: ['Masukan dosen per bab, checklist revisi, PR berikutnya', 'Fokus diskusi, revisinya Aa yang catet.'],
   ngobrol: ['Topik, info penting, janji & rencana', 'Ngobrol aja, Aa yang inget-inget.'],
@@ -1365,6 +1368,8 @@ state.jenis = bacaLS('jenis_terakhir') || 'rapat';
 state.adaJenisLain = bacaLS('ada_jenis_lain') === '1';
 const namaJenis = (k) => ((state.jenisList.find(j => j.kode === (k || 'rapat')) || {}).nama) || (k ? k[0].toUpperCase() + k.slice(1) : 'Rapat');
 const jenisRapat = (r) => !r || !r.jenis || r.jenis === 'rapat';
+const JENIS_NOTULENSI = ['rapat', 'rapat_umum'];   // jenis yang punya tab Notulensi & Paparan
+const pakaiNotulensi = (r) => jenisRapat(r) || JENIS_NOTULENSI.includes(r.jenis);
 function terapkanJenis(list) {
   state.jenisAktif = !!(list && list.length);
   if (state.jenisAktif) state.jenisList = list;
@@ -1421,7 +1426,7 @@ $('pj-daftar').addEventListener('click', async e => {
   bukaDetail(r.id);
 });
 function aturTabJenis(r) {
-  const rapat = jenisRapat(r);
+  const rapat = pakaiNotulensi(r);
   document.querySelectorAll('#d-tabs button[data-t=notulensi], #d-tabs button[data-t=paparan]').forEach(b => b.classList.toggle('hidden', !rapat));
   const aktif = document.querySelector('#d-tabs button.on');
   if (!rapat && aktif && ['notulensi', 'paparan'].includes(aktif.dataset.t)) pilihTab('resume');
@@ -2736,6 +2741,9 @@ function tglPanjang(d) { d = new Date(d); return `${HARI[d.getDay()]}, ${String(
 function tglKota(d) { d = new Date(d); return `${String(d.getDate()).padStart(2, '0')} ${BULAN[d.getMonth()]} ${d.getFullYear()}`; }
 const pisahNamaJabatan = (t) => { const i = String(t || '').indexOf(','); return i < 0 ? [String(t || '').trim(), ''] : [t.slice(0, i).trim(), t.slice(i + 1).trim()]; };
 
+// Rapat umum: kop dokumen per catatan (disimpan di info_rapat), bukan kop kantor yang berlaku global
+const kopPerCatatan = (r) => !!r && r.jenis === 'rapat_umum';
+const kopUntuk = (r, kop) => kopPerCatatan(r) ? { kop1: (r.info_rapat || {}).kop1 || '', kop2: (r.info_rapat || {}).kop2 || '', kota: kop.kota } : kop;
 async function muatKop() {
   if (state.kop) return state.kop;
   const { data } = await sb.from('pengaturan_app').select('kop1,kop2,kota').eq('id', 1).maybeSingle();
@@ -2809,7 +2817,8 @@ async function buatNotulensi(ulang) {
 }
 
 async function bukaInfo(lalu) {
-  const kop = await muatKop();
+  const kop = kopUntuk(state.rapat, await muatKop());
+  $('if-kop-ket').textContent = kopPerCatatan(state.rapat) ? '(khusus catatan ini, boleh dikosongkan)' : '(berlaku untuk semua rapat kantor)';
   const f = infoRapat(state.rapat, kop);
   $('if-agenda').value = f.agenda; $('if-tanggal').value = f.tanggal; $('if-waktu').value = f.waktu;
   $('if-tempat').value = f.tempat; $('if-pimpinan').value = f.pimpinan;
@@ -2830,10 +2839,11 @@ async function simpanInfo() {
     notulis: $('if-notulis').value.trim(), tahu_jabatan: $('if-tahu-jab').value.trim(), tahu_nama: $('if-tahu-nama').value.trim(),
     kota: $('if-kota').value.trim() || 'Jakarta', tanggal_ttd: lama.tanggal_ttd,
   };
+  if (kopPerCatatan(r)) { info.kop1 = $('if-kop1').value.trim(); info.kop2 = $('if-kop2').value.trim(); }
   const b = $('if-simpan'); b.disabled = true;
   const { error } = await sb.from('rapat').update({ info_rapat: info }).eq('id', r.id);
   const kop1 = $('if-kop1').value.trim(), kop2 = $('if-kop2').value.trim();
-  if (!error && state.kop && (kop1 !== (state.kop.kop1 || '') || kop2 !== (state.kop.kop2 || ''))) {
+  if (!error && !kopPerCatatan(r) && state.kop && (kop1 !== (state.kop.kop1 || '') || kop2 !== (state.kop.kop2 || ''))) {
     const k = await sb.from('pengaturan_app').update({ kop1, kop2 }).eq('id', 1);
     if (!k.error) Object.assign(state.kop, { kop1, kop2 });
   }
@@ -2848,7 +2858,7 @@ async function simpanInfo() {
 async function unduhDocx() {
   const r = state.rapat, nt = r.notulensi; if (!nt) return;
   if (!r.info_rapat) return bukaInfo(true);              // cek info dulu sekali
-  const kop = await muatKop();
+  const kop = kopUntuk(r, await muatKop());
   const f = infoRapat(r, kop);
   toast('Aa lagi nyusun dokumen Word…', 4000);
   try {

@@ -86,16 +86,17 @@ Pasang sekali: jalankan [`setup/12-edit-rentang.sql`](setup/12-edit-rentang.sql)
 
 Pasang sekali: jalankan [`setup/15-koreksi.sql`](setup/15-koreksi.sql), lalu impor ulang workflow Resume, Paparan, dan Notulensi (node Tandai sekarang `select=*`).
 
-## Jenis kegiatan: rapat, kuliah, bimbingan, ngobrol
+## Jenis kegiatan: rapat kantor, rapat umum, kuliah, bimbingan, ngobrol
 Pilih **Jenis** di beranda sebelum rekam/upload (pilihan terakhir diingat). Bentuk ringkasan mengikuti jenisnya:
-- **Rapat**: ringkasan rapat + notulensi resmi (Word) + paparan.
+- **Rapat kantor** (kode `rapat`): ringkasan rapat + notulensi resmi (Word) + paparan, memakai prompt bawaan workflow n8n (tempat menaruh konteks instansimu) dan kop Word global.
+- **Rapat umum** (kode `rapat_umum`): sama lengkapnya, tapi prompt ringkasan, notulensi, dan paparan netral (tidak mengasumsikan instansi) dan kop Word diisi per catatan. Untuk rapat bisnis, komunitas, proyek, dsb.
 - **Kuliah**: ringkasan pembuka + pointer materi per topik, istilah, yang ditekankan dosen, rujukan, tugas & tenggat.
 - **Bimbingan**: masukan dosen per bab, checklist revisi, yang sudah disetujui, PR sebelum bimbingan berikutnya.
 - **Ngobrol**: topik, info penting, janji & rencana, ide.
 
-Jenis bisa diganti dari halaman catatan (lalu buat ulang ringkasan). Tab Notulensi & Paparan hanya muncul di Rapat. Daftar bisa disaring per jenis. Prompt tiap jenis disimpan di tabel `jenis_kegiatan` dan bisa diedit admin dari **Pengaturan → Jenis kegiatan & prompt**; prompt Rapat kosong = pakai prompt bawaan di workflow n8n.
+Jenis bisa diganti dari halaman catatan (lalu buat ulang ringkasan). Tab Notulensi & Paparan hanya muncul di Rapat kantor dan Rapat umum. Daftar bisa disaring per jenis. Prompt tiap jenis disimpan di tabel `jenis_kegiatan` dan bisa diedit admin dari **Pengaturan → Jenis kegiatan & prompt**; prompt Rapat kosong = pakai prompt bawaan di workflow n8n.
 
-Pasang sekali: jalankan [`setup/16-jenis-kegiatan.sql`](setup/16-jenis-kegiatan.sql) (butuh `10-multi-akun.sql`), lalu impor ulang workflow Resume (ada node baru *Ambil prompt jenis* + *Pilih prompt*).
+Pasang sekali: jalankan [`setup/16-jenis-kegiatan.sql`](setup/16-jenis-kegiatan.sql) (butuh `10-multi-akun.sql`), lalu impor ulang workflow Resume (ada node baru *Ambil prompt jenis* + *Pilih prompt*). Untuk Rapat umum jalankan juga [`setup/18-rapat-umum.sql`](setup/18-rapat-umum.sql).
 
 ## Rekam suara Zoom / tab lain (di laptop)
 Di laptop/PC (Chrome atau Edge), di bawah tombol *Rekam rapat* ada pilihan **Sumber suara**:
